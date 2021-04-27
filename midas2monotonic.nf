@@ -42,7 +42,7 @@ process preprocess{
   file mapfile from mapfile
 
   output:
-  tuple spec, file("site_data.tsv") into DAT
+  tuple spec, file("site_data.tsv") optional true into DAT
 
   """
   Rscript ${workflow.projectDir}/midasmerge2sitefreqs.r \

@@ -84,6 +84,12 @@ dat <- dat %>%
     }
   })
 
+cat("Checking if any sites left...\n")
+if(nrow(dat) == 0){
+  cat("Exiting without any sites kept...\n")
+  q()
+}
+
 # Recode minor alleles that don't end as dominant
 cat("Recoding...\n")
 Recode <- dat %>%

@@ -125,6 +125,12 @@ if(!dir.exists(args$outdir)){
 cat("Writing gene info...\n")
 write_tsv(gene_sites, file.path(args$outdir, "gene_info.tsv"))
 
+cat("Checking if any genes are kept...\n")
+if(length(genes) == 0){
+  cat("No genes left to model...\n")
+  q()
+}
+
 # Select one gene, create model, will simply be used for update
 cat("Creating dummy model...\n")
 d <- dat %>%
