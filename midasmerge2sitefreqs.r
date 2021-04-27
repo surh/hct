@@ -34,11 +34,11 @@ process_arguments <- function(){
                     help = paste("Mapping file."))
   
   # Read arguments
-  p <- add_argumemt(p, "--output",
+  p <- add_argument(p, "--output",
                     help = "Name of output file",
                     type = "character",
                     default = "site_data.tsv")
-  
+   
   cat("Processing arguments...\n")
   args <- parse_args(p)
   
