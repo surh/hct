@@ -118,7 +118,7 @@ cat("Prepare output directories")
 if(!dir.exists(args$outdir)){
   dir.create(args$outdir)
   dir.create(file.path(args$outdir, "slope_ranefs"))
-  dir.create(file.path(args$outdir, "conditional_day"))
+  # dir.create(file.path(args$outdir, "conditional_day"))
   dir.create(file.path(args$outdir, "pt_preds"))
 }
 
@@ -172,27 +172,13 @@ Res <- (dat %>%
       str_remove(",moday\\]$")
     
     # Plot conditional effects
-    # For some reason it is failing ti create the plots but without errors
-    filename <- file.path(outdir, "conditional_day", paste0(gene, ".jpeg"))
-    jpeg(filename, width = 900, height = 900)
-    conditional_effects(m1, prob = 0.8)
-    dev.off()
+    # For some reason it is failing ti create the plots but without errors !!!
+    # filename <- file.path(outdir, "conditional_day", paste0(gene, ".jpeg"))
+    # jpeg(filename, width = 900, height = 900)
+    # conditional_effects(m1, prob = 0.8)
+    # dev.off()
     
     # Plot patient-wise predictions
-    # bs <- coef(m1, summary = TRUE, robust = FALSE, probs = c(0.1, 0.5, 0.9))
-    # bs$pt[,"Q50","Intercept"]
-    # bs$pt[,,"Intercept"] 
-    # bs$pt[,"Q50","moday"]
-    # tibble(pt = row.names(bs$pt),
-    #        intercept =  bs$pt[,"Q50","Intercept"],
-    #        slope = bs$pt[,"Q50","moday"]) %>%
-    #   ggplot() +
-    #   ylim(c(0,1)) +
-    #   xlim(range(d$day)) +
-    #   xlab(label = "day") +
-    #   ylab(label = "maf") +
-    #   geom_abline(aes(intercept = intercept, slope = slope)) +
-    #   theme_classic()
     # Using predict
     d_pred <- tibble(day = rep(unique(d$day), times = length(unique(d$pt))),
                      pt = rep(unique(d$pt), each = length(unique(d$day))))
