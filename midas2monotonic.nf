@@ -27,7 +27,7 @@ params.warmup = 2000
 midas_dir = file(params.midas_dir)
 mapfile = file(params.map)
 
-MIDAS = Channel.fromPath("$midas_dir/*", type: 'dir', maxdepth: 1)
+MIDAS = Channel.fromPath("$midas_dir/*", type: 'dir', maxDepth: 1)
   .map{ midas_dir -> tuple(midas_dir.name,
     file(midas_dir)) }
 
