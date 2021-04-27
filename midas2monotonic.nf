@@ -35,7 +35,7 @@ process preprocess{
   tag "$spec"
   label 'r'
   publishDir "$params.outdir/site_data", mode: 'rellink',
-    pattern: "site_date.tsv", saveAs: {"${spec}.tsv"}
+    pattern: "site_data.tsv", saveAs: {"${spec}.tsv"}
 
   input:
   tuple spec, file(midas_dir) from MIDAS
