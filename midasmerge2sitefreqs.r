@@ -18,7 +18,7 @@
 # along with hct.  If not, see <http://www.gnu.org/licenses/>.
 
 # Objective is simply to do some of the processing steps which take time
-library(tidyverse)
+library(argparser)
 
 process_arguments <- function(){
   p <- arg_parser(paste("Reads data from midas merge and writes an",
@@ -49,8 +49,9 @@ args <- process_arguments()
 # args <- list(midas_dir = "MGYG-HGUT-00099/",
 #              map = "hct_map_temp.tsv")
 
+library(tidyverse)
 library(HMVAR)
-library(argparser)
+
 
 # Read metadata
 meta <- read_tsv(args$map)
