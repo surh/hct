@@ -63,6 +63,12 @@ Dat <- read_midas_data(args$midas_dir,
                          select(sample, Group = pt),
                        cds_only = TRUE)
 
+cat("Checking if more than one sample...\n")
+if(ncol(Dat$depth) <= 2){
+  cat("Not enough samples to begin with...\n")
+  q()
+}
+
 # Merge depth and freq from midas data
 dat <- match_freq_and_depth(freq = Dat$freq, depth = Dat$depth,
                             info = Dat$info %>%
