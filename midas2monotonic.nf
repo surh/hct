@@ -14,11 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Paramters
+// Parameters
 params.midas_dir = ''
 params.map = ''
 params.outdir = 'output'
 params.brms_cpus = 4
+params.min_sites = 5
+params.iter = 3000
+params.warmup = 2000
 
 // Process params
 midas_dir = file(params.midas_dir)
@@ -46,5 +49,34 @@ process preprocess{
     $midas_dir \
     $mapfile \
     --output site_data.tsv
+  """
+}
+
+process model{
+  tag "$spec"
+  label 'r'
+  label 'long'
+  publishDir "$params.outdir/model", mode: 'relling',
+    pattern: "output/", saveAs: {"$spec"}
+  cpus params.brms_cpus
+
+  input:
+  tuple spec, file(site_data) from DAT
+  val cpus from params.brms_cpus
+  val min_sites from params.min_sites
+  val iter from params.iter
+  val warmup from params.warmup
+
+  output:
+  tuple spec, file("output")
+
+  """
+  Rscript ${workflow.projectDir}/model_monotonic_gene_maf.r \
+    $site_data \
+    --outdir output \
+    --min_sites $min_sites \
+    --iter $iter \
+    --warmup $warmup \
+    --cores $cpus
   """
 }
