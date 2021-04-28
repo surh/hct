@@ -144,8 +144,8 @@ m1 <- brm(freq ~ mo(day) + (1 + mo(day) | pt),
 
 # Fit model on every gene
 cat("Modelling all selected Genes")
-Res <- (dat %>%
-  split(.$gene_id))[1] %>%
+Res <- dat %>%
+  split(.$gene_id) %>%
   map_dfr(function(d, m1, cores = 4,
                    iter = 3000, warmup = 2000,
                    outdir = "output"){
