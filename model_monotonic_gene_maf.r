@@ -118,7 +118,7 @@ genes <- gene_sites$gene_id[ gene_sites$n_sites >= args$min_sites ]
 dat <- dat %>%
   filter(gene_id %in% genes)
 
-cat("Prepare output directories")
+cat("Prepare output directories...\n")
 # Prepare output dir
 if(!dir.exists(args$outdir)){
   dir.create(args$outdir)
@@ -148,7 +148,7 @@ m1 <- brm(freq ~ mo(day) + (1 + mo(day) | pt),
           control = list(adapt_delta = 0.99))
 
 # Fit model on every gene
-cat("Modelling all selected Genes")
+cat("Modelling all selected Genes...\n")
 Res <- dat %>%
   split(.$gene_id) %>%
   map_dfr(function(d, m1, cores = 4,
