@@ -68,7 +68,7 @@ process model{
   val warmup from params.warmup
 
   output:
-  tuple spec, file("output")
+  tuple spec, file("output") optional true
 
   """
   Rscript ${workflow.projectDir}/model_monotonic_gene_maf.r \
