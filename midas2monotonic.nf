@@ -56,7 +56,7 @@ process model{
   tag "$spec"
   label 'r'
   label 'long'
-  publishDir "$params.outdir/model", mode: 'relling',
+  publishDir "$params.outdir/model", mode: 'rellink',
     pattern: "output/", saveAs: {"$spec"}
   cpus params.brms_cpus
 
