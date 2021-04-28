@@ -35,14 +35,14 @@ process preprocess{
   tag "$spec"
   label 'r'
   publishDir "$params.outdir/site_data", mode: 'rellink',
-    pattern: "site_data.tsv", saveAs: {"${spec}.tsv"}
+    pattern: "site_data.tsv.gz", saveAs: {"${spec}.tsv"}
 
   input:
   tuple spec, file(midas_dir) from MIDAS
   file mapfile from mapfile
 
   output:
-  tuple spec, file("site_data.tsv") optional true into DAT
+  tuple spec, file("site_data.tsv.gz") optional true into DAT
 
   """
   Rscript ${workflow.projectDir}/midasmerge2sitefreqs.r \
