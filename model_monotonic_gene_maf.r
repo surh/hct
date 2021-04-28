@@ -62,7 +62,7 @@ process_arguments <- function(){
 }
 
 args <- process_arguments()
-# args <- list(data = "site_data.tsv",
+# args <- list(data = "site_data.tsv.gz",
 #              min_sites = 5,
 #              outdir = "output/",
 #              iter = 3000,
@@ -125,6 +125,7 @@ if(!dir.exists(args$outdir)){
   dir.create(file.path(args$outdir, "slope_ranefs"))
   # dir.create(file.path(args$outdir, "conditional_day"))
   dir.create(file.path(args$outdir, "pt_preds"))
+  dir.create(file.path(args$outdir, "model_res"))
 }
 
 cat("Writing gene info...\n")
@@ -217,6 +218,9 @@ Res <- dat %>%
                           index = FALSE) %>%
       mutate(gene_id = gene)
     
+
+    filename <- file.path(outdir, "model_res", paste0(gene, ".tsv.gz"))
+    write_tsv(res, filename)
     res
   }, m1 = m1,
   cores = args$cores,

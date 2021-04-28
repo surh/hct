@@ -37,7 +37,7 @@ process_arguments <- function(){
   p <- add_argument(p, "--output",
                     help = "Name of output file",
                     type = "character",
-                    default = "site_data.tsv")
+                    default = "site_data.tsv.gz")
    
   cat("Processing arguments...\n")
   args <- parse_args(p)

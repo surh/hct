@@ -48,7 +48,7 @@ process preprocess{
   Rscript ${workflow.projectDir}/midasmerge2sitefreqs.r \
     $midas_dir \
     $mapfile \
-    --output site_data.tsv
+    --output site_data.tsv.gz
   """
 }
 
@@ -59,6 +59,7 @@ process model{
   publishDir "$params.outdir/model", mode: 'rellink',
     pattern: "output/", saveAs: {"$spec"}
   cpus params.brms_cpus
+  // afterScript 'rm -r Rtmp*'
 
   input:
   tuple spec, file(site_data) from DAT
@@ -71,6 +72,7 @@ process model{
   tuple spec, file("output") optional true
 
   """
+  TMPDIR=${workflow.workDir}
   Rscript ${workflow.projectDir}/model_monotonic_gene_maf.r \
     $site_data \
     --outdir output \
