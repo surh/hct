@@ -62,7 +62,7 @@ process_arguments <- function(){
 }
 
 args <- process_arguments()
-# args <- list(data = "test_data.tsv",
+# args <- list(data = "site_data.tsv",
 #              min_sites = 5,
 #              outdir = "output/",
 #              iter = 3000,
@@ -92,6 +92,11 @@ n_pts <- dat %>%
   summarise(n_pt = length(unique(pt)),
             .groups = 'drop')
 sites <- n_pts$site_id[ n_pts$n_pt > 1 ]
+cat("Checking if enough sites have more than one patient...\n")
+if(length(sites) == 0){
+  cat("No sites with more than one patient...\n")
+  q()
+}
 dat <- dat %>%
   filter(site_id %in% sites)
 
