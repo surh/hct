@@ -38,16 +38,32 @@ process_arguments <- function(){
                     help = "Name of output file",
                     type = "character",
                     default = "site_data.tsv.gz")
+  p <- add_argument(p, "--recode",
+                    help = paste("Indicate if major and minor alleles must",
+                                 "be flipped (i.e. recoded) based on the most",
+                                 "common allele in the last date. (yes or no)"),
+                    type = "character", default = "yes")
+  
    
   cat("Processing arguments...\n")
   args <- parse_args(p)
+  
+  # Check arguments
+  if(args$recode == "yes"){
+    args$recode <- TRUE
+  }else if(args$recode == "no"){
+    args$recode <- FALSE
+  }else{
+    stop("ERROR: --recode must be 'yes' or 'no'", call. = TRUE)
+  }
   
   return(args)
 }
 
 args <- process_arguments()
 # args <- list(midas_dir = "MGYG-HGUT-00099/",
-#              map = "hct_map_temp.tsv")
+#              map = "hct_map_temp.tsv",
+#              recode = TRUE)
 
 library(tidyverse)
 library(HMVAR)
@@ -97,14 +113,16 @@ if(nrow(dat) == 0){
 }
 
 # Recode minor alleles that don't end as dominant
-cat("Recoding...\n")
-Recode <- dat %>%
-  group_by(site_id) %>%
-  summarise(recode = mean(freq[ day == max(day) ]) < 0.5,
-            .groups = 'drop')
-dat <- dat %>%
-  left_join(Recode, by = "site_id")
-dat$freq[ dat$recode ] <- 1 - dat$freq[ dat$recode ]
+if(args$recode){
+  cat("Recoding...\n")
+  Recode <- dat %>%
+    group_by(site_id) %>%
+    summarise(recode = mean(freq[ day == max(day) ]) < 0.5,
+              .groups = 'drop')
+  dat <- dat %>%
+    left_join(Recode, by = "site_id")
+  dat$freq[ dat$recode ] <- 1 - dat$freq[ dat$recode ]
+}
 
 cat("Writing output...\n")
 write_tsv(dat, args$output)
