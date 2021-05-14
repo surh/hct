@@ -15,7 +15,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // Params
-/ Parameters
 params.midas_dir = ''
 params.map = ''
 params.outdir = 'output'
