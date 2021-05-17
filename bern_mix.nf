@@ -43,9 +43,8 @@ process bern_mix{
   val min_patients from params.min_patients
 
   output:
-  file "output/m1.stan.rdat" optional TRUE
-  file  "output/p_directional.tsv.gz" optional TRUE
-
+  file "output/m1.stan.rdat" optional true
+  file  "output/p_directional.tsv.gz" optional true
 
   """
   Rscript $workflow.projectDir/bern_mix.r \
