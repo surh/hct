@@ -27,3 +27,53 @@ indir = file(params.input)
 SITES = Channel.fromPath("$indir/*")
   .map{ sites_file -> tuple(sites_file.name.replaceAll(/\.tsv\.gz$/, ''),
     file(sites_file)) }
+
+process bern_mix{
+  cpus 4
+  tag "$spec"
+  label 'r'
+  publishDir "$params.outdir/stan_models", mode: 'rellink',
+    pattern: "output/m1.stan.rdat", saveAs: {"${spec}.stan.rdat"}
+  publishDir "$params.outdir/p_directional", mode: 'rellink',
+    pattern: "output/p_directional.tsv.gz", saveAs: {"${spec}.tsv.gz"}
+
+  input:
+  tuple spec, file(sites_file) from SITES
+  val q_thres from params.q_thres
+  val min_patients from params.min_patients
+
+  output:
+  file "output/m1.stan.rdat" optional TRUE
+  file  "output/p_directional.tsv.gz" optional TRUE
+
+
+  """
+  Rscript $workflow.projectDir/bern_mix.r \
+    $sites_file \
+    --q_thres $q_thres \
+    --min_patients $min_patients \
+    --outdir output
+  """
+
+}
+
+
+// Example nextflow.config
+/*
+process{
+  queue = 'hbfraser,hns'
+  maxForks = 100
+  errorStrategy = 'finish'
+  stageInMode = 'rellink'
+  time = '200h'
+  memory = '5G'
+  withLabel: 'r'{
+    module = 'R/4.0.2'
+  }
+}
+executor{
+  name = 'slurm'
+  queueSize = 500
+  submitRateLitmit = '1 sec'
+}
+*/
