@@ -45,7 +45,7 @@ library(rstan)
 
 dat <- read_tsv(args$input,
                 col_types = cols(site_id = col_character()))
-if(max$n_patients < args$min_patients){
+if(max(dat$n_patients) < args$min_patients){
   cat("Not enough patients.\n")
   q()
 }
