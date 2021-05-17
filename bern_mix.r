@@ -76,9 +76,9 @@ stan_data <- list(x = stan_data$x,
 cat("Compiling stan model...\n")
 # First find the location of the file via introspection
 stan_file <- commandArgs(trailingOnly = FALSE)
-i <- which(x %>%
+i <- which(stan_file %>%
              str_detect("--file"))
-stan_file <- x[i] %>%
+stan_file <- stan_file[i] %>%
   str_remove("^--file=") %>%
   dirname()
 stan_file <- file.path(stan_file, "stan", "bernoulli_mix_multisite.stan")
