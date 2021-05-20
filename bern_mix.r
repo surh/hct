@@ -110,7 +110,7 @@ filename <- file.path(args$outdir, "m1.stan.rdat")
 save(m1.stan, file = filename)
 
 
-cat("\Extracting posterior...\n")
+cat("Extracting posterior...\n")
 post <- rstan::extract(m1.stan)
 # # First find the prob that the probability of change (p) greater than average (P)
 # P_p_diff <- post$p - as.vector(post$P)
