@@ -23,17 +23,51 @@ process_arguments <- function(){
                     help = paste("Directory path to store outputs."),
                     default = "output/",
                     type = "character")
+  p <- add_argument(p, "--iter",
+                    help = "Number of Stan iterations per chain.",
+                    type = "numeric",
+                    default = 3000)
+  p <- add_argument(p, "--warmup",
+                    help = "Number of Stan warmup iterations per chain.",
+                    type = "numeric",
+                    default = 2000)
+  p <- add_argument(p, "--chains",
+                    help = paste("Number of Stan chains. It will be equal",
+                                 "to the number of required threads.")
+                    type = "numeric",
+                    default = 4)
+  p <- add_argument(p, "--vp",
+                    help = paste("Variance parameter for distribution of p_i"),
+                    type = "numeric",
+                    default = 5)
+  p <- add_argument(p, "--vq",
+                    help = paste("Variance parameter for distribution of q_i"),
+                    type = "numeric",
+                    default = 5)
                     
   # Read arguments
   cat("Processing arguments...\n")
   args <- parse_args(p)
   
   # Process arguments
-  args$iter <- 2000
-  args$warmup <- 1000
-  args$chains <- 4
-  args$vp <- 5
-  args$vq <- 5
+  if(args$iter < 0){
+    stop("ERROR: iter must be positive", call. = TRUE)
+  }
+  if(args$warmup < 0){
+    stop("ERROR: warmup must be positive", call. = TRUE)
+  }
+  if(args$warmup >= args$iter){
+    stop("ERROR: warmup must be less than iter", call. = TRUE)
+  }
+  if(args$chains < 1){
+    stop("ERROR: chains must be at least 1", call. = TRUE)
+  }
+  if(args$vp <= 0){
+    stop("ERROR: vp must be positive", call. = TRUE)
+  }
+  if(args$vq <= 0){
+    stop("ERROR: vq must be positive", call. = TRUE)
+  }
   
   return(args)
 }
