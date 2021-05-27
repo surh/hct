@@ -46,8 +46,8 @@ args <- list(input = "sites_dist.tsv.gz",
              iter = 3000,
              warmup = 2000,
              chains = 4,
-             vp = 5,
-             vq = 5)
+             vp = 10,
+             vq = 10)
 
 library(tidyverse)
 library(rstan)
@@ -113,10 +113,11 @@ m1.stan <- sampling(m1.model,
                     thin = 1,
                     cores = args$chains)
 # load("output/m1.stan.rdat")
-print(m1.stan, pars = c("P", "Q", "vp", "vq"))
-bayesplot::mcmc_pairs(m1.stan, pars = c("P", "Q", "vp", "vq"))
-bayesplot::mcmc_trace(m1.stan, pars = c("P", "Q", "vp", "vq"))
-bayesplot::mcmc_acf(m1.stan, pars = c("P", "Q", "vp", "vq"))
+pars <- c("P", "Q")
+print(m1.stan, pars = pars)
+bayesplot::mcmc_pairs(m1.stan, pars = pars)
+bayesplot::mcmc_trace(m1.stan, pars = pars)
+bayesplot::mcmc_acf(m1.stan, pars = pars)
 
 # mu <- 0.2
 # v <- 10
