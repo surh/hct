@@ -112,11 +112,11 @@ if(max(dat$n_patients) < args$min_patients){
 }
 
 # Creating site index, no need to randomly subset anymore
-# subseting randomly
-nsites <- 1000
-set.seed(38924)
-dat <- dat %>%
-  filter(site_id %in% sample(unique(dat$site_id), size = nsites))
+# # subseting randomly
+# nsites <- 1000
+# set.seed(38924)
+# dat <- dat %>%
+#   filter(site_id %in% sample(unique(dat$site_id), size = nsites))
 sites <- tibble(site_id = dat$site_id,
                 id = 1:length(dat$site_id))
 
