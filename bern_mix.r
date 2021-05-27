@@ -112,12 +112,11 @@ if(max(dat$n_patients) < args$min_patients){
 }
 
 # Creating site index, no need to randomly subset anymore
-# # subseting randomly
-# nsites <- 1000
-# set.seed(38924)
-# dat <- dat %>%
-#   filter(site_id %in% sample(unique(dat$site_id), size = nsites))
-# sites <- sample(sites, size = nsites, replace = FALSE)
+# subseting randomly
+nsites <- 1000
+set.seed(38924)
+dat <- dat %>%
+  filter(site_id %in% sample(unique(dat$site_id), size = nsites))
 sites <- tibble(site_id = dat$site_id,
                 id = 1:length(dat$site_id))
 
@@ -147,6 +146,7 @@ stan_file <- stan_file[i] %>%
   str_remove("^--file=") %>%
   dirname()
 stan_file <- file.path(stan_file, "stan", "bernoulli_mix_multisite.stan")
+cat("\tusing stan model at file", stan_file, "\n")
 # stan_file <- "~/micropopgen/src/hct/stan/bernoulli_mix_multisite.stan"
 # stan_file <- "~/micropopgen/src/hct/stan/bernoulli_mix_multisite_hyper.stan"
 m1.model <- stan_model(stan_file,
@@ -165,7 +165,7 @@ m1.stan <- sampling(m1.model,
                     thin = 1,
                     cores = args$chains)
 # load("output/m1.stan.rdat")
-load("~/micropopgen/exp/2021/today/output/m1.stan.rdat")
+# load("~/micropopgen/exp/2021/today/output/m1.stan.rdat")
 pars <- c("P", "Q")
 print(m1.stan, pars = pars)
 # bayesplot::mcmc_pairs(m1.stan, pars = pars)
@@ -226,12 +226,13 @@ for(iter in 1:((args$iter - args$warmup) * args$chains)){
   res <- res + 1*( (post$p[iter,] - post$P[iter]) > 0 & (abs(post$q[iter,] - post$Q[iter]) > args$q_thres) )
 }
 
-cat("Joining results and wirting output...\n")
+cat("Joining results...\n")
 res <- tibble(id = 1:length(res),
        p_directional = res / length(post$P))
 res <- dat %>%
   inner_join(sites %>% left_join(res, by = "id"),
             by = "site_id")
+cat("Writing output...\n")
 filename <- file.path(args$outdir, "p_directional.tsv.gz")
 write_tsv(res, filename)
  
