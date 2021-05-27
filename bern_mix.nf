@@ -68,6 +68,8 @@ process{
   memory = '5G'
   withLabel: 'r'{
     module = 'R/4.0.2'
+    // module = "R/3.6.1:v8/8.4.371.22:gcc/9.1.0"
+    // module = "R/4.0.2:v8/8.4.371.22" // Make sure you have ~/.R/Makevars with CXX14
   }
 }
 executor{
