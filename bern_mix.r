@@ -1,4 +1,22 @@
 #!/usr/bin/env Rscript
+
+# (C) Copyright 2021 Sur Herrera Paredes
+# 
+# This file is part of hct.
+# 
+# hct is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# hct is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with hct.  If not, see <http://www.gnu.org/licenses/>.
+
 library(argparser)
 
 process_arguments <- function(){
@@ -72,16 +90,16 @@ process_arguments <- function(){
   return(args)
 }
 
-# args <- process_arguments()
-args <- list(input = "sites_dist.tsv.gz",
-             q_thres = 0.1,
-             min_patients = 5,
-             outdir = "output",
-             iter = 3000,
-             warmup = 2000,
-             chains = 4,
-             vp = 10,
-             vq = 10)
+args <- process_arguments()
+# args <- list(input = "sites_dist.tsv.gz",
+#              q_thres = 0.1,
+#              min_patients = 5,
+#              outdir = "output",
+#              iter = 3000,
+#              warmup = 2000,
+#              chains = 4,
+#              vp = 10,
+#              vq = 10)
 
 library(tidyverse)
 library(rstan)
@@ -94,11 +112,11 @@ if(max(dat$n_patients) < args$min_patients){
 }
 
 # Creating site index, no need to randomly subset anymore
-# subseting randomly
-nsites <- 1000
-set.seed(38924)
-dat <- dat %>%
-  filter(site_id %in% sample(unique(dat$site_id), size = nsites))
+# # subseting randomly
+# nsites <- 1000
+# set.seed(38924)
+# dat <- dat %>%
+#   filter(site_id %in% sample(unique(dat$site_id), size = nsites))
 # sites <- sample(sites, size = nsites, replace = FALSE)
 sites <- tibble(site_id = dat$site_id,
                 id = 1:length(dat$site_id))
@@ -122,14 +140,14 @@ stan_data <- list(x = stan_data$x,
 
 cat("Compiling stan model...\n")
 # First find the location of the file via introspection
-# stan_file <- commandArgs(trailingOnly = FALSE)
-# i <- which(stan_file %>%
-#              str_detect("--file"))
-# stan_file <- stan_file[i] %>%
-#   str_remove("^--file=") %>%
-#   dirname()
-# stan_file <- file.path(stan_file, "stan", "bernoulli_mix_multisite.stan")
-stan_file <- "~/micropopgen/src/hct/stan/bernoulli_mix_multisite.stan"
+stan_file <- commandArgs(trailingOnly = FALSE)
+i <- which(stan_file %>%
+             str_detect("--file"))
+stan_file <- stan_file[i] %>%
+  str_remove("^--file=") %>%
+  dirname()
+stan_file <- file.path(stan_file, "stan", "bernoulli_mix_multisite.stan")
+# stan_file <- "~/micropopgen/src/hct/stan/bernoulli_mix_multisite.stan"
 # stan_file <- "~/micropopgen/src/hct/stan/bernoulli_mix_multisite_hyper.stan"
 m1.model <- stan_model(stan_file,
                        model_name = "bern_change")
@@ -147,11 +165,12 @@ m1.stan <- sampling(m1.model,
                     thin = 1,
                     cores = args$chains)
 # load("output/m1.stan.rdat")
+load("~/micropopgen/exp/2021/today/output/m1.stan.rdat")
 pars <- c("P", "Q")
 print(m1.stan, pars = pars)
-bayesplot::mcmc_pairs(m1.stan, pars = pars)
-bayesplot::mcmc_trace(m1.stan, pars = pars)
-bayesplot::mcmc_acf(m1.stan, pars = pars)
+# bayesplot::mcmc_pairs(m1.stan, pars = pars)
+# bayesplot::mcmc_trace(m1.stan, pars = pars)
+# bayesplot::mcmc_acf(m1.stan, pars = pars)
 
 # mu <- 0.2
 # v <- 10
@@ -163,18 +182,21 @@ if(!dir.exists(args$outdir)){
 }
 
 filename <- file.path(args$outdir, "model_summaries.tsv.gz")
-# write_tsv(summary(m1.stan)$summary %>%
-#             as.data.frame() %>%
-#             rownames_to_column(var = "var"),
-#           filename)
+write_tsv(summary(m1.stan)$summary %>%
+            as.data.frame() %>%
+            rownames_to_column(var = "var"),
+          filename)
 
 # Save model
 cat("Saving stan model...\n")
 filename <- file.path(args$outdir, "m1.stan.rdat")
-# save(m1.stan, file = filename)
+save(m1.stan, file = filename)
 
 cat("Extracting posterior...\n")
+# Do I need post? or can iterate over stan object?
 post <- rstan::extract(m1.stan)
+rm(m1.stan)
+gc()
 # # First find the prob that the probability of change (p) greater than average (P)
 # P_p_diff <- post$p - as.vector(post$P)
 # # dim(P_p_diff)
@@ -211,25 +233,8 @@ res <- dat %>%
   inner_join(sites %>% left_join(res, by = "id"),
             by = "site_id")
 filename <- file.path(args$outdir, "p_directional.tsv.gz")
-# write_tsv(res, filename)
+write_tsv(res, filename)
  
-res %>%
-  arrange(desc(p_directional))
 # res %>%
-#   filter(pval_inc < 0.05 & pval_dec < 0.05)
-# 
-# 
-# sites %>%
-#   filter(site_id == "829901")
-# id_num <- 388
-# 
-# pars <- names(m1.stan)
-# 
-# 
-# selected_pars <- pars[c(1,2, 2 + id_num, 2 + stan_data$nsites + id_num)]
-# selected_pars
-# 
-# bayesplot::mcmc_areas(m1.stan, selected_pars)
-# bayesplot::mcmc_pairs(m1.stan, selected_pars)
-# bayesplot::mcmc_intervals(m1.stan, selected_pars)
-# bayesplot::mcmc_acf(m1.stan, selected_pars)
+#   arrange(desc(p_directional))
+
