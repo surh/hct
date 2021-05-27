@@ -51,7 +51,7 @@ process_arguments <- function(){
                     default = 2000)
   p <- add_argument(p, "--chains",
                     help = paste("Number of Stan chains. It will be equal",
-                                 "to the number of required threads.")
+                                 "to the number of required threads."),
                     type = "numeric",
                     default = 4)
   p <- add_argument(p, "--vp",
