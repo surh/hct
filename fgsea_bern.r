@@ -37,39 +37,87 @@ process_arguments <- function(){
                         "plotting of the results"))
   
   # Positional arguments
-  p <- add_argument(p, "",
-                    help = paste(""),
+  p <- add_argument(p, "bern",
+                    help = paste("TSV file with results from bernoulli mix",
+                                 "model. It should have site_id and",
+                                 "p_directional columns"),
                     type = "character")
+  p <- add_argument(p, "info",
+                    help = paste("snps_info.txt in MIDAS format (from",
+                                 "midas_merge.py. It should have an entry for",
+                                 "every SNP tested"))
   
   # Optional arguments
-  p <- add_argument(p, "--",
-                     help = paste(""),
-                     type = "character",
-                     default = "")
+  p <- add_argument(p, "--outdir",
+                    help = paste("Directory path to store outputs."),
+                    default = "output/",
+                    type = "character")
+  p <- add_argument(p, "--manhattan",
+                     help = paste("Flag indicating whether to make a",
+                                  "manhattan plot of p_directional,"),
+                     flag = TRUE)
+  p <- add_argument(p, "--contig_sizes",
+                    help = paste("File with contig sizes for manhattan plot."),
+                    type = "character",
+                    default = NULL)
+  p <- add_argument(p, "--locus_test",
+                    help = paste("Flag indicating whether to test if there is",
+                                 "an enrichment for a particular locus type.",
+                                 "If passed, there must be a locus_type column",
+                                 "in the info file."),
+                    flag = TRUE)
+  p <- add_argument(p, "--ns_test",
+                    help = paste("Flag indicating whether to test if there is",
+                                 "an enrichment non-synonynmous or synonymous.",
+                                 "SNPs amon p_directional values. Only coding",
+                                 "sites are included in the test."),
+                    flag = TRUE)
+  p <- add_argument(p, "--annot_test",
+                    help = paste("Flag indicating whether to test if there are",
+                                 "enrichments of gene-level annotations for",
+                                 "p_directional values. For each gene the max",
+                                 "p_directional value within it is used. If",
+                                 "passed, there must be a gene_id column in",
+                                 "the info file, and a valid annotation file",
+                                 "must be provided (see --annot)."),
+                    flag = TRUE)
+  p <- add_argumentS(p, "--annot",
+                     help = paste("File with gene level annotations. It must",
+                                  "be a TSV file with a gene_id column. It",
+                                  "should also have a terms column with",
+                                  "comma-separated annotation terms for each",
+                                  "gene, unless it is a boolean annotation.",
+                                  "If it is a boolean annotation, then the ",
+                                  "second column must contain the annotation",
+                                  "value (TRUE/FALSE)."))
                      
   # Read arguments
   cat("Processing arguments...\n")
   args <- parse_args(p)
   
   # Process arguments
+  if(args$manhattan && !file.exists(args$contig_sizes))
+    stop("ERROR: If --manhattan is passed, then a valid --contig_sizes must be provided", call. = TRUE)
+  if(args$annot_test && !file.exists(args$annot))
+    stop("ERROR: If --annot_test is passed, then a valid --anot must be provided", call. = TRUE)
   
   return(args)
 }
 
-args <- process_arguments()
-args <- list(bern = "test_data/p_directional/MGYG-HGUT-00099.tsv.gz",
-             info = "test_data/snps_info/MGYG-HGUT-00099.txt",
-             annot = "test_data/core_genes/MGYG-HGUT-00099.txt",
-             contig_sizes = "test_data/seq_lengths/MGYG-HGUT-00099.tsv",
-             boolean = TRUE,
-             bool_vals = c("accessory", "core"),
-             min_size = 5,
+# args <- process_arguments()
+args <- list(bern = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/p_directional/MGYG-HGUT-00099.tsv.gz",
+             info = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/snps_info/MGYG-HGUT-00099.txt",
+             annot = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/core_genes/MGYG-HGUT-00099.txt",
+             contig_sizes = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/seq_lengths/MGYG-HGUT-00099.tsv",
              annot_test = TRUE,
              locus_test = FALSE,
              ns_test = FALSE,
-             plot_probs = FALSE,
-             OR_trans = TRUE,
-             outdir = "outs/MGYG-HGUT-00099/core_genes")
+             manhattan = FALSE,
+             outdir = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_testouts/MGYG-HGUT-00099/core_genes",
+             
+             bool_labs = c("accessory", "core"),
+             min_size = 5,
+             OR_trans = TRUE)
 
 
 
@@ -77,12 +125,8 @@ library(tidyverse)
 library(HMVAR)
 library(fgsea)
 
-
-
-
-
-
 # Read data
+cat("Reading data...\n")
 bern <- read_tsv(args$bern,
                  col_types = cols(site_id = col_character(),
                                   id = col_character(),
@@ -97,7 +141,8 @@ if(!dir.exists(args$outdir)){
   dir.create(args$outdir)
 }
 
-if(args$plot_probs){
+if(args$manhattan){
+  cat("Readign contig sizes...\n")
   contig_sizes <- read_tsv(args$contig_sizes,
                            col_names = FALSE,
                            col_types = cols(X1 = col_character(),
@@ -108,6 +153,7 @@ if(args$plot_probs){
   
   point_cols <- rep(c("darkblue", "skyblue"), length.out = nrow(contig_sizes))
   
+  cat("Creating manhattan plot...\n")
   p1 <- info %>%
     select(site_id, ref_id, ref_pos) %>%
     right_join(bern %>%
@@ -131,9 +177,15 @@ if(args$plot_probs){
       
       d %>%
         mutate(cum_pos = ref_pos + size)
-    }, contig_sizes = contig_sizes) %>%
+    }, contig_sizes = contig_sizes)
+  
+  if(args$OR_trans){
+    p1 <- p1 %>% ggplot(aes(x = cum_pos, y = p_directional / (1 - p_directional)))
+  }else{
+    p1 <- p1 %>% ggplot(aes(x = cum_pos, y = p_directional))
+  }
 
-    ggplot(aes(x = cum_pos, y = p_directional / (1 - p_directional))) +
+  p1 <- p1 +
     geom_point(aes(col = ref_id)) +
     scale_color_manual(values = point_cols) +
     xlim(c(1, sum(contig_sizes$X2)))  +
@@ -178,6 +230,7 @@ if(args$plot_probs){
 
 
 if(args$locus_test){
+  cat("Matching p_directional with locus type...\n")
   dat <- bern %>%
     select(site_id, p_directional) %>%
     left_join(info %>%
@@ -249,17 +302,28 @@ if(args$ns_test){
 if(args$annot_test){
   annot <- read_tsv(args$annot,
                     col_types = cols(gene_id = col_character()))
-  # annot
   
-  if(args$boolean){
-    # annot <- read_tsv("test_data/core_genes/MGYG-HGUT-00044.txt")
-    # annot
-    cat("Converting boolean annotation...\n")
-    annot$terms <- args$bool_vals[ as.vector(unlist(annot[,2])) + 1 ]
-    annot <- annot %>%
-      select(gene_id, terms)
+  if( !all(c("gene_id", "terms") %in%  colnames(annot)) ){
+    cat("Missing 'terms' column, checking if boolean...\n")
+    
+    if( "gene_id" %in% colnames(annot) && is.logical(unlist(annot[,2])) ){
+      cat("Found boolean annotation in second column, proceeding...\n")
+      
+      if( length(args$bool_labs) != 2 || any(is.na(args$bool_labs)) ){
+        cat("No valid boolean labels provided, using default...\n")
+        args$bool_labs <- c("false", "true")
+      }
+      
+      cat("Converting boolean annotation...\n")
+      annot$terms <- args$bool_labs[ as.vector(unlist(annot[,2])) + 1 ]
+      annot <- annot %>%
+        select(gene_id, terms)
+    }else{
+      stop("ERROR: annotation file must either have a 'terms' column or a boolean second column", call. = TRUE)
+    }
   }
   
+  cat("Matching sites_to genes  and annotations...\n")
   dat <- bern %>%
     select(site_id, p_directional) %>%
     inner_join(info %>%
