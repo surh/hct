@@ -90,6 +90,24 @@ process_arguments <- function(){
                                   "If it is a boolean annotation, then the ",
                                   "second column must contain the annotation",
                                   "value (TRUE/FALSE)."))
+  p <- add_argument(p, "--bool_labs",
+                    help = paste("If annot file is a boolean specification,",
+                                 "then the values passed here are used as",
+                                 "labels, with the first value corresponding",
+                                 "to FALSE, and the second to TRUE"),
+                    type = "character",
+                    nargs = 2,
+                    default = c("false", "true"))
+  p <-add_argument(p, "--min_size",
+                   help = paste("Minimum number of sites/genes in a group,",
+                                "for enrichment tests to be performed."),
+                   type = "numeric",
+                   default = 5)
+  p <- add_argument(p, "--OR_trans",
+                    help = paste("Flag indicating if the odds ratio, OR = ",
+                                "p / (1-p), should be used instead of",
+                                "p_directional (p)."),
+                    flag = TRUE)
                      
   # Read arguments
   cat("Processing arguments...\n")
@@ -104,23 +122,21 @@ process_arguments <- function(){
   return(args)
 }
 
-# args <- process_arguments()
-args <- list(bern = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/p_directional/MGYG-HGUT-00099.tsv.gz",
-             info = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/snps_info/MGYG-HGUT-00099.txt",
-             annot = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/core_genes/MGYG-HGUT-00099.txt",
-             contig_sizes = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/seq_lengths/MGYG-HGUT-00099.tsv",
-             annot_test = TRUE,
-             locus_test = FALSE,
-             ns_test = FALSE,
-             manhattan = FALSE,
-             outdir = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_testouts/MGYG-HGUT-00099/core_genes",
-             
-             bool_labs = c("accessory", "core"),
-             min_size = 5,
-             OR_trans = TRUE)
+args <- process_arguments()
+# args <- list(bern = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/p_directional/MGYG-HGUT-00099.tsv.gz",
+#              info = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/snps_info/MGYG-HGUT-00099.txt",
+#              annot = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/core_genes/MGYG-HGUT-00099.txt",
+#              contig_sizes = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/seq_lengths/MGYG-HGUT-00099.tsv",
+#              annot_test = TRUE,
+#              locus_test = FALSE,
+#              ns_test = FALSE,
+#              manhattan = FALSE,
+#              outdir = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_testouts/MGYG-HGUT-00099/core_genes",
+#              bool_labs = c("accessory", "core"),
+#              min_size = 5,
+#              OR_trans = TRUE)
 
-
-
+# Libraries required
 library(tidyverse)
 library(HMVAR)
 library(fgsea)
@@ -348,11 +364,5 @@ if(args$annot_test){
   filename <- file.path(args$outdir, "annot_test.tsv")
   write_tsv(res, filename)
 }
-
-
-
-
-
-
 
 
