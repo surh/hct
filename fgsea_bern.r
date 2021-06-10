@@ -34,7 +34,7 @@ run_fgsea <- function(dat, score_type = "pos", min_size = 5){
 process_arguments <- function(){
   p <- arg_parser(paste("Script that takes output from bernoulli mix model",
                         "and performs GSEA (via fgsea) and/or manhattan",
-                        "plotting of the results"))
+                        "plotting of the results."))
   
   # Positional arguments
   p <- add_argument(p, "bern",
@@ -72,19 +72,23 @@ process_arguments <- function(){
                                  "SNPs amon p_directional values. Only coding",
                                  "sites are included in the test."),
                     flag = TRUE)
-  p <- add_argument(p, "--annot_test",
-                    help = paste("Flag indicating whether to test if there are",
-                                 "enrichments of gene-level annotations for",
-                                 "p_directional values. For each gene the max",
-                                 "p_directional value within it is used. If",
-                                 "passed, there must be a gene_id column in",
-                                 "the info file, and a valid annotation file",
-                                 "must be provided (see --annot)."),
-                    flag = TRUE)
-  p <- add_argumentS(p, "--annot",
-                     help = paste("File with gene level annotations. It must",
-                                  "be a TSV file with a gene_id column. It",
-                                  "should also have a terms column with",
+  # p <- add_argument(p, "--annot_test",
+  #                   help = paste("Flag indicating whether to test if there are",
+  #                                "enrichments of gene-level annotations for",
+  #                                "p_directional values. For each gene the max",
+  #                                "p_directional value within it is used. If",
+  #                                "passed, there must be a gene_id column in",
+  #                                "the info file, and a valid annotation file",
+  #                                "must be provided (see --annot)."),
+  #                   flag = TRUE)
+  p <- add_argument(p, "--annot",
+                     help = paste("File with gene level annotations. If passed",
+                                  "enrichment test for those annotations on",
+                                  "p_directional values will be performed. For",
+                                  "each gene the max p_directional value",
+                                  "within it is used. The file must",
+                                  "be a TSV file with a 'gene_id' column. It",
+                                  "should also have a 'terms' column with",
                                   "comma-separated annotation terms for each",
                                   "gene, unless it is a boolean annotation.",
                                   "If it is a boolean annotation, then the ",
@@ -112,29 +116,33 @@ process_arguments <- function(){
   # Read arguments
   cat("Processing arguments...\n")
   args <- parse_args(p)
+  # print(args)
   
   # Process arguments
-  if(args$manhattan && !file.exists(args$contig_sizes))
+  if( args$manhattan && (is.na(args$contig_sizes) || !file.exists(args$contig_sizes)) ) 
     stop("ERROR: If --manhattan is passed, then a valid --contig_sizes must be provided", call. = TRUE)
-  if(args$annot_test && !file.exists(args$annot))
-    stop("ERROR: If --annot_test is passed, then a valid --anot must be provided", call. = TRUE)
-  
+  if(is.na(args$annot)){
+    args$annot <- FALSE
+  }else if(!file.exists(args$annot)){
+    stop("ERROR: If --annot is passed, it must be a valid file", call. = TRUE)
+  }
+    
   return(args)
 }
 
 args <- process_arguments()
-# args <- list(bern = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/p_directional/MGYG-HGUT-00099.tsv.gz",
-#              info = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/snps_info/MGYG-HGUT-00099.txt",
-#              annot = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/core_genes/MGYG-HGUT-00099.txt",
-#              contig_sizes = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/seq_lengths/MGYG-HGUT-00099.tsv",
-#              annot_test = TRUE,
-#              locus_test = FALSE,
-#              ns_test = FALSE,
-#              manhattan = FALSE,
-#              outdir = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_testouts/MGYG-HGUT-00099/core_genes",
-#              bool_labs = c("accessory", "core"),
-#              min_size = 5,
-#              OR_trans = TRUE)
+args <- list(bern = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/p_directional/MGYG-HGUT-00099.tsv.gz",
+             info = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/snps_info/MGYG-HGUT-00099.txt",
+             annot = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/core_genes/MGYG-HGUT-00099.txt",
+             contig_sizes = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/seq_lengths/MGYG-HGUT-00099.tsv",
+             locus_test = FALSE,
+             ns_test = FALSE,
+             manhattan = FALSE,
+             outdir = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_testouts/MGYG-HGUT-00099/core_genes",
+             bool_labs = c("accessory", "core"),
+             min_size = 5,
+             OR_trans = TRUE)
+print(args)
 
 # Libraries required
 library(tidyverse)
@@ -315,7 +323,7 @@ if(args$ns_test){
     write_tsv(filename)
 }
 
-if(args$annot_test){
+if(is.character(args$annot)){
   annot <- read_tsv(args$annot,
                     col_types = cols(gene_id = col_character()))
   
