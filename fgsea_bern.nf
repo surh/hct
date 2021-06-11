@@ -98,6 +98,18 @@ ALLIN = BERN.join(INFO).join(CTGS).join(ANNOT)
 process fgsea {
   label 'r'
   tag "$spec"
+  publishDir params.outdir, mode: 'rellink',
+    pattern: "output/bern_manhattan.png",
+    saveAs: {"${spec}.manhattan.png"}
+  publishDir params.outdir, mode: 'rellink',
+    pattern: "output/locus_test.tsv",
+    saveAs: {"${spec}.locus.tsv"}
+  publishDir params.outdir, mode: 'rellink',
+    pattern: "output/ns_test.tsv",
+    saveAs: {"${spec}.ns.tsv"}
+  publishDir params.outdir, mode: 'rellink',
+    pattern: "output/annot_test.tsv",
+    saveAs: {"${spec}.annot.tsv"}
 
   input:
   tuple spec, file("bern_file"), file("snps_info"), file("contig_sizes"), file("gene_annotations") from ALLIN
