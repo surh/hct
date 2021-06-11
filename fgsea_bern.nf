@@ -18,6 +18,11 @@
 // Parametrs
 params.bern = ''
 params.midas_merge = ''
+params.outdir = 'output'
+params.manhattan = false
+params.contig_sizes = ''
+params.locus_test = false
+params.ns_test = false
 
 
 // Process Params
@@ -36,3 +41,11 @@ INFO = Channel.fromPath("$midas_merge/*", type: 'dir', maxDepth: 1)
   .map{midas_dir -> tuple(midas_dir.name,
     file("$midas_dir/snps_info.txt"))}
 // INFO.subscribe{println it}
+
+if(params.manhattan){
+  contig_sizes = file(contig_sizes)
+  println("Reading contig sizes files")
+  CTGS = Channel.fromPath("$contig_sizes/*")
+    .map{ctgfile -> tuple(ctgfile.name[ 0..<ctgfile.name.indexOf('.') ],
+      file(ctgsize))}
+}
