@@ -34,7 +34,6 @@ params.bool_labs = false // Must be quoted and space-separated, e.g "a b"
 // Process Params
 bern = file(params.bern)
 midas_merge = file(params.midas_merge)
-contig_sizes = file(params.contig_sizes)
 
 // Prepare command
 opt_pars = ''
@@ -95,7 +94,6 @@ if(params.OR_trans){
 
 if(params.bool_labs){
   opt_pars = opt_pars + " --bool_labs $params.bool_labs"
-
 }
 
 // println(opt_pars)
