@@ -32,7 +32,7 @@ BERN = Channel.fromPath("$bern/*")
 // bernfile.name[ 0..<bernfile.name.indexOf('.') ]
 // BERN.subscribe{println it}
 
-INFO = Channel.fromPath("$midas_merge/*", type: 'dir', maxdepth: 1)
+INFO = Channel.fromPath("$midas_merge/*", type: 'dir', maxDepth: 1)
   .map{midas_dir -> tuple(midas_dir.name,
     file("$midas_dir/snps_info.txt"))}
 INFO.subscribe{println it}
