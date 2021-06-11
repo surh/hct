@@ -2,17 +2,17 @@
 
 # (C) Copyright 2021 Sur Herrera Paredes
 # This file is part of hct.
-# 
+#
 # hctis free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # hctis distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with hct.  If not, see <https://www.gnu.org/licenses/>.
 library(argparser)
@@ -25,9 +25,9 @@ run_fgsea <- function(dat, score_type = "pos", min_size = 5){
     split(.$term) %>%
     map(~.x$gene_id)
   ranks <- set_names(x = dat$score, nm = dat$gene_id)
-  
+
   res <- fgsea(paths, ranks, scoreType = score_type, minSize = min_size)
-  
+
   return(res)
 }
 
@@ -35,7 +35,7 @@ process_arguments <- function(){
   p <- arg_parser(paste("Script that takes output from bernoulli mix model",
                         "and performs GSEA (via fgsea) and/or manhattan",
                         "plotting of the results."))
-  
+
   # Positional arguments
   p <- add_argument(p, "bern",
                     help = paste("TSV file with results from bernoulli mix",
@@ -46,7 +46,7 @@ process_arguments <- function(){
                     help = paste("snps_info.txt in MIDAS format (from",
                                  "midas_merge.py. It should have an entry for",
                                  "every SNP tested"))
-  
+
   # Optional arguments
   p <- add_argument(p, "--outdir",
                     help = paste("Directory path to store outputs."),
@@ -112,36 +112,36 @@ process_arguments <- function(){
                                 "p / (1-p), should be used instead of",
                                 "p_directional (p)."),
                     flag = TRUE)
-                     
+
   # Read arguments
   cat("Processing arguments...\n")
   args <- parse_args(p)
   # print(args)
-  
+
   # Process arguments
-  if( args$manhattan && (is.na(args$contig_sizes) || !file.exists(args$contig_sizes)) ) 
+  if( args$manhattan && (is.na(args$contig_sizes) || !file.exists(args$contig_sizes)) )
     stop("ERROR: If --manhattan is passed, then a valid --contig_sizes must be provided", call. = TRUE)
   if(is.na(args$annot)){
     args$annot <- FALSE
   }else if(!file.exists(args$annot)){
     stop("ERROR: If --annot is passed, it must be a valid file", call. = TRUE)
   }
-    
+
   return(args)
 }
 
 args <- process_arguments()
-args <- list(bern = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/p_directional/MGYG-HGUT-00099.tsv.gz",
-             info = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/snps_info/MGYG-HGUT-00099.txt",
-             annot = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/core_genes/MGYG-HGUT-00099.txt",
-             contig_sizes = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/seq_lengths/MGYG-HGUT-00099.tsv",
-             locus_test = FALSE,
-             ns_test = FALSE,
-             manhattan = FALSE,
-             outdir = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_testouts/MGYG-HGUT-00099/core_genes",
-             bool_labs = c("accessory", "core"),
-             min_size = 5,
-             OR_trans = TRUE)
+# args <- list(bern = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/p_directional/MGYG-HGUT-00099.tsv.gz",
+#              info = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/snps_info/MGYG-HGUT-00099.txt",
+#              annot = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/core_genes/MGYG-HGUT-00099.txt",
+#              contig_sizes = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_test/test_data/seq_lengths/MGYG-HGUT-00099.tsv",
+#              locus_test = FALSE,
+#              ns_test = FALSE,
+#              manhattan = FALSE,
+#              outdir = "/home/sur/micropopgen/exp/2021/2021-06-10.gsea_hct_testouts/MGYG-HGUT-00099/core_genes",
+#              bool_labs = c("accessory", "core"),
+#              min_size = 5,
+#              OR_trans = TRUE)
 print(args)
 
 # Libraries required
@@ -171,12 +171,12 @@ if(args$manhattan){
                            col_names = FALSE,
                            col_types = cols(X1 = col_character(),
                                             X2 = col_number()))
-  
+
   contig_sizes <- contig_sizes %>%
     arrange(desc(X2))
-  
+
   point_cols <- rep(c("darkblue", "skyblue"), length.out = nrow(contig_sizes))
-  
+
   cat("Creating manhattan plot...\n")
   p1 <- info %>%
     select(site_id, ref_id, ref_pos) %>%
@@ -198,11 +198,11 @@ if(args$manhattan){
       }else{
         size <- sum(contig_sizes$X2[1:(ii - 1)])
       }
-      
+
       d %>%
         mutate(cum_pos = ref_pos + size)
     }, contig_sizes = contig_sizes)
-  
+
   if(args$OR_trans){
     p1 <- p1 %>% ggplot(aes(x = cum_pos, y = p_directional / (1 - p_directional)))
   }else{
@@ -220,7 +220,7 @@ if(args$manhattan){
           axis.line.y = element_line(),
           panel.grid = element_blank(),
           axis.title.x = element_blank())
-    
+
   # p1 <- info %>%
   #   select(site_id, ref_id, ref_pos) %>%
   #   right_join(bern %>%
@@ -298,7 +298,7 @@ if(args$ns_test){
     inner_join(bern %>%
                  select(site_id, p_directional),
                by = 'site_id')
-  
+
   if(args$OR_trans){
     res <- dat %>%
       # head(1000) %>%
@@ -313,7 +313,7 @@ if(args$ns_test){
                 score = p_directional) %>%
       run_fgsea(score_type = "pos", min_size = args$min_size)
   }
-    
+
   filename <- file.path(args$outdir, "ns_test.tsv")
   res %>%
     as_tibble() %>%
@@ -326,18 +326,18 @@ if(args$ns_test){
 if(is.character(args$annot)){
   annot <- read_tsv(args$annot,
                     col_types = cols(gene_id = col_character()))
-  
+
   if( !all(c("gene_id", "terms") %in%  colnames(annot)) ){
     cat("Missing 'terms' column, checking if boolean...\n")
-    
+
     if( "gene_id" %in% colnames(annot) && is.logical(unlist(annot[,2])) ){
       cat("Found boolean annotation in second column, proceeding...\n")
-      
+
       if( length(args$bool_labs) != 2 || any(is.na(args$bool_labs)) ){
         cat("No valid boolean labels provided, using default...\n")
         args$bool_labs <- c("false", "true")
       }
-      
+
       cat("Converting boolean annotation...\n")
       annot$terms <- args$bool_labs[ as.vector(unlist(annot[,2])) + 1 ]
       annot <- annot %>%
@@ -346,7 +346,7 @@ if(is.character(args$annot)){
       stop("ERROR: annotation file must either have a 'terms' column or a boolean second column", call. = TRUE)
     }
   }
-  
+
   cat("Matching sites_to genes  and annotations...\n")
   dat <- bern %>%
     select(site_id, p_directional) %>%
@@ -357,12 +357,12 @@ if(is.character(args$annot)){
     summarise(score = max(p_directional),
               .groups = 'drop') %>%
     inner_join(annot, by = "gene_id")
-  
+
   if(args$OR_trans){
     dat <- dat %>%
       mutate(score = score / (1 - score))
   }
-    
+
   res <- run_fgsea(dat = dat, score_type = "pos", min_size = args$min_size) %>%
     as_tibble() %>%
     mutate(leadingEdge = leadingEdge %>%
@@ -372,8 +372,3 @@ if(is.character(args$annot)){
   filename <- file.path(args$outdir, "annot_test.tsv")
   write_tsv(res, filename)
 }
-
-
-
-
-

@@ -35,4 +35,4 @@ BERN = Channel.fromPath("$bern/*")
 INFO = Channel.fromPath("$midas_merge/*", type: 'dir', maxDepth: 1)
   .map{midas_dir -> tuple(midas_dir.name,
     file("$midas_dir/snps_info.txt"))}
-INFO.subscribe{println it}
+// INFO.subscribe{println it}
