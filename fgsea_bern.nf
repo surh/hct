@@ -49,6 +49,7 @@ BERN = Channel.fromPath("$bern/*")
     file(bernfile))}
 // bernfile.name[ 0..<bernfile.name.indexOf('.') ]
 // BERN.subscribe{println it}
+SPECSBERN.combine(BERN, by: 0).view()
 
 INFO = Channel.fromPath("$midas_merge/*", type: 'dir', maxDepth: 1)
   .map{midas_dir -> tuple(midas_dir.name,
