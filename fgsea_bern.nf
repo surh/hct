@@ -55,10 +55,11 @@ INFO = Channel.fromPath("$midas_merge/*", type: 'dir', maxDepth: 1)
   .map{midas_dir -> tuple(midas_dir.name,
     file("$midas_dir/snps_info.txt"))}
 // INFO.subscribe{println it}
+SPECSINFO.combine(INFO, by: 0).view()
 
 if(params.manhattan){
   contig_sizes = file(contig_sizes)
-  println("Reading contig sizes files")
+  // println("Reading contig sizes files")
   CTGS = Channel.fromPath("$contig_sizes/*")
     .map{ctgfile -> tuple(ctgfile.name[ 0..<ctgfile.name.indexOf('.') ],
       file(ctgfile))}
