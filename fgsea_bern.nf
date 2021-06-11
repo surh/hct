@@ -25,6 +25,7 @@ bern = file(params.bern)
 println("$bern")
 
 BERN = Channel.fromPath("$bern/*")
+  .map{bernfile -> tuple(file(bernfile))}
 
 // bernfile.name[ 0..<bernfile.name.indexOf('.') ]
 
