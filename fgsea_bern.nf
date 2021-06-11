@@ -82,7 +82,7 @@ if(params.annot){
     .map{ annotfile -> tuple(annotfile.name[ 0..<annotfile.name.indexOf('.') ],
       file(annotfile))}
   // ANNOT.subscribe{println it}
-  opt_pars = opt_pars + ' --annot gene_annotations.txt'
+  opt_pars = opt_pars + ' --annot gene_annotations'
 }else{
   ANNOT = SPECSANNOT
     .map{spec -> tuple(spec, 'dummy_annot')}
