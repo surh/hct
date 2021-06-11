@@ -96,6 +96,7 @@ if(params.OR_trans){
 ALLIN = BERN.join(INFO).join(CTGS).join(ANNOT)
 
 process fgsea {
+  label 'r'
   tag "$spec"
 
   input:
@@ -104,7 +105,31 @@ process fgsea {
   val opt_pars
 
   """
-  ls -la
+  Rscript $workflow.projectDir/fgsea_bern.r bern_file snps_info \
+    --min_size $min_size \
+    --outdir output \
+    $opt_pars
   """
 
 }
+
+// Example nextflow.config
+/*
+process{
+  queue = 'hbfraser,hns'
+  maxForks = 100
+  errorStrategy = 'finish'
+  stageInMode = 'rellink'
+  time = '4h'
+  memory = '2G'
+  withLabel: 'r'{
+    module = 'R/4.1.0'
+    // module = "R/4.0.2:v8/8.4.371.22" // Make sure you have ~/.R/Makevars with CXX14
+  }
+}
+executor{
+  name = 'slurm'
+  queueSize = 500
+  submitRateLitmit = '1 sec'
+}
+*/
