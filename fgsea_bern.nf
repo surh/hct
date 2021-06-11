@@ -76,7 +76,7 @@ if(params.annot){
   ANNOT = Channel.fromPath("$annot/*")
     .map{ annotfile -> tuple(annotfile.name[ 0..<annotfile.name.indexOf('.') ],
       file(annotfile))}
-  ANNOT.subscribe{println it}
+  // ANNOT.subscribe{println it}
   opt_pars = opt_pars + ' --annot gene_annotations.txt'
 }
 
