@@ -27,6 +27,8 @@ params.contig_sizes = ''
 params.locus_test = false
 params.ns_test = false
 params.annot = false
+params.min_size = 5
+params.OR_trans = false
 
 // Process Params
 bern = file(params.bern)
@@ -80,5 +82,8 @@ if(params.annot){
   opt_pars = opt_pars + ' --annot gene_annotations.txt'
 }
 
+if(params.OR_trans){
+  opt_pars = opt_pars + ' --OR_trans'
+}
 
 println(opt_pars)
