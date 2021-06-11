@@ -58,7 +58,7 @@ if(params.manhattan){
   println("Reading contig sizes files")
   CTGS = Channel.fromPath("$contig_sizes/*")
     .map{ctgfile -> tuple(ctgfile.name[ 0..<ctgfile.name.indexOf('.') ],
-      file(ctgsize))}
+      file(ctgfile))}
   opt_pars = opt_pars + '--manhattan --contig_sizes contig_sizes.txt'
 }
 CTGS.subscribe{println it}
