@@ -277,7 +277,7 @@ if(args$locus_test){
                   score = p_directional) %>%
         run_fgsea(score_type = "pos", min_size = args$min_size)
     }
-    filename <- file.path(args$outdir, "locus_type_test.tsv")
+    filename <- file.path(args$outdir, "locus_test.tsv")
     res %>%
       as_tibble() %>%
       mutate(leadingEdge = leadingEdge %>%

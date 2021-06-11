@@ -104,6 +104,12 @@ process fgsea {
   val min_size from params.min_size
   val opt_pars
 
+  output:
+  file "output/bern_manhattan.png" optional true
+  file "output/locus_test.tsv" optional true
+  file "output/ns_test.tsv" optional true
+  file "output/annot_test.tsv" optional true
+
   """
   Rscript $workflow.projectDir/fgsea_bern.r bern_file snps_info \
     --min_size $min_size \
