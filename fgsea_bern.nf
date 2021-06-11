@@ -41,7 +41,7 @@ opt_pars = ''
 // Getting speclist
 Channel.fromPath("$bern/*")
  .map{bernfile -> bernfile.name[ 0..<bernfile.name.indexOf('.') ]}
- .into{SPECSINFO; SPECSCTGS; SPECSANNOT}
+ .into{SPECSIN; SPECSBERN; SPECSINFO; SPECSCTGS; SPECSANNOT}
 
 //  Reading basic files
 BERN = Channel.fromPath("$bern/*")
@@ -86,4 +86,4 @@ if(params.OR_trans){
   opt_pars = opt_pars + ' --OR_trans'
 }
 
-println(opt_pars)
+// println(opt_pars)
