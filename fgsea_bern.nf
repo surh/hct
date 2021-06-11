@@ -26,7 +26,7 @@ params.manhattan = false
 params.contig_sizes = ''
 params.locus_test = false
 params.ns_test = false
-
+params.annot = false
 
 // Process Params
 bern = file(params.bern)
@@ -39,7 +39,7 @@ opt_pars = ''
 // Getting speclist
 Channel.fromPath("$bern/*")
  .map{bernfile -> bernfile.name[ 0..<bernfile.name.indexOf('.') ]}
- .into{SPECSINFO; SPECSCTGS}
+ .into{SPECSINFO; SPECSCTGS; SPECSANNOT}
 
 //  Reading basic files
 BERN = Channel.fromPath("$bern/*")
@@ -70,5 +70,15 @@ if(params.locus_test){
 if(params.ns_test){
   opt_pars = opt_pars + ' --ns_test'
 }
+
+if(params.annot){
+  annot = file(params.annot)
+  ANNOT = Channel.fromPath("$annot/*")
+    .map{ annotfile -> tuple(annotfile.name[ 0..<annotfile.name.indexOf('.') ],
+      file(annotfile))}
+  ANNOT.subscribe{println it}
+  opt_pars = opt_pars + ' --annot gene_annotations.txt'
+}
+
 
 println(opt_pars)
