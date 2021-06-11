@@ -59,7 +59,16 @@ if(params.manhattan){
   CTGS = Channel.fromPath("$contig_sizes/*")
     .map{ctgfile -> tuple(ctgfile.name[ 0..<ctgfile.name.indexOf('.') ],
       file(ctgfile))}
-  opt_pars = opt_pars + '--manhattan --contig_sizes contig_sizes.txt'
+  opt_pars = opt_pars + ' --manhattan --contig_sizes contig_sizes.txt'
+  // CTGS.subscribe{println it}
 }
-CTGS.subscribe{println it}
-print(opt_pars)
+
+if(params.locus_test){
+  opt_pars = opt_pars + ' --locus_test'
+}
+
+if(params.ns_test){
+  opt_pars = opt_pars + ' --ns_test'
+}
+
+println(opt_pars)
