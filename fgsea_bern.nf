@@ -100,7 +100,7 @@ process fgsea {
   tag "$spec"
 
   input:
-  tuple spec, file("bern_file"), file("snps_info"), file("contig_sizes"), file("gene_anotations") from ALLIN
+  tuple spec, file("bern_file"), file("snps_info"), file("contig_sizes"), file("gene_annotations") from ALLIN
   val min_size from params.min_size
   val opt_pars
 
