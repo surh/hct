@@ -49,13 +49,11 @@ BERN = Channel.fromPath("$bern/*")
     file(bernfile))}
 // bernfile.name[ 0..<bernfile.name.indexOf('.') ]
 // BERN.subscribe{println it}
-SPECSBERN.combine(BERN, by: 0).view()
 
 INFO = Channel.fromPath("$midas_merge/*", type: 'dir', maxDepth: 1)
   .map{midas_dir -> tuple(midas_dir.name,
     file("$midas_dir/snps_info.txt"))}
 // INFO.subscribe{println it}
-SPECSINFO.combine(INFO, by: 0).view()
 
 if(params.manhattan){
   contig_sizes = file(contig_sizes)
@@ -65,6 +63,9 @@ if(params.manhattan){
       file(ctgfile))}
   opt_pars = opt_pars + ' --manhattan --contig_sizes contig_sizes.txt'
   // CTGS.subscribe{println it}
+}else{
+  CTGS = SPECSCTGS
+    .map{ spec -> tuple(spec, "dummy_ctg")}
 }
 
 if(params.locus_test){
@@ -82,6 +83,9 @@ if(params.annot){
       file(annotfile))}
   // ANNOT.subscribe{println it}
   opt_pars = opt_pars + ' --annot gene_annotations.txt'
+}else{
+  ANNOT = SPECSANNOT
+    .map{spec -> tuple(spec, 'dummy_annot')}
 }
 
 if(params.OR_trans){
@@ -89,3 +93,4 @@ if(params.OR_trans){
 }
 
 // println(opt_pars)
+BERN.join(INFO).join(CTGS).join(ANNOT).subscribe{println it}
