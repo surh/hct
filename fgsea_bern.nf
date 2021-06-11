@@ -22,9 +22,10 @@ params.info = ''
 
 // Process Params
 bern = file(params.bern)
+println("$bern")
 
-BERN = Channel.fromPath("$bern/*", type: 'dir')
-  .map{ bernfile -> tuple(bernfile.name[ 0..<bernfile.name.indexOf('.') ],
-    file(bernfile)) }
+BERN = Channel.fromPath("$bern/*")
+
+// bernfile.name[ 0..<bernfile.name.indexOf('.') ]
 
 BERN.subscribe{println it}
