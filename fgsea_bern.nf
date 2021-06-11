@@ -15,6 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+// A problem that is not easy to solve is how to deal with not all
+// inputs present for process
+
 // Parametrs
 params.bern = ''
 params.midas_merge = ''
@@ -29,6 +32,11 @@ params.ns_test = false
 bern = file(params.bern)
 midas_merge = file(params.midas_merge)
 println("$bern")
+
+// Getting speclist
+Channel.fromPath("$bern/*")
+ .map{bernfile -> bernfile.name[ 0..<bernfile.name.indexOf('.') ]}
+ .into{SPECSINFO; SPECSCTGS}
 
 //  Reading basic files
 BERN = Channel.fromPath("$bern/*")
@@ -49,3 +57,4 @@ if(params.manhattan){
     .map{ctgfile -> tuple(ctgfile.name[ 0..<ctgfile.name.indexOf('.') ],
       file(ctgsize))}
 }
+CTGS.subscribe{println it}
