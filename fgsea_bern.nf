@@ -17,17 +17,22 @@
 
 // Parametrs
 params.bern = ''
-params.info = ''
+params.midas_merge = ''
 
 
 // Process Params
 bern = file(params.bern)
+midas_merge = file(params.midas_merge)
 println("$bern")
 
+//  Reading basic files
 BERN = Channel.fromPath("$bern/*")
   .map{bernfile -> tuple(bernfile.name[ 0..<bernfile.name.indexOf('.') ],
     file(bernfile))}
-
 // bernfile.name[ 0..<bernfile.name.indexOf('.') ]
+// BERN.subscribe{println it}
 
-BERN.subscribe{println it}
+INFO = Channel.fromPath("$midas_merge/*", type: 'dir', maxdepth: 1)
+  .map{midas_dir -> tuple(midas_dir.name,
+    file("$midas_dir/snps_info.txt"))}
+INFO.subscribe{println it}
