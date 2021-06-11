@@ -29,6 +29,7 @@ params.ns_test = false
 params.annot = false
 params.min_size = 5
 params.OR_trans = false
+params.bool_labs = false // Must be quoted and space-separated, e.g "a b"
 
 // Process Params
 bern = file(params.bern)
@@ -90,6 +91,11 @@ if(params.annot){
 
 if(params.OR_trans){
   opt_pars = opt_pars + ' --OR_trans'
+}
+
+if(params.bool_labs){
+  opt_pars = opt_pars + " --bool_labs $params.bool_labs"
+
 }
 
 // println(opt_pars)
