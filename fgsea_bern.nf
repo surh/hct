@@ -31,6 +31,7 @@ params.ns_test = false
 // Process Params
 bern = file(params.bern)
 midas_merge = file(params.midas_merge)
+contig_sizes = file(params.contig_sizes)
 
 // Prepare command
 opt_pars = ''
