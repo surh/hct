@@ -41,7 +41,7 @@ opt_pars = ''
 // Getting speclist
 Channel.fromPath("$bern/*")
  .map{bernfile -> bernfile.name[ 0..<bernfile.name.indexOf('.') ]}
- .into{SPECSIN; SPECSBERN; SPECSINFO; SPECSCTGS; SPECSANNOT}
+ .into{SPECSCTGS; SPECSANNOT}
 
 //  Reading basic files
 BERN = Channel.fromPath("$bern/*")
@@ -93,4 +93,18 @@ if(params.OR_trans){
 }
 
 // println(opt_pars)
-BERN.join(INFO).join(CTGS).join(ANNOT).subscribe{println it}
+ALLIN = BERN.join(INFO).join(CTGS).join(ANNOT)
+
+process fgsea {
+  tag "$spec"
+
+  input:
+  tuple spec, file("bern_file"), file("snps_info"), file("contig_sizes"), file("gene_anotations") from ALLIN
+  val min_size from params.min_size
+  val opt_pars
+
+  """
+  ls -la
+  """
+
+}
