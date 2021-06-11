@@ -31,7 +31,9 @@ params.ns_test = false
 // Process Params
 bern = file(params.bern)
 midas_merge = file(params.midas_merge)
-println("$bern")
+
+// Prepare command
+opt_pars = ''
 
 // Getting speclist
 Channel.fromPath("$bern/*")
@@ -56,5 +58,7 @@ if(params.manhattan){
   CTGS = Channel.fromPath("$contig_sizes/*")
     .map{ctgfile -> tuple(ctgfile.name[ 0..<ctgfile.name.indexOf('.') ],
       file(ctgsize))}
+  opt_pars = opt_pars + '--manhattan --contig_sizes contig_sizes.txt'
 }
 CTGS.subscribe{println it}
+print(opt_pars)
