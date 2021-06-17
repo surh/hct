@@ -56,7 +56,7 @@ INFO = Channel.fromPath("$midas_merge/*", type: 'dir', maxDepth: 1)
 // INFO.subscribe{println it}
 
 if(params.manhattan){
-  contig_sizes = file(contig_sizes)
+  contig_sizes = file(params.contig_sizes)
   // println("Reading contig sizes files")
   CTGS = Channel.fromPath("$contig_sizes/*")
     .map{ctgfile -> tuple(ctgfile.name[ 0..<ctgfile.name.indexOf('.') ],
