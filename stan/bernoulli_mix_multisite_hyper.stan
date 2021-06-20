@@ -31,8 +31,6 @@ data {
   int<lower = -1, upper = 1> x[nobs]; // Whether there was a change and its direction
   int<lower = 1> nsites;
   int<lower = 1> id[nobs];
-  real<lower = 0>vp; // Variance of beta distributions
-  real<lower = 0>vq; // Variance of beta distributions
 }
 
 transformed data {
@@ -46,15 +44,21 @@ parameters {
   
   real<lower = 0, upper = 1>p[nsites]; // Prob of change = P(x != 0)
   real<lower = 0, upper = 1>q[nsites]; // P(change | x != 0)
+  
+  real<lower = 0>vp; // variance parameter
 }
 
 transformed parameters {
+  real<lower = 0>vq; // variance parameter  
+  vq = vp;
 }
 
 model {
   // Priors
   P ~ uniform(0,1);
   Q ~ uniform(0,1);
+  vp ~ exponential(0.2);
+  // vq ~ exponential(0.2);
   
   p ~ beta(P * vp, (1-P) * vp);
   q ~ beta(Q * vq, (1-Q) * vq);

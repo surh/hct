@@ -19,7 +19,11 @@ params.input = ''
 params.outdir = 'output'
 params.q_thres = 0.1
 params.min_patients = 5
-
+params.iter = 3000
+params.warmup = 2000
+params.chains = 4
+params.vp = 5
+params.vq = 5
 
 // Process params
 indir = file(params.input)
@@ -29,29 +33,42 @@ SITES = Channel.fromPath("$indir/*")
     file(sites_file)) }
 
 process bern_mix{
-  cpus 4
+  cpus params.chains
   tag "$spec"
   label 'r'
   publishDir "$params.outdir/stan_models", mode: 'rellink',
     pattern: "output/m1.stan.rdat", saveAs: {"${spec}.stan.rdat"}
   publishDir "$params.outdir/p_directional", mode: 'rellink',
     pattern: "output/p_directional.tsv.gz", saveAs: {"${spec}.tsv.gz"}
+  publishDir "$params.outdir/model_summaries", mode: 'rellink',
+    pattern: "output/model_summaries.tsv.gz", saveAs: {"${spec}.tsv.gz"}
 
   input:
   tuple spec, file(sites_file) from SITES
   val q_thres from params.q_thres
   val min_patients from params.min_patients
+  val iter from params.iter
+  val warmup from params.warmup
+  val chains from params.chains
+  val vp from params.vp
+  val vq from params.vq
 
   output:
   file "output/m1.stan.rdat" optional true
   file  "output/p_directional.tsv.gz" optional true
+  file  "output/model_summaries.tsv.gz" optional true
 
   """
   Rscript $workflow.projectDir/bern_mix.r \
     $sites_file \
     --q_thres $q_thres \
     --min_patients $min_patients \
-    --outdir output
+    --outdir output \
+    --iter $iter \
+    --warmup $warmup \
+    --chains $chains \
+    --vp $vp \
+    --vq $vq
   """
 
 }
@@ -67,7 +84,8 @@ process{
   time = '200h'
   memory = '5G'
   withLabel: 'r'{
-    module = 'R/4.0.2'
+    module = 'R/4.1.0'
+    // module = "R/4.0.2:v8/8.4.371.22" // Make sure you have ~/.R/Makevars with CXX14
   }
 }
 executor{
