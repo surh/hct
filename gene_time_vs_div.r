@@ -1,6 +1,72 @@
 library(tidyverse)
 library(HMVAR)
 
+#' Count inStrain popSNPs
+#'
+#' @param x 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+popSNPs <- function(x){
+  x[ !(x == 1 | x == 0) ] <- NA # Keep fixed differences
+  
+  apply(x,1,function(vec,x.t){
+    colSums(vec != x.t, na.rm = TRUE)
+  }, x.t = t(x)) %>% as.dist()
+}
+
+#' countinStrain conSNPs
+#'
+#' @param x 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+conSNPs <- function(x){
+  x[ x == 0.5 ] <- NA # ties are not conSNPs
+  x <- round(x, digits = 0) # get consensus
+  
+  apply(x,1,function(vec,x.t){
+    colSums(vec != x.t, na.rm = TRUE)
+  }, x.t = t(x)) %>% as.dist()
+}
+
+
+
+x <- c(1, 0, 0.2, 0.8, 0.5)
+x1 <- rep(x, times = 5)
+x2 <- rep(x, each = 5)
+mat <- matrix(c(x1,x2), ncol = 2)
+colnames(mat) <- c("S1", "S2")
+
+
+mat <- mat[ !(rowSums(is.na(mat)) > 0), , drop = FALSE ]
+
+# For popANI
+mat <- mat[rowSums(mat == 1 | mat == 0) == 2, , drop = FALSE ]
+mat
+sum(mat[,1] != mat[,2])
+
+
+
+
+
+
+mat[ !(mat == 1 | mat == 0) ] <- NA
+mat
+
+
+mat
+conANI(t(mat))
+
+rowSums(mat[,1] != t(mat), na.rm = TRUE)
+
+
+
+
 args <- list(dir = "MGYG-HGUT-00099/",
              map = "hct_quickmap.txt")
 
