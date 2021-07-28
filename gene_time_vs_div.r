@@ -153,7 +153,7 @@ Res
 
 
 
-Res %>%
+Divs <- Res %>%
   map_dfr(function(l, meta){
     l$divs %>%
       left_join(meta, by = "sample")
@@ -163,30 +163,33 @@ Res %>%
   map_dfr(function(d){
     d$days <- as.numeric(d$date - min(d$date))
     d
-  }) %>%
+  })
+Divs 
+
+Divs %>%
   # filter(gene_id == "GUT_GENOME000518_00001") %>%
   ggplot(aes(x = days, y = divergence)) +
   # facet_wrap(~ gene_id, scales = "free") +
   geom_point(aes(col = pt), show.legend = FALSE) +
   geom_smooth(method = "lm", formula = y ~ x) +
+  # scale_y_log10() +
+  # scale_x_log10() +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 90))
+ggsave("date_vs_popSNPs.jpeg", width = 6, height = 4, dpi = 150)
 
-# Res$GUT_GENOME000518_00001$divs %>%
-#   arrange(desc(divergence))
-# plot(Res$GUT_GENOME000518_00001$tre)
-# 
-# Res$GUT_GENOME000518_00001[50:102, ]
-# Res$GUT_GENOME000518_00001 %>% as.matrix()
-# hclust(Res$GUT_GENOME000518_00001)
-# 
-# plot(ape::njs(Res$GUT_GENOME000518_00001))
-# plot(Res$GUT_GENOME000518_00001)
-# plot(Res$GUT_GENOME000518_00002)
-# plot(Res$GUT_GENOME000518_00003)
-# plot(Res$GUT_GENOME000518_00004)
-# plot(Res$GUT_GENOME000518_00005)
-# plot(Res$GUT_GENOME000518_00008)
+
+Divs %>%
+  group_by(sample, pt, date, days) %>%
+  summarise(divergence = sum(divergence),
+            .groups = 'drop') %>%
+  arrange(pt, days) %>%
+  # print(n = 100)
+  ggplot(aes(x = date, y = log10(divergence + 1))) +
+  facet_wrap(~ pt, scales = "free") +
+  geom_point() +
+  geom_smooth(method = "lm", formula = y ~ x) +
+  theme_classic()
 
 
 
