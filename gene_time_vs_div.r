@@ -7,8 +7,6 @@ library(HMVAR)
 #'
 #' @return
 #' @export
-#'
-#' @examples
 popSNPs <- function(x){
   x[ !(x == 1 | x == 0) ] <- NA # Keep fixed differences
   
@@ -17,14 +15,12 @@ popSNPs <- function(x){
   }, x.t = t(x)) %>% as.dist()
 }
 
-#' countinStrain conSNPs
+#' Count inStrain conSNPs
 #'
 #' @param x 
 #'
 #' @return
 #' @export
-#'
-#' @examples
 conSNPs <- function(x){
   x[ x == 0.5 ] <- NA # ties are not conSNPs
   x <- round(x, digits = 0) # get consensus
@@ -34,41 +30,9 @@ conSNPs <- function(x){
   }, x.t = t(x)) %>% as.dist()
 }
 
-
-
-x <- c(1, 0, 0.2, 0.8, 0.5)
-x1 <- rep(x, times = 5)
-x2 <- rep(x, each = 5)
-mat <- matrix(c(x1,x2), ncol = 2)
-colnames(mat) <- c("S1", "S2")
-
-
-mat <- mat[ !(rowSums(is.na(mat)) > 0), , drop = FALSE ]
-
-# For popANI
-mat <- mat[rowSums(mat == 1 | mat == 0) == 2, , drop = FALSE ]
-mat
-sum(mat[,1] != mat[,2])
-
-
-
-
-
-
-mat[ !(mat == 1 | mat == 0) ] <- NA
-mat
-
-
-mat
-conANI(t(mat))
-
-rowSums(mat[,1] != t(mat), na.rm = TRUE)
-
-
-
-
 args <- list(dir = "MGYG-HGUT-00099/",
-             map = "hct_quickmap.txt")
+             map = "hct_quickmap.txt",
+             distfun = "popSNPs")
 
 
 
@@ -98,12 +62,18 @@ Dat
 
 Res <- Dat$info %>%
   split(.$gene_id) %>%
-  map(function(i, Dat, min_depth = 10, prop = 0.8, min_snps = 20){
+  map(function(i, Dat,
+               min_depth = 10,
+               prop = 0.8,
+               min_snps = 20,
+               distfun = "dist"){
     # i <- Dat$info %>% filter(gene_id == "GUT_GENOME000518_00164")
     # min_depth <- 10
     # prop <- 0.8
     # min_snps <- 20
-
+    # distfun <- args$dir
+    
+    distfun <- match.fun(distfun)
     cat(unique(i$gene_id), "\n")
     if(nrow(i) < min_snps){
       return(NULL)
@@ -144,24 +114,42 @@ Res <- Dat$info %>%
     }
     
     # Calculate divergence
-    # dis <- t(f)
-    tre <- ape::njs(dist(t(f), method = "manhattan"))
-    tre <- phytools::midpoint.root(tre)
-    tips <- tre$tip.label
-    divs <- castor::get_all_distances_to_root(tre)
+    dis <- distfun(t(f))
+    # return(dis)
     
-    divs <- tibble(sample = tips, divergence = divs[1:length(tips)])
+    # Third attempt counting distance from first sample
+    first_sample <- (meta %>%
+                       filter(sample %in% attr(dis, "Labels")) %>%
+                       arrange(date) %>%
+                       select(sample) %>%
+                       unlist)[1] %>%
+      as.character
+    divs <- as.matrix(dis)[,first_sample]
+    divs <- tibble(sample = names(divs), divergence = as.numeric(divs))
     
-    list(tre = tre, divs = divs)
+    return(list(dis = dis, divs = divs))
     
+    # Second attempt using tree to count divergence
+    # tre <- ape::njs(dis)
+    # tre <- phytools::midpoint.root(tre)
+    # tips <- tre$tip.label
+    # divs <- castor::get_all_distances_to_root(tre)
+    # 
+    # divs <- tibble(sample = tips, divergence = divs[1:length(tips)])
+    # 
+    # return(list(tre = tre, divs = divs))
+    
+    # First attempt using matching freq and depth, probably not general and slow
     # match_freq_and_depth(freq = f, depth = d,
     #                      info = i %>%
     #                        select(site_id, gene_id),
     #                      map = meta,
     #                      depth_thres = 1)
     
-  }, Dat = Dat) %>%
+  }, Dat = Dat, distfun = args$distfun) %>%
   compact()
+Res
+
 
 
 
@@ -177,7 +165,7 @@ Res %>%
     d
   }) %>%
   # filter(gene_id == "GUT_GENOME000518_00001") %>%
-  ggplot(aes(x = date, y = divergence)) +
+  ggplot(aes(x = days, y = divergence)) +
   # facet_wrap(~ gene_id, scales = "free") +
   geom_point(aes(col = pt), show.legend = FALSE) +
   geom_smooth(method = "lm", formula = y ~ x) +
