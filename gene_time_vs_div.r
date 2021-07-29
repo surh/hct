@@ -217,8 +217,7 @@ for(d in args$input){
     map_dfr(function(l, meta){
       l$divs %>%
         left_join(meta, by = "sample")
-    }, meta = meta %>%
-      mutate(date = parse_date(date, format = "%Y-%m-%d")), .id = "gene_id") %>%
+    }, meta = meta, .id = "gene_id") %>%
     split(.$gene_id) %>%
     map_dfr(function(d){
       d$days <- as.numeric(d$date - min(d$date))
