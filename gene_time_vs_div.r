@@ -137,11 +137,12 @@ cat("\n\n=====================\n")
 for(d in args$input){
   spec <- basename(d)
   cat("Processing species", spec, "\n")
-  
-  Dat <- read_midas_data(d, cds_only = TRUE, map = meta, genes = NULL)
-  
-  
-  
+
+  cat("\treading data...\n")
+  Dat <- read_midas_data(d, cds_only = TRUE, map = meta)
+  # print(Dat$info)
+
+  cat("\tGetting SNP counts...\n") 
   Res <- Dat$info %>%
     split(.$gene_id) %>%
     map(function(i, Dat,
@@ -209,10 +210,15 @@ for(d in args$input){
     }, Dat = Dat, distfun = args$distfun) %>%
     compact()
   
+  if(length(Res) == 0){
+      cat("\t>No genes met conditions. Skipping\n")
+      next
+  }
+
   filename <- file.path(args$outdir, paste0(spec,".rdat"))
   save(Res, file = filename)
   
-  
+  cat("\tGetting table of 'divergences'...\n")
   Divs <- Res %>%
     map_dfr(function(l, meta){
       l$divs %>%
@@ -225,12 +231,10 @@ for(d in args$input){
     })
   filename <- file.path(args$outdir, paste0(spec,".tsv"))
   write_tsv(Divs, filename)
-  
-  
+ 
+  cat("\tPlotting overall 'divergences'...\n")
   p1 <- Divs %>%
-    # filter(gene_id == "GUT_GENOME000518_00001") %>%
     ggplot(aes(x = days, y = divergence)) +
-    # facet_wrap(~ gene_id, scales = "free") +
     geom_point(aes(col = pt), show.legend = FALSE) +
     geom_smooth(method = "lm", formula = y ~ x) +
     # scale_y_log10() +
