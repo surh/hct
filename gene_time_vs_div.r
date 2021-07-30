@@ -141,6 +141,11 @@ for(d in args$input){
   cat("\treading data...\n")
   Dat <- read_midas_data(d, cds_only = TRUE, map = meta)
   # print(Dat$info)
+ 
+  if(ncol(Dat$freq) <= 2){
+      cat("\t>Just one sample. Skipping\n")
+      next
+  }
 
   cat("\tGetting SNP counts...\n") 
   Res <- Dat$info %>%
@@ -164,7 +169,12 @@ for(d in args$input){
       f <- Dat$freq %>%
         filter(site_id %in% i$site_id)
       f_sites <- f$site_id
-      
+
+      # if(unique(i$gene_id) == "GUT_GENOME000131_00421"){
+      #   print(d)
+      #   print(f)
+      # }
+
       if(!all(d_sites %in% f_sites) || !all(f_sites %in% d_sites))
         stop("ERROR: inconsistent sites between freq and depth", call. = TRUE)
       
