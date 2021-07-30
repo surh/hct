@@ -61,9 +61,17 @@ dat <- phybreakdata(sequences = alleles,
                     host.names = host_names,
                     sample.names = sample_names)
 
+Sys.time()
 m1 <- phybreak(dataset = dat)
+Sys.time()
 m1 <- burnin_phybreak(x = m1, ncycles = args$burnin)
+Sys.time()
 m1 <- sample_phybreak(x = m1, nsample = args$iter, thin = args$thin)
+Sys.time()
+
+save(m1, file = "model.rdat")
+
+
 # 
 # ESS(m1)
 # transtree(m1)
