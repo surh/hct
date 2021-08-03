@@ -20,8 +20,8 @@
 library(tidyverse)
 library(phybreak)
 
-args <- list(burnin = 5000,
-             iter = 1e4,
+args <- list(burnin = 2e3,
+             iter = 2e3,
              thin = 5,
              alleles = "filtered_alleles/snps_alleles.txt",
              map = "meta.txt")
