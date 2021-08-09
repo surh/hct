@@ -79,7 +79,7 @@ for(d in dirs){
       return(FALSE)
     }
     
-  }, maf = 0.2, min_samples = 5)
+  }, maf = args$min_maf, min_samples = args$min_samples)
   seqs <- seqs[ii, ]
   sites <- sites[ii]
   
