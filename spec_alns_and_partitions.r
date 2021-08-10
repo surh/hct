@@ -21,7 +21,7 @@ library(HMVAR)
 # Based on earlier version that simply created alignment file.
 # This version now creates a partitions file in RAxML style
 
-args <- list(dir = "./",
+args <- list(dir = "filtered_alleles/",
              map = "meta.txt",
              outdir = "output",
              min_maf = 0.5,
