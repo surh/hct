@@ -50,7 +50,7 @@ for(d in dirs){
   # seqs
   
   if(ncol(seqs) < args$min_samples){
-    warn("SKIPPING. Not enough samples")
+    warning("SKIPPING. Not enough samples")
     next
   }
   
@@ -84,7 +84,7 @@ for(d in dirs){
   sites <- sites[ii]
   
   # Preparing partition table
-  info <- read_tsv(file.paths(d, "snps_info.txt"),
+  info <- read_tsv(file.path(d, "snps_info.txt"),
                    col_types = cols(site_id = col_character(),
                                     gene_id = col_character()))
   
@@ -102,7 +102,7 @@ for(d in dirs){
   sites <- sites[ii]
   
   if(nrow(seqs) < 1){
-    warn("SKIPPING. No sites left after filtering")
+    warning("SKIPPING. No sites left after filtering")
     next
   }
   if(!all(info$site_id == sites)){
