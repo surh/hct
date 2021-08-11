@@ -36,7 +36,7 @@ process iqtree2 {
   val cpus from params.cpus
 
   output:
-  file "output"
+  file "$spec"
 
   """
   mkdir $spec
