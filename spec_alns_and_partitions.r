@@ -24,7 +24,7 @@ library(HMVAR)
 args <- list(dir = "filtered_alleles/",
              map = "meta.txt",
              outdir = "output",
-             min_maf = 0.5,
+             min_maf = 0.2,
              min_samples = 5)
 
 # Read metadata
