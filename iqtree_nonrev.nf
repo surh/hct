@@ -22,7 +22,7 @@ indir = file(params.indir)
 
 // Doesn't like dots in pattern
 INPUTS = Channel.fromFilePairs("$indir/*.{fasta,partitions}")
-INPUTS.view()
+// INPUTS.view()
 
 process iqtree2 {
   label 'iqtree2'
