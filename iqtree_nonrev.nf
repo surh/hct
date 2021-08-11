@@ -32,7 +32,7 @@ process iqtree2 {
   cpus params.cpus
 
   input:
-  tuple spec, file(aln), file(partitions) from INPUTS
+  tuple spec, file(aln_parts) from INPUTS
   val cpus from params.cpus
 
   output:
@@ -41,8 +41,8 @@ process iqtree2 {
   """
   mkdir $spec
   iqtree2 \
-    -s $aln \
-    -p $partitions \
+    -s $aln_part[0] \
+    -p $aln_part[1] \
     --model-joint 12.12 \
     -B 1000 \
     -T $cpus \
