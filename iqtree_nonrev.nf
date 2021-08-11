@@ -20,11 +20,27 @@ params.indir = "input/"
 
 indir = file(params.indir)
 
+// Doesn't like dots in pattern
 INPUTS = Channel.fromFilePairs("$indir/*.{fasta,partitions}")
-// FASTA = Channel.fromPath("$indir/*fasta")
-// INPUTS = Channel.fromFilePairs("$indir/MGY*{.fasta, .partitions}")
-
 INPUTS.view()
+
+process iqtree2 {
+  label 'iqtree2'
+  tag "$spec"
+
+  input:
+  tuple spec, file(aln), file(partitions)
+
+  """
+  iqtree2 \
+    -s $aln \
+    -p $partitions \
+    --model-joint 12.12 \
+    -B 1000 \
+    -T ${process.cpus} \
+    --prefix nonrev_dna
+  """
+}
 
 // Example nextflow.config
 /*
