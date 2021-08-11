@@ -22,6 +22,8 @@ indir = file(params.indir)
 
 INPUTS = Channel.fromFilePairs("$indir/MGYG-HGUT-*{.fasta, .partitions}")
 
+INPUTS.view()
+
 // Example nextflow.config
 /*
 process{
