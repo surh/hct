@@ -32,7 +32,7 @@ process iqtree2 {
   cpus params.cpus
 
   input:
-  tuple spec, file(aln_parts) from INPUTS
+  tuple spec, file(aln_part) from INPUTS
   val cpus from params.cpus
 
   output:
