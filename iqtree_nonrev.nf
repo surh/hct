@@ -20,7 +20,8 @@ params.indir = "input/"
 
 indir = file(params.indir)
 
-INPUTS = Channel.fromPath("$indir/*partitions")
+INPUTS = Channel.fromPath("$indir/*.{fasta,partitions}")
+// FASTA = Channel.fromPath("$indir/*fasta")
 // INPUTS = Channel.fromFilePairs("$indir/MGY*{.fasta, .partitions}")
 
 INPUTS.view()
