@@ -30,7 +30,7 @@ process iqtree2 {
   publishDir "$params.outdir", mode: 'rellink'
 
   input:
-  tuple spec, file(aln), file(partitionss)
+  tuple spec, file(aln), file(partitions) from INPUTS
 
   output:
   file "output"
