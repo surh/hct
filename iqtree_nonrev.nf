@@ -17,6 +17,7 @@
 
 params.indir = "input/"
 params.outdir = "output/"
+params.cpus = 8
 
 indir = file(params.indir)
 
@@ -28,9 +29,11 @@ process iqtree2 {
   label 'iqtree2'
   tag "$spec"
   publishDir "$params.outdir", mode: 'rellink'
+  cpus params.cpus
 
   input:
   tuple spec, file(aln), file(partitions) from INPUTS
+  val cpus from params.cpus
 
   output:
   file "output"
@@ -42,7 +45,7 @@ process iqtree2 {
     -p $partitions \
     --model-joint 12.12 \
     -B 1000 \
-    -T ${process.cpus} \
+    -T $cpus \
     --prefix $spec/nonrev_dna
   """
 }
@@ -58,7 +61,6 @@ process{
   memory = '2G'
   withLabel: 'iqtree2'{
     time = '24h'
-    cpus = 8
     module = 'iq-tree/2'
   }
 
