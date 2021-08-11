@@ -16,7 +16,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 params.indir = "input/"
-
+params.outdir = "output/"
 
 indir = file(params.indir)
 
@@ -27,18 +27,23 @@ INPUTS.view()
 process iqtree2 {
   label 'iqtree2'
   tag "$spec"
+  publishDir "$params.outdir", mode: 'rellink'
 
   input:
-  tuple spec, file(aln), file(partitions)
+  tuple spec, file(aln), file(partitionss)
+
+  output:
+  file "output"
 
   """
+  mkdir $spec
   iqtree2 \
     -s $aln \
     -p $partitions \
     --model-joint 12.12 \
     -B 1000 \
     -T ${process.cpus} \
-    --prefix nonrev_dna
+    --prefix $spec/nonrev_dna
   """
 }
 
