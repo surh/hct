@@ -20,7 +20,7 @@ params.indir = "input/"
 
 indir = file(params.indir)
 
-INPUTS = Channel.fromFilePairs("$indir/MGYG-HGUT-*{.fasta, .partitions}")
+INPUTS = Channel.fromFilePairs("$indir/MGYG-HGUT-*{\.fasta, \.partitions}")
 
 INPUTS.view()
 
@@ -36,7 +36,7 @@ process{
   withLabel: 'iqtree2'{
     time = '24h'
     cpus = 8
-    module = 'iqtree/2'
+    module = 'iq-tree/2'
   }
 
 }
