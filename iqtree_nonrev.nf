@@ -22,7 +22,7 @@ params.cpus = 8
 indir = file(params.indir)
 
 // Doesn't like dots in pattern
-INPUTS = Channel.fromFilePairs("$indir/*.{fasta,partitions}")
+INPUTS = Channel.fromFilePairs("$indir/*.{fasta,partitions}", flat: true)
 // INPUTS.view()
 
 process iqtree2 {
@@ -32,7 +32,7 @@ process iqtree2 {
   cpus params.cpus
 
   input:
-  tuple spec, file(aln_part) from INPUTS
+  tuple spec, file(aln), file(part) from INPUTS
   val cpus from params.cpus
 
   output:
@@ -41,8 +41,8 @@ process iqtree2 {
   """
   mkdir $spec
   iqtree2 \
-    -s $aln_part[0] \
-    -p $aln_part[1] \
+    -s $aln \
+    -p $part \
     --model-joint 12.12 \
     -B 1000 \
     -T $cpus \
