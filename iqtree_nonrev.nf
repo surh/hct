@@ -38,7 +38,7 @@ process rev {
   val cpus from params.cpus
 
   output:
-  file "$spec"
+  file "$spec/"
   tuple spec, file(aln), file("${spec}/rev_dna.best_scheme.nex") into REVS
 
   """
@@ -74,6 +74,9 @@ process nonrev {
   file "$spec"
 
   """
+  # Create directory for output
+  mkdir $spec
+
   # Run
   iqtree2 \
     -s $aln \
