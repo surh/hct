@@ -25,10 +25,12 @@ indir = file(params.indir)
 INPUTS = Channel.fromFilePairs("$indir/*.{fasta,partitions}", flat: true)
 // INPUTS.view()
 
-process iqtree2 {
+
+process rev {
   label 'iqtree2'
   tag "$spec"
-  publishDir "$params.outdir", mode: 'rellink'
+  publishDir "$params.outdir/rev", mode: 'rellink',
+    pattern: "$spec/"
   cpus params.cpus
 
   input:
@@ -37,9 +39,42 @@ process iqtree2 {
 
   output:
   file "$spec"
+  tuple spec, file(aln), file("${spec}/rev_dna.best_scheme.nex") into REVS
 
   """
+  # Convert partitions file to nexus format
+  echo -e "#nexus\nbegin sets;" > ${spec}.nex
+  cat $part | awk '{print " charset " \$2 "dna = " \$4 ";"}' >> ${spec}.nex
+  echo "end;" >> ${spec}.nex
+
+  # Prepare output directory
   mkdir $spec
+
+  # Run IQ-TREE 2 reversible model
+  iqtree2 \
+    -s $aln \
+    -p ${spec}.nex \
+    -B 1000 \
+    -T $cpus \
+    --prefix $spec/rev_dna
+  """
+}
+
+process nonrev {
+  label 'iqtree2'
+  tag "$spec"
+  publishDir "$params.outdir/nonrev", mode: 'rellink'
+  cpus params.cpus
+
+  input:
+  tuple spec, file(aln), file(part) from REVS
+  val cpus from params.cpus
+
+  output:
+  file "$spec"
+
+  """
+  # Run
   iqtree2 \
     -s $aln \
     -p $part \
