@@ -26,10 +26,10 @@ INPUTS = Channel.fromFilePairs("$indir/*.{fasta,partitions}", flat: true)
 // INPUTS.view()
 
 
-process rev {
+process best_scheme {
   label 'iqtree2'
   tag "$spec"
-  publishDir "$params.outdir/rev", mode: 'rellink',
+  publishDir "$params.outdir/find_best", mode: 'rellink',
     pattern: "$spec"
   cpus params.cpus
 
@@ -38,7 +38,7 @@ process rev {
   val cpus from params.cpus
 
   output:
-  tuple spec, file(aln), file("${spec}/rev_dna.best_scheme.nex") into REVS
+  tuple spec, file(aln), file("${spec}/find_best.best_scheme.nex") into BEST
   file "$spec"
 
   """
@@ -50,13 +50,13 @@ process rev {
   # Prepare output directory
   mkdir $spec
 
-  # Run IQ-TREE 2 reversible model
+  # Run IQ-TREE to find best partition scheme
   iqtree2 \
     -s $aln \
     -p ${spec}.nex \
-    -B 1000 \
+    -m MF+MERGE \
     -T $cpus \
-    --prefix $spec/rev_dna
+    --prefix $spec/find_best
   """
 }
 
@@ -67,7 +67,7 @@ process nonrev {
   cpus params.cpus
 
   input:
-  tuple spec, file(aln), file(part) from REVS
+  tuple spec, file(aln), file(part) from BEST
   val cpus from params.cpus
 
   output:
