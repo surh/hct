@@ -30,7 +30,7 @@ process rev {
   label 'iqtree2'
   tag "$spec"
   publishDir "$params.outdir/rev", mode: 'rellink',
-    pattern: "$spec/"
+    pattern: "$spec"
   cpus params.cpus
 
   input:
@@ -38,8 +38,8 @@ process rev {
   val cpus from params.cpus
 
   output:
-  file "$spec/"
   tuple spec, file(aln), file("${spec}/rev_dna.best_scheme.nex") into REVS
+  file "$spec"
 
   """
   # Convert partitions file to nexus format
