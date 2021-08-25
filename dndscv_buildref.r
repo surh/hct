@@ -158,12 +158,12 @@ for(i in 1:nrow(to_change)){
 }
 
 # Write custom ref for dnds
-cat("\tWriting new reference")
+cat("\tWriting new reference...\n")
 ref_fna <- file.path(args$outdir, "reference.fna")
 write.fasta(seq, names = names(seq), file.out = ref_fna)
 
 # Build reference
-cat("Build reference...\n")
+cat("Building reference...\n")
 buildref(cdsfile = cds_tsv,
          genomefile = ref_fna, 
          outfile = file.path(args$outdir, "reference.rda"),
