@@ -17,15 +17,74 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-args <- list(midas_dir = "~/micropopgen/exp/2021/2021-08-20.dnds/Fplautii_merged/",
-             refdb = "~/micropopgen/exp/2021/2021-08-20.dnds/refdb/Fplautii.rda",
-             mode = "all_dummy",
-             maf_thres = 0.8,
-             max_coding_muts_per_sample = Inf,
-             max_muts_per_gene_per_sample = Inf,
-             genetic_code = 1,
-             seed = NULL,
-             outdir = "output")
+library(argparser)
+
+process_arguments <- function(){
+  p <- arg_parser(paste("Run dndscv on MIDAS SNVs"))
+  
+  # Positional arguments
+  p <- add_argument(p, "midas_dir",
+                    help = paste("Directory with output from midas_merge.py"),
+                    type = "character")
+  p <- add_argument(p, "refdb",
+                    help = paste(".rda file from buildref"),
+                    type = "character")
+  
+  # Optional arguments
+  p <- add_argument(p, "--mode",
+                     help = paste("Mode to determine mutations"),
+                     type = "character",
+                     default = "true_singletons")
+  p <- add_argument(p, "--maf_thres",
+                    help = paste("Threshold for minor allele frequency.",
+                                 "Used in some modes"),
+                    type = "numeric",
+                    default = 0.8)
+  p <- add_argument(p, "--max_coding_muts_per_sample",
+                    help = paste("See dndscv help for info. For dummy modes",
+                                 "it should be set to Inf"),
+                    type = "numeric",
+                    default = 100)
+  p <- add_argument(p, "--max_muts_per_gene_per_sample",
+                    help = paste("See dndscv help for info. For dummy modes",
+                                 "it should be set to Inf"),
+                    type = "numeric",
+                    default = 10)
+  p <- add_argument(p, "--genetic_code",
+                    help = paste("Genetic code to use"),
+                    type = "numeric",
+                    default = 1)
+  p <- add_argument(p, "--seed",
+                    help = paste("Seed for random selection"),
+                    type = "numeric",
+                    default = NULL)
+  p <- add_argument(p, "--outdir",
+                    help = paste("Directory path to store outputs."),
+                    default = "output/",
+                    type = "character")
+                    
+  
+  # Read arguments
+  cat("Processing arguments...\n")
+  args <- parse_args(p)
+  
+  # Process arguments
+  if(is.na(args$seed ))
+    args$seed <- NULL
+  
+  return(args)
+}
+
+args <- process_arguments()
+# args <- list(midas_dir = "~/micropopgen/exp/2021/2021-08-20.dnds/Fplautii_merged/",
+#              refdb = "~/micropopgen/exp/2021/2021-08-20.dnds/refdb/Fplautii.rda",
+#              mode = "all_dummy",
+#              maf_thres = 0.8,
+#              max_coding_muts_per_sample = Inf,
+#              max_muts_per_gene_per_sample = Inf,
+#              genetic_code = 1,
+#              seed = NULL,
+#              outdir = "output")
 print(args)
 
 library(tidyverse)
