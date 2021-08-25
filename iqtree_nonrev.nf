@@ -28,6 +28,7 @@ INPUTS = Channel.fromFilePairs("$indir/*.{fasta,partitions}", flat: true)
 
 process best_scheme {
   label 'iqtree2'
+  label 'big'
   tag "$spec"
   publishDir "$params.outdir/find_best", mode: 'rellink',
     pattern: "$spec"
@@ -98,8 +99,11 @@ process{
   time = '4h'
   memory = '2G'
   withLabel: 'iqtree2'{
-    time = '24h'
+    time = '36h'
     module = 'iq-tree/2'
+  }
+  withLabel: 'big'{
+    memory = '72G'
   }
 
 }
