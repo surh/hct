@@ -65,6 +65,7 @@ args <- process_arguments()
 #              midas_dir,
 #              enogg_format = "uhgg",
 #              outdir)
+print(args)
 
 library(tidyverse)
 library(dndscv)
