@@ -72,6 +72,14 @@ process_arguments <- function(){
   if(is.na(args$seed ))
     args$seed <- NULL
   
+  if(args$mode %in% c("dummy_singletons", "all_dummy") && 
+     (args$max_coding_muts_per_sample != Inf ||
+      args$max_muts_per_gene_per_sample != Inf)){
+    warning(paste("WARNING: You selected a dummy mode, we suggest you",
+                  "set max_coding_muts_per_sample and",
+                  "max_muts_per_gene_per_sample to Inf"))
+  }
+  
   return(args)
 }
 
