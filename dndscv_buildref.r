@@ -1,18 +1,74 @@
+#!/usr/bin/env Rscript
 
-args <- list(gff,
-             enogg,
-             genome_fna,
-             midas_dir,
-             enogg_format = "uhgg",
-             outdir)
+# (C) Copyright 2021 Sur Herrera Paredes
+# This file is part of This program.
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+library(argparser)
+
+process_arguments <- function(){
+  p <- arg_parser(paste("Script that takes an UHGG genome, annotations, and",
+                        "MIDAS SNPs and creates a dndscv reference."))
+  
+  # Positional arguments
+  p <- add_argument(p, "gff",
+                    help = paste("GFF3 format with for extracting CDSs.",
+                                 "Third column must be 'CDS' for coding genes.",
+                                 "Ninth column must begin with ID=<gene_id>;"),
+                    type = "character")
+  p <- add_argument(p, "enogg",
+                    help = "eggNOG annotation for the genome",
+                    type = "charachter")
+  p <- add_argument(p, "genome_fna",
+                    help = "FASTA of genome assembly",
+                    type = "character")
+  p <- add_argument(p, "midas_dir",
+                    help = "Directory with output of midas_merge.py",
+                    type = "character")
+  
+  # Optional arguments
+  p <- add_argument(p, "--outdir",
+                    help = paste("Directory path to store outputs."),
+                    default = "output/",
+                    type = "character")
+  p <- add_argument(p, "--enogg_format",
+                     help = paste("IF UHGG annotations used the  'uhgg'.",
+                                  "Alternative is 'emapper1'"),
+                     type = "character",
+                     default = "uhgg")
+                     
+  # Read arguments
+  cat("Processing arguments...\n")
+  args <- parse_args(p)
+  
+  # Process arguments
+  
+  return(args)
+}
+
+args <- process_arguments()
+# args <- list(gff,
+#              enogg,
+#              genome_fna,
+#              midas_dir,
+#              enogg_format = "uhgg",
+#              outdir)
 
 library(tidyverse)
 library(dndscv)
 library(seqinr)
-# data(dataset_simbreast)
-# res <- dndscv(mutations)
-
-
 
 # Read gene defintions
 cat("Reading gene defintions from GFF3 file...\n")
