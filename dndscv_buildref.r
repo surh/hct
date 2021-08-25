@@ -30,7 +30,7 @@ process_arguments <- function(){
                     type = "character")
   p <- add_argument(p, "enogg",
                     help = "eggNOG annotation for the genome",
-                    type = "charachter")
+                    type = "character")
   p <- add_argument(p, "genome_fna",
                     help = "FASTA of genome assembly",
                     type = "character")
