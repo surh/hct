@@ -84,6 +84,10 @@ process buildref{
 }
 
 mode = 'all_dummy'
+if (mode == 'all_dummy' || mode == "dummy_singletons"){
+  curr_max_coding_muts_per_sample = "Inf"
+  curr_max_muts_per_gene_per_sample = "Inf"
+}
 
 process run{
   label 'r'
@@ -94,8 +98,8 @@ process run{
   input:
   val mode from mode
   val maf_thres from params.maf_thres
-  val max_coding_muts_per_sample from params.max_coding_muts_per_sample
-  val max_muts_per_gene_per_sample from params.max_muts_per_gene_per_sample
+  val max_coding_muts_per_sample from curr_max_coding_muts_per_sample
+  val max_muts_per_gene_per_sample from curr_max_muts_per_gene_per_sample
   genetic_code = 1
   tuple spec, file('midas_dir'), file('reference.rda') from MIDAS2.join(REF)
 
