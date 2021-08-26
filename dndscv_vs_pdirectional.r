@@ -38,7 +38,7 @@ site2gene <- HMVAR::read_midas_info(args$info) %>%
   select(site_id, gene_id)
 
 cat("Reading map of gene names to gene IDs...\n")
-name2.id <- read_tsv(args$cds,
+name2id <- read_tsv(args$cds,
          col_types = cols(gene.id = col_character(),
                           gene.name = col_character())) %>%
   select(gene_id = gene.id, gene_name = gene.name)
