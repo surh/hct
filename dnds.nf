@@ -20,6 +20,7 @@ params.gff = ''
 params.enogg = ''
 params.fna = ''
 params.midas = ''
+params.pdir = ''
 params.outdir = 'output'
 params.maf_thres = 0.8
 params.max_coding_muts_per_sample = 100
@@ -31,24 +32,29 @@ gff_dir = file(params.gff)
 enogg_dir = file(params.enogg)
 fna_dir = file(params.fna)
 midas_dir = file(params.midas)
+pdir_dir = file(params.pdir)
 
-GFF = Channel.fromPath("$gff_dir/*.gff")
+GFF = Channel.fromPath("$gff_dir/*")
   .map{ infile -> tuple(infile.name.replaceAll(/\.gff$/, ''),
     file(infile))}
-ENOGG = Channel.fromPath("$enogg_dir/*.tsv")
+ENOGG = Channel.fromPath("$enogg_dir/*")
   .map{ infile -> tuple(infile.name.replaceAll(/\.tsv$/, ''),
     file(infile))}
-FNA = Channel.fromPath("$fna_dir/*.fna")
+PDIR = Channel.fromPath("$pdir_dir/*")
+  .map{ infile -> tuple(infile.name.replaceAll(/\.tsv\.gz$/, ''),
+    file(infile))}
+FNA = Channel.fromPath("$fna_dir/*")
   .map{ infile -> tuple(infile.name.replaceAll(/\.fna$/, ''),
     file(infile))}
-Channel.fromPath("$enogg_dir/*", type: 'dir', maxdepth: 1)
+Channel.fromPath("$midas_dir/*", type: 'dir', maxdepth: 1)
   .map{ infile -> tuple(infile.name,
     file(infile)) }
   .into{MIDAS1; MIDAS2}
-
+INFO = Channel.fromPath("$midas_dir/*", type: 'dir', maxdepth: 1)
+  .map{ infile -> tuple(infile.name,
+    file("$infile/snps_info.txt")) }
 
 BUILDIN = MIDAS1.join(ENOGG).join(FNA).join(GFF)
-
 
 process buildref{
   label 'r'
@@ -106,6 +112,31 @@ process run{
     --max_coding_muts_per_sample $max_coding_muts_per_sample \
     --max_muts_per_gene_per_sample $max_muts_per_gene_per_sample \
     --genetic_code \
+    --outdir $spec
+  """
+}
+
+
+proces plot{
+  label 'r'
+  tag "$mode $spec"
+  publishDir "$params.outdir/plot/$mode", mode: 'rellink'
+
+  input:
+  tuple spec, mode, file('dnds_csv.tsv'),
+    file('cdsfile.tsv'),
+    file('snps_info.txt'),
+    file('p_directional.tsv.gz') from DNDSCV.join(CDS).join(INFO).join(PDIR)
+
+  output:
+  file "$spec"
+
+  """
+  Rscript ${workflow.projectDir}/dndscv_vs_pdirectional.r \
+    dnds_csv.tsv \
+    cdsfile.tsv \
+    snps_info.txt \
+    p_directional.tsv.gz \
     --outdir $spec
   """
 }
