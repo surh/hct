@@ -16,22 +16,56 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+library(argparser)
 
-library(tidyverse)
-library(HMVAR)
+process_arguments <- function(){
+  p <- arg_parser(paste(""))
+  
+  # Positional arguments
+  p <- add_argument(p, "dndscv",
+                    help = paste("Results from dndscv."),
+                    type = "character")
+  p <- add_argument(p, "cds",
+                    help = "CDS file used for buildref.",
+                    type = "character")
+  p <- add_argument(p, "info",
+                    help = "snps_info.txt file from midas_merge.py.",
+                    type = "character")
+  p <- add_argument(p, "pdir",
+                    help = "p_directional from bern_mix model.",
+                    type = "character")
+  
+  # Optional arguments
+  p <- add_argument(p, "--outdir",
+                    help = paste("Directory path to store outputs."),
+                    default = "output/",
+                    type = "character")
+                                       
+  # Read arguments
+  cat("Processing arguments...\n")
+  args <- parse_args(p)
+  
+  # Process arguments
+  
+  return(args)
+}
 
+args <- process_arguments()
 # args <- list(dndscv = "",
 #              cds = "~/micropopgen/exp/2021/2021-08-20.dnds/refdb/Fplautii.cdsfile.tsv",
 #              pdir = "~/micropopgen/exp/2021/2021-08-20.dnds/p_directional/MGYG-HGUT-00099.tsv.gz",
 #              info = "~/micropopgen/exp/2021/2021-08-20.dnds/Fplautii_merged/snps_info.txt",
 #              outdir = "output")
-args <- list(dndscv = "all_dummy/dnds_cv.tsv",
-             cds = "test_refdb/cdsfile.tsv",
-             pdir = "test_in/MGYG-HGUT-00099.tsv.gz",
-             info = "test_in/MGYG-HGUT-00099/snps_info.txt",
-             outdir = "test_plot")
+# args <- list(dndscv = "all_dummy/dnds_cv.tsv",
+#              cds = "test_refdb/cdsfile.tsv",
+#              pdir = "test_in/MGYG-HGUT-00099.tsv.gz",
+#              info = "test_in/MGYG-HGUT-00099/snps_info.txt",
+#              outdir = "test_plot")
 
 print(args)
+
+library(tidyverse)
+library(HMVAR)
 
 cat("Reading map of sites to genes...\n")
 site2gene <- HMVAR::read_midas_info(args$info) %>%
