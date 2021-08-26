@@ -60,7 +60,7 @@ process buildref{
   label 'r'
   tag "$spec"
   publishDir "$params.outdir/buildref/", mode: 'rellink'
-    pattern: "^${spec}$"
+    pattern: "$spec"
 
   input:
   tuple spec, file("midas_dir"), file("eggnog.tsv"),
@@ -93,7 +93,7 @@ process run{
   label 'r'
   tag "$mode $spec"
   publishDir "$params.outdir/dndscv/", mode: 'rellink'
-    pattern: "^${spec}$"
+    pattern: "$spec"
 
   input:
   val mode from mode
