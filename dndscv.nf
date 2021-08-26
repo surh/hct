@@ -92,27 +92,27 @@ if (curr_mode == 'all_dummy' || curr_mode == "dummy_singletons"){
 
 process dndscv{
   label 'r'
-  tag "$mode $spec"
+  tag "$mut_mode $spec"
   publishDir "$params.outdir/dndscv/", mode: 'rellink',
     pattern: "$spec"
 
   input:
   tuple spec, file('midas_dir'), file('reference.rda') from MIDAS2.join(REF)
-  val snvs_mode from curr_mode
+  val mut_mode from curr_mode
   val maf_thres from params.maf_thres
-  val max_coding_muts_per_sample from curr_max_coding_muts_per_sample
+  val max_coding_muts_per_samp/cashew/users/sur/exp/fraserv/2021/today4le from curr_max_coding_muts_per_sample
   val max_muts_per_gene_per_sample from curr_max_muts_per_gene_per_sample
   val genetic_code from params.genetic_code
 
   output:
-  tuple spec, mode, file("$spec/dnds_cv.tsv") into DNDSCV
+  tuple spec, mut_mode, file("$spec/dnds_cv.tsv") into DNDSCV
   file "$spec"
 
   """
   Rscript ${workflow.projectDir}/dndscv_run.r \
     midas_dir/ \
     reference.rda \
-    --mode $snvs_mode \
+    --mode $mut_mode \
     --maf_thres $maf_thres \
     --max_coding_muts_per_sample $max_coding_muts_per_sample \
     --max_muts_per_gene_per_sample $max_muts_per_gene_per_sample \
