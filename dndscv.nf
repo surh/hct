@@ -82,67 +82,67 @@ process buildref{
 
 }
 
-mode = 'all_dummy'
-if (mode == 'all_dummy' || mode == "dummy_singletons"){
-  curr_max_coding_muts_per_sample = "Inf"
-  curr_max_muts_per_gene_per_sample = "Inf"
-}
-
-process dndscv{
-  label 'r'
-  tag "$mode $spec"
-  publishDir "$params.outdir/dndscv/", mode: 'rellink',
-    pattern: "$spec"
-
-  input:
-  val mode from mode
-  val maf_thres from params.maf_thres
-  val max_coding_muts_per_sample from curr_max_coding_muts_per_sample
-  val max_muts_per_gene_per_sample from curr_max_muts_per_gene_per_sample
-  genetic_code = 1
-  tuple spec, file('midas_dir'), file('reference.rda') from MIDAS2.join(REF)
-
-  output:
-  tuple spec, mode, file("$spec/dnds_cv.tsv") into DNDSCV
-  file "$spec"
-
-  """
-  Rscript ${workflow.projectDir}/dndscv_run.r \
-    midas_dir/ \
-    reference.rda \
-    --mode $mode \
-    --maf_thres \
-    --max_coding_muts_per_sample $max_coding_muts_per_sample \
-    --max_muts_per_gene_per_sample $max_muts_per_gene_per_sample \
-    --genetic_code \
-    --outdir $spec
-  """
-}
-
-
-proces plot{
-  label 'r'
-  tag "$mode $spec"
-  publishDir "$params.outdir/plot/$mode", mode: 'rellink'
-
-  input:
-  tuple spec, mode, file('dnds_csv.tsv'),
-    file('cdsfile.tsv'),
-    file('snps_info.txt'),
-    file('p_directional.tsv.gz') from DNDSCV.join(CDS).join(INFO).join(PDIR)
-
-  output:
-  file "$spec"
-
-  """
-  Rscript ${workflow.projectDir}/dndscv_vs_pdirectional.r \
-    dnds_csv.tsv \
-    cdsfile.tsv \
-    snps_info.txt \
-    p_directional.tsv.gz \
-    --outdir $spec
-  """
-}
+// mode = 'all_dummy'
+// if (mode == 'all_dummy' || mode == "dummy_singletons"){
+//   curr_max_coding_muts_per_sample = "Inf"
+//   curr_max_muts_per_gene_per_sample = "Inf"
+// }
+//
+// process dndscv{
+//   label 'r'
+//   tag "$mode $spec"
+//   publishDir "$params.outdir/dndscv/", mode: 'rellink',
+//     pattern: "$spec"
+//
+//   input:
+//   val mode from mode
+//   val maf_thres from params.maf_thres
+//   val max_coding_muts_per_sample from curr_max_coding_muts_per_sample
+//   val max_muts_per_gene_per_sample from curr_max_muts_per_gene_per_sample
+//   genetic_code = 1
+//   tuple spec, file('midas_dir'), file('reference.rda') from MIDAS2.join(REF)
+//
+//   output:
+//   tuple spec, mode, file("$spec/dnds_cv.tsv") into DNDSCV
+//   file "$spec"
+//
+//   """
+//   Rscript ${workflow.projectDir}/dndscv_run.r \
+//     midas_dir/ \
+//     reference.rda \
+//     --mode $mode \
+//     --maf_thres \
+//     --max_coding_muts_per_sample $max_coding_muts_per_sample \
+//     --max_muts_per_gene_per_sample $max_muts_per_gene_per_sample \
+//     --genetic_code \
+//     --outdir $spec
+//   """
+// }
+//
+//
+// proces plot{
+//   label 'r'
+//   tag "$mode $spec"
+//   publishDir "$params.outdir/plot/$mode", mode: 'rellink'
+//
+//   input:
+//   tuple spec, mode, file('dnds_csv.tsv'),
+//     file('cdsfile.tsv'),
+//     file('snps_info.txt'),
+//     file('p_directional.tsv.gz') from DNDSCV.join(CDS).join(INFO).join(PDIR)
+//
+//   output:
+//   file "$spec"
+//
+//   """
+//   Rscript ${workflow.projectDir}/dndscv_vs_pdirectional.r \
+//     dnds_csv.tsv \
+//     cdsfile.tsv \
+//     snps_info.txt \
+//     p_directional.tsv.gz \
+//     --outdir $spec
+//   """
+// }
 
 
 
