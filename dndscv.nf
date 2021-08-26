@@ -25,7 +25,7 @@ params.outdir = 'output'
 params.maf_thres = 0.8
 params.max_coding_muts_per_sample = 100
 params.max_muts_per_gene_per_sample = 10
-genetic_code = 1
+params.genetic_code = 1
 
 // Process params
 gff_dir = file(params.gff)
@@ -83,42 +83,43 @@ process buildref{
 
 }
 
-// mode = 'all_dummy'
-// if (mode == 'all_dummy' || mode == "dummy_singletons"){
-//   curr_max_coding_muts_per_sample = "Inf"
-//   curr_max_muts_per_gene_per_sample = "Inf"
-// }
-//
-// process dndscv{
-//   label 'r'
-//   tag "$mode $spec"
-//   publishDir "$params.outdir/dndscv/", mode: 'rellink',
-//     pattern: "$spec"
-//
-//   input:
-//   val mode from mode
-//   val maf_thres from params.maf_thres
-//   val max_coding_muts_per_sample from curr_max_coding_muts_per_sample
-//   val max_muts_per_gene_per_sample from curr_max_muts_per_gene_per_sample
-//   genetic_code = 1
-//   tuple spec, file('midas_dir'), file('reference.rda') from MIDAS2.join(REF)
-//
-//   output:
-//   tuple spec, mode, file("$spec/dnds_cv.tsv") into DNDSCV
-//   file "$spec"
-//
-//   """
-//   Rscript ${workflow.projectDir}/dndscv_run.r \
-//     midas_dir/ \
-//     reference.rda \
-//     --mode $mode \
-//     --maf_thres \
-//     --max_coding_muts_per_sample $max_coding_muts_per_sample \
-//     --max_muts_per_gene_per_sample $max_muts_per_gene_per_sample \
-//     --genetic_code \
-//     --outdir $spec
-//   """
-// }
+
+curr_mode = 'all_dummy'
+if (curr_mode == 'all_dummy' || curr_mode == "dummy_singletons"){
+  curr_max_coding_muts_per_sample = "Inf"
+  curr_max_muts_per_gene_per_sample = "Inf"
+}
+
+process dndscv{
+  label 'r'
+  tag "$mode $spec"
+  publishDir "$params.outdir/dndscv/", mode: 'rellink',
+    pattern: "$spec"
+
+  input:
+  tuple spec, file('midas_dir'), file('reference.rda') from MIDAS2.join(REF)
+  val snvs_mode from curr_mode
+  val maf_thres from params.maf_thres
+  val max_coding_muts_per_sample from curr_max_coding_muts_per_sample
+  val max_muts_per_gene_per_sample from curr_max_muts_per_gene_per_sample
+  val genetic_code from params.genetic_code
+
+  output:
+  tuple spec, mode, file("$spec/dnds_cv.tsv") into DNDSCV
+  file "$spec"
+
+  """
+  Rscript ${workflow.projectDir}/dndscv_run.r \
+    midas_dir/ \
+    reference.rda \
+    --mode $snvs_mode \
+    --maf_thres \
+    --max_coding_muts_per_sample $max_coding_muts_per_sample \
+    --max_muts_per_gene_per_sample $max_muts_per_gene_per_sample \
+    --genetic_code \
+    --outdir $spec
+  """
+}
 //
 //
 // proces plot{
