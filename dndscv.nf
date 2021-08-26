@@ -100,7 +100,7 @@ process dndscv{
   tuple spec, file('midas_dir'), file('reference.rda') from MIDAS2.join(REF)
   val mut_mode from curr_mode
   val maf_thres from params.maf_thres
-  val max_coding_muts_per_samp/cashew/users/sur/exp/fraserv/2021/today4le from curr_max_coding_muts_per_sample
+  val max_coding_muts_per_sample from curr_max_coding_muts_per_sample
   val max_muts_per_gene_per_sample from curr_max_muts_per_gene_per_sample
   val genetic_code from params.genetic_code
 
