@@ -31,6 +31,8 @@ args <- list(dndscv = "all_dummy/dnds_cv.tsv",
              info = "test_in/MGYG-HGUT-00099/snps_info.txt",
              outdir = "test_plot")
 
+print(args)
+
 cat("Reading map of sites to genes...\n")
 site2gene <- HMVAR::read_midas_info(args$info) %>%
   select(site_id, gene_id)
@@ -52,11 +54,11 @@ pdir <- pdir %>%
   group_by(gene_id) %>%
   summarise(p_directional = max(p_directional),
             .groups = 'drop')
-  
+
 cat("Reading dndscv results...\n")
 Res <- read_tsv(args$dndscv,
                 col_types = cols(gene_name = col_character(),
-                                 .default = col_number))
+                                 .default = col_number()))
 
 cat("Matching dndscv and p_directional...\n")
 Res <- Res %>%
