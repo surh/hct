@@ -122,7 +122,7 @@ process dndscv{
 }
 
 
-proces plot{
+proces compare_pdir{
   label 'r'
   tag "$mut_mode $spec"
   publishDir "$params.outdir/plot/$mut_mode", mode: 'rellink'
