@@ -54,7 +54,7 @@ INFO = Channel.fromPath("$midas_dir/*", type: 'dir', maxDepth: 1)
   .map{ infile -> tuple(infile.name,
     file("$infile/snps_info.txt")) }
 
-BUILDIN = MIDAS1.join(ENOGG).join(FNA).join(GFF).view()
+BUILDIN = MIDAS1.join(ENOGG).join(FNA).join(GFF)
 
 process buildref{
   label 'r'
@@ -63,8 +63,7 @@ process buildref{
     pattern: "$spec"
 
   input:
-  tuple spec, file("midas_dir"), file("eggnog.tsv"),
-      file("genome.fna"), file("genes.gff") from BUILDIN
+  tuple spec, file("midas_dir"), file("eggnog.tsv"), file("genome.fna"), file("genes.gff") from BUILDIN
 
   output:
   file "$spec"
