@@ -63,7 +63,8 @@ process buildref{
     pattern: "$spec"
 
   input:
-  tuple spec, file("midas_dir"), file("eggnog.tsv"), file("genome.fna"), file("genes.gff") from BUILDIN
+  tuple spec, file("midas_dir"), file("eggnog.tsv"),
+    file("genome.fna"), file("genes.gff") from BUILDIN
 
   output:
   file "$spec"
