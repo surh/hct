@@ -21,6 +21,10 @@ params.enogg = ''
 params.fna = ''
 params.midas = ''
 params.outdir = 'output'
+params.maf_thres = 0.8
+params.max_coding_muts_per_sample = 100
+params.max_muts_per_gene_per_sample = 10
+genetic_code = 1
 
 // Process params
 gff_dir = file(params.gff)
@@ -37,11 +41,13 @@ ENOGG = Channel.fromPath("$enogg_dir/*.tsv")
 FNA = Channel.fromPath("$fna_dir/*.fna")
   .map{ infile -> tuple(infile.name.replaceAll(/\.fna$/, ''),
     file(infile))}
-MIDAS = Channel.fromPath("$enogg_dir/*", type: 'dir', maxdepth: 1)
+Channel.fromPath("$enogg_dir/*", type: 'dir', maxdepth: 1)
   .map{ infile -> tuple(infile.name,
-    file(infile))}
+    file(infile)) }
+  .into{MIDAS1; MIDAS2}
 
-BUILDIN = MIDAS.join(ENOGG).join(FNA).join(GFF)
+
+BUILDIN = MIDAS1.join(ENOGG).join(FNA).join(GFF)
 
 
 process buildref{
@@ -56,8 +62,8 @@ process buildref{
 
   output:
   file "$spec"
-  tuple spec, file("$spec/cdsfile.tsv")
-  tuple spec, file("$spec/reference.rda")
+  tuple spec, file("$spec/cdsfile.tsv") into CDS
+  tuple spec, file("$spec/reference.rda") into REF
 
   """
   Rscript ${workflow.projectDir}/dndscv_buildref.r \
@@ -69,6 +75,39 @@ process buildref{
     --enogg_format uhgg
   """
 
+}
+
+mode = 'all_dummy'
+
+process run{
+  label 'r'
+  tag "$mode $spec"
+  publishDir "$params.outdir/dndscv/", mode: 'rellink'
+    pattern: "^$spec$"
+
+  input:
+  val mode from mode
+  val maf_thres from params.maf_thres
+  val max_coding_muts_per_sample from params.max_coding_muts_per_sample
+  val max_muts_per_gene_per_sample from params.max_muts_per_gene_per_sample
+  genetic_code = 1
+  tuple spec, file('midas_dir'), file('reference.rda') from MIDAS2.join(REF)
+
+  output:
+  tuple spec, mode, file("$spec/dnds_cv.tsv") into DNDSCV
+  file "$spec"
+
+  """
+  Rscript ${workflow.projectDir}/dndscv_run.r \
+    midas_dir/ \
+    reference.rda \
+    --mode $mode \
+    --maf_thres \
+    --max_coding_muts_per_sample $max_coding_muts_per_sample \
+    --max_muts_per_gene_per_sample $max_muts_per_gene_per_sample \
+    --genetic_code \
+    --outdir $spec
+  """
 }
 
 
