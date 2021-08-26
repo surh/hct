@@ -46,11 +46,11 @@ PDIR = Channel.fromPath("$pdir_dir/*")
 FNA = Channel.fromPath("$fna_dir/*")
   .map{ infile -> tuple(infile.name.replaceAll(/\.fna$/, ''),
     file(infile))}
-Channel.fromPath("$midas_dir/*", type: 'dir', maxdepth: 1)
+Channel.fromPath("$midas_dir/*", type: 'dir', maxDepth: 1)
   .map{ infile -> tuple(infile.name,
     file(infile)) }
   .into{MIDAS1; MIDAS2}
-INFO = Channel.fromPath("$midas_dir/*", type: 'dir', maxdepth: 1)
+INFO = Channel.fromPath("$midas_dir/*", type: 'dir', maxDepth: 1)
   .map{ infile -> tuple(infile.name,
     file("$infile/snps_info.txt")) }
 
