@@ -26,6 +26,8 @@ params.maf_thres = 0.8
 params.max_coding_muts_per_sample = 100
 params.max_muts_per_gene_per_sample = 10
 params.genetic_code = 1
+params.mut_modes = ["dummy_singletons", "all_dummy", "random_top_thres",
+  "all_thres", "all", "true_singletons", "thres_singletons"]
 
 // Process params
 gff_dir = file(params.gff)
@@ -84,11 +86,23 @@ process buildref{
 }
 
 
-curr_mode = 'all_dummy'
-if (curr_mode == 'all_dummy' || curr_mode == "dummy_singletons"){
-  curr_max_coding_muts_per_sample = "Inf"
-  curr_max_muts_per_gene_per_sample = "Inf"
-}
+// curr_mode = 'all_dummy'
+// if (curr_mode == 'all_dummy' || curr_mode == "dummy_singletons"){
+//   curr_max_coding_muts_per_sample = "Inf"
+//   curr_max_muts_per_gene_per_sample = "Inf"
+// }
+
+DNDSIN = MIDAS2.join(REF).combine(params.mut_modes)
+  .map{ midas_dir, ref_rda, mut_mode ->
+    if (mut_mode == 'all_dummy' || mut_mode == "dummy_singletons"){
+      max_coding_muts_per_sample = "Inf"
+      max_muts_per_gene_per_sample = "Inf"
+    }else{
+      max_coding_muts_per_sample = params.max_coding_muts_per_sample
+      max_muts_per_gene_per_sample = params.curr_max_muts_per_gene_per_sample
+    }
+    tuple(file(midas_dir), file(ref_rda), mut_mode,
+      max_coding_muts_per_sample, max_muts_per_gene_per_sample)}
 
 process dndscv{
   label 'r'
@@ -97,11 +111,11 @@ process dndscv{
     pattern: "$spec"
 
   input:
-  tuple spec, file('midas_dir'), file('reference.rda') from MIDAS2.join(REF)
-  val mut_mode from curr_mode
+  tuple spec, file('midas_dir'), file('reference.rda'),
+    mut_mode,
+    max_coding_muts_per_sample,
+    max_muts_per_gene_per_sample from DNDSIN
   val maf_thres from params.maf_thres
-  val max_coding_muts_per_sample from curr_max_coding_muts_per_sample
-  val max_muts_per_gene_per_sample from curr_max_muts_per_gene_per_sample
   val genetic_code from params.genetic_code
 
   output:
