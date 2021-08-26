@@ -85,24 +85,24 @@ process buildref{
 
 }
 
-
-// curr_mode = 'all_dummy'
-// if (curr_mode == 'all_dummy' || curr_mode == "dummy_singletons"){
-//   curr_max_coding_muts_per_sample = "Inf"
-//   curr_max_muts_per_gene_per_sample = "Inf"
-// }
-
 DNDSIN = MIDAS2.join(REF).combine(params.mut_modes)
-  .map{ midas_dir, ref_rda, mut_mode ->
+  .map{ elems ->
+
+    spec = elems[0]
+    midas_dir = elems[1]
+    ref_rda = elems[2]
+    mut_mode = elems[3]
+
     if (mut_mode == 'all_dummy' || mut_mode == "dummy_singletons"){
       max_coding_muts_per_sample = "Inf"
       max_muts_per_gene_per_sample = "Inf"
     }else{
       max_coding_muts_per_sample = params.max_coding_muts_per_sample
-      max_muts_per_gene_per_sample = params.curr_max_muts_per_gene_per_sample
+      max_muts_per_gene_per_sample = params.max_muts_per_gene_per_sample
     }
-    tuple(file(midas_dir), file(ref_rda), mut_mode,
-      max_coding_muts_per_sample, max_muts_per_gene_per_sample)}
+
+    tuple(spec, file(midas_dir), file(ref_rda), mut_mode,
+      max_coding_muts_per_sample, max_muts_per_gene_per_sample) }
 
 process dndscv{
   label 'r'
@@ -135,30 +135,29 @@ process dndscv{
   """
 }
 
-
-process compare_pdir{
-  label 'r'
-  tag "$mut_mode $spec"
-  publishDir "$params.outdir/plot/$mut_mode", mode: 'rellink'
-
-  input:
-  tuple spec, mut_mode, file('dnds_csv.tsv'),
-    file('cdsfile.tsv'),
-    file('snps_info.txt'),
-    file('p_directional.tsv.gz') from DNDSCV.join(CDS).join(INFO).join(PDIR)
-
-  output:
-  file "$spec"
-
-  """
-  Rscript ${workflow.projectDir}/dndscv_vs_pdirectional.r \
-    dnds_csv.tsv \
-    cdsfile.tsv \
-    snps_info.txt \
-    p_directional.tsv.gz \
-    --outdir $spec
-  """
-}
+// process compare_pdir{
+//   label 'r'
+//   tag "$mut_mode $spec"
+//   publishDir "$params.outdir/plot/$mut_mode", mode: 'rellink'
+//
+//   input:
+//   tuple spec, mut_mode, file('dnds_csv.tsv'),
+//     file('cdsfile.tsv'),
+//     file('snps_info.txt'),
+//     file('p_directional.tsv.gz') from DNDSCV.join(CDS).join(INFO).join(PDIR)
+//
+//   output:
+//   file "$spec"
+//
+//   """
+//   Rscript ${workflow.projectDir}/dndscv_vs_pdirectional.r \
+//     dnds_csv.tsv \
+//     cdsfile.tsv \
+//     snps_info.txt \
+//     p_directional.tsv.gz \
+//     --outdir $spec
+//   """
+// }
 
 
 
