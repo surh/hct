@@ -59,7 +59,7 @@ BUILDIN = MIDAS1.join(ENOGG).join(FNA).join(GFF)
 process buildref{
   label 'r'
   tag "$spec"
-  publishDir "$params.outdir/buildref/", mode: 'rellink'
+  publishDir "$params.outdir/buildref/", mode: 'rellink',
     pattern: "$spec"
 
   input:
@@ -89,10 +89,10 @@ if (mode == 'all_dummy' || mode == "dummy_singletons"){
   curr_max_muts_per_gene_per_sample = "Inf"
 }
 
-process run{
+process dndscv{
   label 'r'
   tag "$mode $spec"
-  publishDir "$params.outdir/dndscv/", mode: 'rellink'
+  publishDir "$params.outdir/dndscv/", mode: 'rellink',
     pattern: "$spec"
 
   input:
