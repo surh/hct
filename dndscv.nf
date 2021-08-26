@@ -93,7 +93,7 @@ if (curr_mode == 'all_dummy' || curr_mode == "dummy_singletons"){
 process dndscv{
   label 'r'
   tag "$mut_mode $spec"
-  publishDir "$params.outdir/dndscv/", mode: 'rellink',
+  publishDir "$params.outdir/dndscv/$mut_mode", mode: 'rellink',
     pattern: "$spec"
 
   input:
@@ -122,29 +122,29 @@ process dndscv{
 }
 
 
-// proces plot{
-//   label 'r'
-//   tag "$mode $spec"
-//   publishDir "$params.outdir/plot/$mode", mode: 'rellink'
-//
-//   input:
-//   tuple spec, mode, file('dnds_csv.tsv'),
-//     file('cdsfile.tsv'),
-//     file('snps_info.txt'),
-//     file('p_directional.tsv.gz') from DNDSCV.join(CDS).join(INFO).join(PDIR)
-//
-//   output:
-//   file "$spec"
-//
-//   """
-//   Rscript ${workflow.projectDir}/dndscv_vs_pdirectional.r \
-//     dnds_csv.tsv \
-//     cdsfile.tsv \
-//     snps_info.txt \
-//     p_directional.tsv.gz \
-//     --outdir $spec
-//   """
-// }
+proces plot{
+  label 'r'
+  tag "$mut_mode $spec"
+  publishDir "$params.outdir/plot/$mut_mode", mode: 'rellink'
+
+  input:
+  tuple spec, mut_mode, file('dnds_csv.tsv'),
+    file('cdsfile.tsv'),
+    file('snps_info.txt'),
+    file('p_directional.tsv.gz') from DNDSCV.join(CDS).join(INFO).join(PDIR)
+
+  output:
+  file "$spec"
+
+  """
+  Rscript ${workflow.projectDir}/dndscv_vs_pdirectional.r \
+    dnds_csv.tsv \
+    cdsfile.tsv \
+    snps_info.txt \
+    p_directional.tsv.gz \
+    --outdir $spec
+  """
+}
 
 
 
