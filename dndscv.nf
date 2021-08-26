@@ -54,7 +54,7 @@ INFO = Channel.fromPath("$midas_dir/*", type: 'dir', maxDepth: 1)
   .map{ infile -> tuple(infile.name,
     file("$infile/snps_info.txt")) }
 
-BUILDIN = MIDAS1.join(ENOGG).join(FNA).join(GFF)
+BUILDIN = MIDAS1.join(ENOGG).join(FNA).join(GFF).view()
 
 process buildref{
   label 'r'
