@@ -113,15 +113,15 @@ process dndscv{
     midas_dir/ \
     reference.rda \
     --mode $snvs_mode \
-    --maf_thres \
+    --maf_thres $maf_thres \
     --max_coding_muts_per_sample $max_coding_muts_per_sample \
     --max_muts_per_gene_per_sample $max_muts_per_gene_per_sample \
-    --genetic_code \
+    --genetic_code $genetic_code \
     --outdir $spec
   """
 }
-//
-//
+
+
 // proces plot{
 //   label 'r'
 //   tag "$mode $spec"
