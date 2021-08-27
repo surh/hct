@@ -105,6 +105,7 @@ DNDSIN = MIDAS2.join(REF).combine(params.mut_modes)
       max_coding_muts_per_sample, max_muts_per_gene_per_sample) }
 
 process dndscv{
+  label 'big'
   label 'r'
   tag "$mut_mode $spec"
   publishDir "$params.outdir/dndscv/$mut_mode", mode: 'rellink',
@@ -168,13 +169,19 @@ process{
   maxForks = 100
   errorStrategy = 'finish'
   stageInMode = 'rellink'
-  time = '4h'
+  time = '20m'
   memory = '2G'
   withLabel: 'r'{
     module = 'R/4.1.0'
     // module = "R/4.0.2:v8/8.4.371.22" // Make sure you have ~/.R/Makevars with CXX14
   }
+  withLabel: 'big'{
+    errorStrategy = { task.attempt < 3 ? 'retry' : 'finish' }
+    time = { 60.m + (task.attempt - 1) * 120.m }
+    memory = { 2.GB + (task.attempt - 1) * 4.GB }
+  }
 }
+
 executor{
   name = 'slurm'
   queueSize = 500
