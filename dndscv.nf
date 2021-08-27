@@ -105,7 +105,7 @@ DNDSIN = MIDAS2.join(REF).combine(params.mut_modes)
       max_coding_muts_per_sample, max_muts_per_gene_per_sample) }
 
 process dndscv{
-  label 'big'
+  label 'dndscv'
   label 'r'
   tag "$mut_mode $spec"
   publishDir "$params.outdir/dndscv/$mut_mode", mode: 'rellink',
@@ -136,31 +136,29 @@ process dndscv{
   """
 }
 
-// process compare_pdir{
-//   label 'r'
-//   tag "$mut_mode $spec"
-//   publishDir "$params.outdir/plot/$mut_mode", mode: 'rellink'
-//
-//   input:
-//   tuple spec, mut_mode, file('dnds_csv.tsv'),
-//     file('cdsfile.tsv'),
-//     file('snps_info.txt'),
-//     file('p_directional.tsv.gz') from DNDSCV.join(CDS).join(INFO).join(PDIR)
-//
-//   output:
-//   file "$spec"
-//
-//   """
-//   Rscript ${workflow.projectDir}/dndscv_vs_pdirectional.r \
-//     dnds_csv.tsv \
-//     cdsfile.tsv \
-//     snps_info.txt \
-//     p_directional.tsv.gz \
-//     --outdir $spec
-//   """
-// }
+process compare_pdir{
+  label 'r'
+  tag "$mut_mode $spec"
+  publishDir "$params.outdir/plot/$mut_mode", mode: 'rellink'
 
+  input:
+  tuple spec, mut_mode, file('dnds_csv.tsv'),
+    file('cdsfile.tsv'),
+    file('snps_info.txt'),
+    file('p_directional.tsv.gz') from DNDSCV.join(CDS).join(INFO).join(PDIR)
 
+  output:
+  file "$spec"
+
+  """
+  Rscript ${workflow.projectDir}/dndscv_vs_pdirectional.r \
+    dnds_csv.tsv \
+    cdsfile.tsv \
+    snps_info.txt \
+    p_directional.tsv.gz \
+    --outdir $spec
+  """
+}
 
 // Example nextflow.config
 /*
@@ -175,7 +173,7 @@ process{
     module = 'R/4.1.0'
     // module = "R/4.0.2:v8/8.4.371.22" // Make sure you have ~/.R/Makevars with CXX14
   }
-  withLabel: 'big'{
+  withLabel: 'dndscv'{
     errorStrategy = { task.attempt < 3 ? 'retry' : 'finish' }
     time = { 60.m + (task.attempt - 1) * 120.m }
     memory = { 2.GB + (task.attempt - 1) * 4.GB }
