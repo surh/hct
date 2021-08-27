@@ -26,9 +26,9 @@ params.maf_thres = 0.8
 params.max_coding_muts_per_sample = 100
 params.max_muts_per_gene_per_sample = 10
 params.genetic_code = 1
-// params.mut_modes = ["dummy_singletons", "all_dummy", "random_top_thres",
-//   "all_thres", "all", "true_singletons", "thres_singletons"]
-params.mut_modes = ["all_dummy", "thres_singletons"]
+params.mut_modes = ["dummy_singletons", "all_dummy", "random_top_thres",
+  "all_thres", "all", "true_singletons", "thres_singletons"]
+// params.mut_modes = ["all_dummy", "thres_singletons"]
 
 
 // Process params
