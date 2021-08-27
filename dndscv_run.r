@@ -93,6 +93,15 @@ args <- process_arguments()
 #              genetic_code = 1,
 #              seed = NULL,
 #              outdir = "output")
+# args <- list(midas_dir = "midas_dir/",
+#              refdb = "reference.rda",
+#              mode = "all_dummy",
+#              maf_thres = 0.8,
+#              max_coding_muts_per_sample = 100,
+#              max_muts_per_gene_per_sample = 10,
+#              genetic_code = 1,
+#              seed = NULL,
+#              outdir = "output")
 print(args)
 
 library(tidyverse)
@@ -237,10 +246,21 @@ if(args$mode == "random_top_thres"){
 
 
 cat("Running dndscv...\n")
-res <- dndscv(mutations = Dat, refdb = args$refdb,
-              max_coding_muts_per_sample = args$max_coding_muts_per_sample,
-              max_muts_per_gene_per_sample = args$max_muts_per_gene_per_sample,
-              numcode = args$genetic_code)
+out <- tryCatch(res <- dndscv(mutations = Dat, refdb = args$refdb,
+                         max_coding_muts_per_sample = args$max_coding_muts_per_sample,
+                         max_muts_per_gene_per_sample = args$max_muts_per_gene_per_sample,
+                         numcode = args$genetic_code),
+                error = function(e) e)
+
+cat("\tChecking dndscv output...\n")
+if(any(class(out) %in% c("simpleError", "error", "condition"))){
+  if(out$message == "Zero coding substitutions found in this dataset. Unable to run dndscv. Common causes for this error are inputting only indels or using chromosome names different to those in the reference database (e.g. chr1 vs 1)"){
+    warning("dndscv_run.r: WARNING, zero samples/subsitutions left for analysis, check max_coding_muts_per_sample & max_muts_per_gene_per_sample. Pipeline will continue.")
+    q(save = "no", status = 0)
+  }else{
+    stop("ERROR: dndscv failed with unknown error message.")
+  }
+}
 
 # Prepare output dir
 cat("Creating output directory...\n")

@@ -119,8 +119,8 @@ process dndscv{
   val genetic_code from params.genetic_code
 
   output:
-  tuple spec, mut_mode, file("$spec/dnds_cv.tsv") into DNDSCV
-  file "$spec"
+  tuple spec, mut_mode, file("$spec/dnds_cv.tsv") optional true into DNDSCV
+  file "$spec" optional true
 
   """
   Rscript ${workflow.projectDir}/dndscv_run.r \
