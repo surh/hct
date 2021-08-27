@@ -26,8 +26,10 @@ params.maf_thres = 0.8
 params.max_coding_muts_per_sample = 100
 params.max_muts_per_gene_per_sample = 10
 params.genetic_code = 1
-params.mut_modes = ["dummy_singletons", "all_dummy", "random_top_thres",
-  "all_thres", "all", "true_singletons", "thres_singletons"]
+// params.mut_modes = ["dummy_singletons", "all_dummy", "random_top_thres",
+//   "all_thres", "all", "true_singletons", "thres_singletons"]
+params.mut_modes = ["all_dummy", "thres_singletons"]
+
 
 // Process params
 gff_dir = file(params.gff)
@@ -145,7 +147,7 @@ process compare_pdir{
   tuple spec, mut_mode, file('dnds_csv.tsv'),
     file('cdsfile.tsv'),
     file('snps_info.txt'),
-    file('p_directional.tsv.gz') from DNDSCV.join(CDS).join(INFO).join(PDIR)
+    file('p_directional.tsv.gz') from DNDSCV.combine(CDS, by: 0).combine(INFO, by: 0).combine(PDIR, by: 0)
 
   output:
   file "$spec"
