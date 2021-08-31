@@ -108,8 +108,13 @@ library(tidyverse)
 library(HMVAR)
 library(dndscv)
 
+# Prepare object to save general numbers
+statistics <- list()
+
 cat("Read midas data...\n")
 Dat <- HMVAR::read_midas_data(args$midas_dir, cds_only = TRUE)
+
+statistics$n_cds_snps <- nrow(Dat$info)
 
 if(args$mode == "random_top_thres"){
   cat(paste("random_top: Choosing one random sample per SNV among those that",
@@ -244,6 +249,9 @@ if(args$mode == "random_top_thres"){
   stop("ERROR: mode not recognized")
 }
 
+statistics$n_sites_mutated <- length(unique(paste(Dat$chr, Dat$pos)))
+statistics$n_muts <- nrow(Dat)
+statistics$n_samples <- length(unique(Dat$sampleID))
 
 cat("Running dndscv...\n")
 out <- tryCatch(res <- dndscv(mutations = Dat, refdb = args$refdb,
@@ -252,20 +260,27 @@ out <- tryCatch(res <- dndscv(mutations = Dat, refdb = args$refdb,
                          numcode = args$genetic_code),
                 error = function(e) e)
 
-cat("\tChecking dndscv output...\n")
-if(any(class(out) %in% c("simpleError", "error", "condition"))){
-  if(out$message == "Zero coding substitutions found in this dataset. Unable to run dndscv. Common causes for this error are inputting only indels or using chromosome names different to those in the reference database (e.g. chr1 vs 1)"){
-    warning("dndscv_run.r: WARNING, zero samples/subsitutions left for analysis, check max_coding_muts_per_sample & max_muts_per_gene_per_sample. Pipeline will continue.")
-    q(save = "no", status = 0)
-  }else{
-    stop("ERROR: dndscv failed with unknown error message.")
-  }
-}
-
 # Prepare output dir
 cat("Creating output directory...\n")
 if(!dir.exists(args$outdir)){
   dir.create(args$outdir)
+}
+
+cat("\tChecking dndscv output...\n")
+if(any(class(out) %in% c("simpleError", "error", "condition"))){
+  if(out$message == "Zero coding substitutions found in this dataset. Unable to run dndscv. Common causes for this error are inputting only indels or using chromosome names different to those in the reference database (e.g. chr1 vs 1)"){
+    warning("dndscv_run.r: WARNING, zero samples/subsitutions left for analysis, check max_coding_muts_per_sample & max_muts_per_gene_per_sample. Pipeline will continue.")
+    # Statsitics about the processing
+    
+    cat("Writing statistics...\n")
+    filename <- file.path(args$outdir, "statistics.tsv")
+    write_tsv(tibble(statistic = names(statistics),
+                     value = unlist(statistics)), filename)
+    
+    q(save = "no", status = 0)
+  }else{
+    stop("ERROR: dndscv failed with unknown error message.")
+  }
 }
 
 cat("Writing local dnds...\n")
@@ -285,3 +300,12 @@ res$sel_cv %>%
   arrange(desc(wmis_cv)) %>%
   write_tsv(filename)
 
+cat("Collecting data about results...\n")
+statistics$n_local_cds <- nrow(res$sel_loc)
+statistics$n_cv_cds <- nrow(res$sel_cv)
+
+# Statsitics about the processing
+cat("Writing statistics...\n")
+filename <- file.path(args$outdir, "statistics.tsv")
+write_tsv(tibble(statistic = names(statistics),
+                 value = unlist(statistics)), filename)
