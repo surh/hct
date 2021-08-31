@@ -21,7 +21,7 @@ library(argparser)
 process_arguments <- function(){
   p <- arg_parser(paste("Script that takes an UHGG genome, annotations, and",
                         "MIDAS SNPs and creates a dndscv reference."))
-  
+
   # Positional arguments
   p <- add_argument(p, "gff",
                     help = paste("GFF3 format with for extracting CDSs.",
@@ -37,7 +37,7 @@ process_arguments <- function(){
   p <- add_argument(p, "midas_dir",
                     help = "Directory with output of midas_merge.py",
                     type = "character")
-  
+
   # Optional arguments
   p <- add_argument(p, "--outdir",
                     help = paste("Directory path to store outputs."),
@@ -48,13 +48,13 @@ process_arguments <- function(){
                                   "Alternative is 'emapper1'"),
                      type = "character",
                      default = "uhgg")
-                     
+
   # Read arguments
   cat("Processing arguments...\n")
   args <- parse_args(p)
-  
+
   # Process arguments
-  
+
   return(args)
 }
 
@@ -65,11 +65,63 @@ args <- process_arguments()
 #              midas_dir,
 #              enogg_format = "uhgg",
 #              outdir)
+# args <- list(gff = "genes.gff",
+#              enogg = "eggnog.tsv",
+#              genome_fna = "genome.fna",
+#              midas_dir = "midas_dir/",
+#              enogg_format = 'uhgg',
+#              outdir = "out")
 print(args)
 
 library(tidyverse)
 library(dndscv)
 library(seqinr)
+
+# Prepare object to save general numbers
+statistics <- list()
+
+# Build custom reference
+cat("Preparing reference genome...\n")
+# Read midas data
+cat("\tReading MIDAS data...\n")
+Dat <- HMVAR::read_midas_data(args$midas_dir, cds_only = TRUE)
+
+# Identify positions to change in reference
+cat("\tIdentifying sites to change...\n")
+to_change <- Dat$info %>%
+  filter(ref_allele != major_allele) %>%
+  select(ref_id, ref_pos, ref_allele, major_allele, minor_allele) %>%
+  mutate(major_allele = tolower(major_allele),
+         minor_allele = tolower(minor_allele),
+         ref_allele = tolower(ref_allele))
+
+# Read fasta
+cat("\tReading original genome fasta...\n")
+seq <- read.fasta(args$genome_fna)
+
+# Change positions
+cat("\tChanging sites...\n")
+for(i in 1:nrow(to_change)){
+  seq[[to_change$ref_id[i]]][to_change$ref_pos[i]] <- to_change$major_allele[i]
+}
+
+# Prepare output dir
+if(!dir.exists(args$outdir)){
+  dir.create(args$outdir)
+}
+
+# Write custom ref for dnds
+cat("\tWriting new reference...\n")
+ref_fna <- file.path(args$outdir, "reference.fna")
+write.fasta(seq, names = names(seq), file.out = ref_fna)
+
+# Basic genome stats
+cat("Collecting basic genome stats\n")
+statistics$n_contigs <- length(seq)
+statistics$genome_size <- seq %>% map_int(length) %>% sum
+statistics$ambiguous_bases <- seq %>% map_int(~ sum(!(.x %in% c("a", "c", "g", "t")))) %>% sum
+statistics$changed_ref_bases <- nrow(to_change)
+# statistics
 
 # Read gene defintions
 cat("Reading gene defintions from GFF3 file...\n")
@@ -90,10 +142,35 @@ gff$gene.id <- gff$X9 %>%
   })
 # gff
 
+statistics$n_feats <- nrow(gff)
+statistics$n_cds <- sum(gff$X3 == "CDS")
+# statistics
+
+cat("\tDeleting features with ambiguous bases...\n")
+feats_to_remove <- NULL
+for(i in 1:nrow(gff)){
+  gene_seq <- seq[[gff$X1[i]]][ gff$X4[i]:gff$X5[i] ]
+  if(any(!(gene_seq %in% c("a", "c", "g", "t")))){
+    cat("\t\tRemoving feature", gff$gene.id[i], "\n")
+    feats_to_remove <- c(feats_to_remove, gff$gene.id[i])
+  }
+}
+gff <- gff %>%
+  filter(!(gene.id %in% feats_to_remove))
+
+
+statistics$n_feats_noamb <- nrow(gff)
+statistics$n_cds_noamb <- sum(gff$X3 == "CDS")
+# statistics
+
 # Annotations provide gene names
 cat("Reading eggNOG annotations...\n")
 annot <- HMVAR::read_eggnog(args$enogg,
                             format = args$enogg_format)
+
+
+statistics$n_annotated <- nrow(annot)
+statistics$n_named <- sum(!is.na(annot$predicted_gene_name))
 
 # Create cds object for cds file
 cat("Creating CDS file...\n")
@@ -118,50 +195,20 @@ cds <- gff %>%
   mutate(gene_num = gene.id %>%
            str_split(pattern = "_") %>%
            map_chr(~ .x[3])) %>%
-  mutate(gene.name = replace(gene.name, !is.na(gene.name), paste(gene.name[!is.na(gene.name)], gene_num[!is.na(gene.name)], sep = ":"))) %>%
-  mutate(gene.name = replace(gene.name, is.na(gene.name), gene.id[ is.na(gene.name) ])) %>%
+  mutate(gene.name = replace(gene.name, !is.na(gene.name),
+                             paste(gene.name[!is.na(gene.name)],
+                                   gene_num[!is.na(gene.name)], sep = ":"))) %>%
+  mutate(gene.name = replace(gene.name, is.na(gene.name),
+                             gene.id[ is.na(gene.name) ])) %>%
   select(-gene_num)
-
-# Prepare output dir
-if(!dir.exists(args$outdir)){
-  dir.create(args$outdir)
-}
-
 cds_tsv <- file.path(args$outdir, "cdsfile.tsv")
 write_tsv(cds, cds_tsv)
-# name2id <- cds %>%
-#   select(gene_name = gene.name, gene_id = gene.id)
 
-### Build new reference file so I can include all sites
-cat("Preparing reference genome...\n")
-# Read midas data
-cat("\tReading MIDAS data...\n")
-Dat <- HMVAR::read_midas_data(args$midas_dir, cds_only = TRUE)
-# site2gene <- Dat$info %>% select(site_id, gene_id)
-
-# Identify positions to change in reference
-cat("\tIdentifying sites to change...\n")
-to_change <- Dat$info %>%
-  filter(ref_allele != major_allele) %>%
-  select(ref_id, ref_pos, ref_allele, major_allele, minor_allele) %>%
-  mutate(major_allele = tolower(major_allele),
-         minor_allele = tolower(minor_allele),
-         ref_allele = tolower(ref_allele))
-
-# Read fasta
-cat("\tReading original genome fasta...\n")
-seq <- read.fasta(args$genome_fna)
-
-# Change positions
-cat("\tChanging sites...\n")
-for(i in 1:nrow(to_change)){
-  seq[[to_change$ref_id[i]]][to_change$ref_pos[i]] <- to_change$major_allele[i]
-}
-
-# Write custom ref for dnds
-cat("\tWriting new reference...\n")
-ref_fna <- file.path(args$outdir, "reference.fna")
-write.fasta(seq, names = names(seq), file.out = ref_fna)
+# Statsitics about the processing
+cat("Writing statistics...\n")
+filename <- file.path(args$outdir, "statistics.tsv")
+write_tsv(tibble(statistic = names(statistics),
+                 value = unlist(statistics)), filename)
 
 # Build reference
 cat("Building reference...\n")
