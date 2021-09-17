@@ -103,7 +103,10 @@ FIT <- function(Dat){
 # https://www.genetics.org/content/196/2/509
 
 
-meta <- read_tsv(args$map)
+meta <- read_tsv(args$map,
+                 col_types = cols(sample = col_character(),
+                                  pt = col_character(),
+                                  date = col_date(format = "%Y-%m-%d")))
 # meta
 cat("Reading data...\n")
 Dat <- read_midas_data(args$midas_dir)
