@@ -1,3 +1,52 @@
+#!/usr/bin/env Rscript
+
+# (C) Copyright 2021 Sur Herrera Paredes
+# This file is part of This program.
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
+process_arguments <- function(){
+  p <- arg_parser(paste("Calculate selection coefficient (Feder et. al 2014)"))
+  
+  # Positional arguments
+  p <- add_argument(p, "midas_dir",
+                    help = paste("Directory with output from midas_merge.py"),
+                    type = "character")
+  p <- add_argument(p, "map",
+                    help = paste("Metadata file. Needs 'sample', 'pt', and
+                                 'date'"),
+                    type = "character")
+  
+  # Optional arguments
+  p <- add_argument(p, "--output",
+                    help = paste("File to write results"),
+                    type = "character",
+                    default = "s_coef.tsv")
+  
+  # Read arguments
+  cat("Processing arguments...\n")
+  args <- parse_args(p)
+  
+  # Process arguments
+  
+  return(args)
+}
+
+args <- process_arguments()
+print(args)
+
 library(tidyverse)
 library(HMVAR)
 
@@ -39,18 +88,23 @@ s_coefficient <- function(Dat){
 }
 
 
-meta <- read_tsv("meta.txt")
-meta
-Dat <- read_midas_data("Fplautii_merged/")
+meta <- read_tsv(args$map,
+                 col_types = cols(sample = col_character(),
+                                  pt = col_character(),
+                                  date = col_date(format = "%Y-%m-%d")))
+
+cat("Reading data...\n")
+Dat <- read_midas_data(args$midas_dir)
 Dat <- match_freq_and_depth(freq = Dat$freq,
                             depth = Dat$depth,
                             info = Dat$info %>%
                               select(site_id, ref_id, ref_pos),
                             map = meta,
                             depth_thres = 1)
-Dat
 
+cat("Calculating selection coefficients (s)...")
 Res <- s_coefficient(Dat) %>%
   arrange(desc(abs(s)))
-Res
-write_tsv(Res, "output/Fplautii.s_coefficient.tsv")
+
+cat("Writing results...\n")
+write_tsv(Res, args$output)
