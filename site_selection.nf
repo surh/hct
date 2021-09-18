@@ -41,7 +41,7 @@ process FIT {
   Rscript $workflow.projectDir/fit_test.r \
     $midas_dir \
     $meta \
-    --output ${spec.tsv}
+    --output ${spec}.tsv
   """
 
 }
@@ -62,7 +62,7 @@ process S_COEF {
   Rscript $workflow.projectDir/s_coef.r \
     $midas_dir \
     $meta \
-    --output ${spec.tsv}
+    --output ${spec}.tsv
   """
 
 }
