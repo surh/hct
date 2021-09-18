@@ -46,6 +46,9 @@ process_arguments <- function(){
 }
 
 args <- process_arguments()
+# args <- list(midas_dir = "merged/MGYG-HGUT-00032/",
+#              map = "meta.txt",
+#              output = "FIT.tsv")
 print(args)
 
 library(tidyverse)
@@ -58,16 +61,12 @@ library(HMVAR)
 #' @param Dat Tibble, must have site_id, freq, pt,
 #' date, ref_id & ref_pos columns
 #'
-#' @return A tibble
+#' @return A tibble. Empty if no site x pt combination has at least three
+#' timepoints
 #' @export
 FIT <- function(Dat){
   Dat %>%
     dplyr::filter(freq != 1 & freq != 0) %>%
-    # head(10000) %>%
-    # filter(site_id %in% c("100035", "100073", "100087", "69024", "69024", "69027")) %>%
-    # arrange(site_id, pt, date) %>%
-    # group_by(site_id, pt) %>% 
-    # summarise(Y = diff(freq))
     split(list(.$site_id, .$pt)) %>%
     purrr::map_dfr(function(d){
       
@@ -118,8 +117,12 @@ Dat <- match_freq_and_depth(freq = Dat$freq,
                             depth_thres = 1)
 
 cat("Performing FIT test...\n")
-Res <- FIT(Dat) %>%
-  arrange(pval)
-
-cat("Writing results...\n")
-write_tsv(Res, args$output)
+Res <- FIT(Dat) 
+if(nrow(Res) > 0){
+  cat("Ordering & writing results...\n")
+  Res %>%
+    arrange(pval) %>%
+    write_tsv(args$output)
+}else{
+  warning("WARNING: no site x pt combination had at least three timepoints...\n")
+}

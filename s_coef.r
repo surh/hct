@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+library(argparser)
 
 process_arguments <- function(){
   p <- arg_parser(paste("Calculate selection coefficient (Feder et. al 2014)"))
@@ -103,8 +104,13 @@ Dat <- match_freq_and_depth(freq = Dat$freq,
                             depth_thres = 1)
 
 cat("Calculating selection coefficients (s)...")
-Res <- s_coefficient(Dat) %>%
-  arrange(desc(abs(s)))
+Res <- s_coefficient(Dat)
+if(nrow(Res) > 0){
+  cat("Ordering & writing results...\n")
+  Res %>%
+    arrange(desc(abs(s))) %>%
+    write_tsv(args$output)
+}else{
+  warning("WARNING: no site x pt combination had at least two timepoints...\n")
+}
 
-cat("Writing results...\n")
-write_tsv(Res, args$output)
