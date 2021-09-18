@@ -25,7 +25,7 @@ Channel.fromPath("$params.midas_dir/*", type: 'dir')
   .map{ dirname -> tuple(dirname.name, file(dirname)) }
   .into{MIDAS1; MIDAS2}
 
-process FIT{
+process FIT {
   label 'r'
   tag "$spec"
   publishDir "$params.outdir/FIT", mode: 'rellink'
@@ -46,7 +46,7 @@ process FIT{
 
 }
 
-process FIT{
+process S_COEF {
   label 'r'
   tag "$spec"
   publishDir "$params.outdir/s_coef", mode: 'rellink'
