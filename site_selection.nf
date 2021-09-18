@@ -32,7 +32,7 @@ process FIT {
 
   input:
   tuple spec, file(midas_dir) from MIDAS1
-  file meta from params.meta
+  file meta from file(params.meta)
 
   output:
   tuple spec, file("${spec}.tsv") optional true
@@ -53,7 +53,7 @@ process S_COEF {
 
   input:
   tuple spec, file(midas_dir) from MIDAS2
-  file meta from params.meta
+  file meta from file(params.meta)
 
   output:
   tuple spec, file("${spec}.tsv") optional true
