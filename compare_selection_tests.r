@@ -288,7 +288,7 @@ compare_sel_results <- function(pdir = NULL, s_coef = NULL, fit = NULL,
     write_tsv(Cors, file.path(outdir, "cors.tsv"))
   }
   
-  return(list(Pvf = PvF, PvS = PvS))
+  return(list(PvF = PvF$dat, PvS = PvS$dat))
 }
 
 process_arguments <- function(){
@@ -366,8 +366,10 @@ if(args$type == 'single'){
   cat("\t", sum(!is.na(Files$s_coef)), " also have s_coef file...\n", sep = "")
   cat("\t", sum(!is.na(Files$fit)), " also have FIT file...\n", sep = "")
   
+  # print(Files)
+  
   Files <- Files %>%
-    filter(!(is.na(s_coef) && is.na(fit)))
+    filter(!(is.na(s_coef) & is.na(fit)))
   cat("\t", nrow(Files), " specs to analyze...\n", sep = "")
   
   # Prepare output dir
@@ -376,7 +378,7 @@ if(args$type == 'single'){
   }
   
   PvS <- PvF <- NULL
-  for(i in nrow(Files)){
+  for(i in 1:nrow(Files)){
     spec <- Files$spec[i]
     cat(spec, "\n")
     Res <- compare_sel_results(pdir = Files$pdir[i],
@@ -384,25 +386,32 @@ if(args$type == 'single'){
                                fit = Files$fit[i],
                                outdir = file.path(args$outdir, spec))
     
-    if(!is.null(PvF)){
-      PvF <- PvF %>%
-        bind_rows(Res$PvF %>% mutate(spec = spec))
-    }
-    if(!is.null(PvS)){
+    if(!is.null(Res$PvS)){
       PvS <- PvS %>%
         bind_rows(Res$PvS %>% mutate(spec = spec))
+    }
+    if(!is.null(Res$PvF)){
+      PvF <- PvF %>%
+        bind_rows(Res$PvF %>% mutate(spec = spec))
     }
   }
   
   # Overall plots
+  cat("Overall analysis...\n")
   ov_outdir <- file.path(args$outdir, "overall")
   ov_sdir <- file.path(ov_outdir, "s_coef")
-  ov_sdir <- file.path(ov_outdir, "FIT")
+  ov_fitdir <- file.path(ov_outdir, "FIT")
   dir.create(ov_outdir)
-  plot_pvs(PvS, ov_outdir)
-  plot_pvf(PvF, ov_outdir)
+  dir.create(ov_sdir)
+  dir.create(ov_fitdir)
+  
+  # Plots
+  cat("\tPlotting...\n")
+  plot_pvs(PvS, ov_sdir)
+  plot_pvf(PvF, ov_fitdir)
   
   # Overall cors
+  cat("\tCorrelations...\n")
   thres <- c(0, 0.5, 0.6, 0.7, 0.8)
   rs <- NULL
   for(u in thres){
