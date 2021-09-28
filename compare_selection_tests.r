@@ -207,7 +207,7 @@ pdir_vs_fit <- function(Pdir, Fit, outdir = "./", plot = TRUE){
   return(list(dat = Dat, cors = Cors))
 }
 
-plot_pfv <- function(Dat, outdir){
+plot_pvf <- function(Dat, outdir){
   # Compare numbers
   p1 <- ftable(pdir.pts ~ fit.pts, data = Dat) %>%
     as_tibble() %>%
