@@ -237,6 +237,52 @@ pdir_vs_fit <- function(Pdir, Fit, outdir = "./", plot = TRUE){
   return(list(dat = Dat, cors = Cors))
 }
 
+compare_sel_results <- function(pdir = NULL, s_coef = NULL, fit = NULL,
+                                outdir = "output/"){
+  # Read results tables
+  cat("Reading selection test results...\n")
+  Sel <- read_sel_tests(pdir = pdir, s_coef = s_coef, fit = fit)
+  
+  cat("Calculate number of tests...\n")
+  Ntests <- count_tests(Dat = Sel)
+  write_tsv(Ntests, file.path(outdir, "ntests.tsv"))
+  
+  # Prepare output dir
+  cat("Prepare output directory...\n")
+  if(!dir.exists(outdir)){
+    fit_dir <- file.path(outdir, "FIT")
+    s_dir <- file.path(outdir, "s_coef")
+    dir.create(outdir)
+    dir.create(fit_dir)
+    dir.create(s_dir)
+  }
+  
+  # Compare tests
+  Cors <- PvS <- PvF <- NULL
+  if(!is.null(Sel$pdir) && !is.null(Sel$s_coef)){
+    cat("Compare p_directional versus selection coefficient (s)...\n")
+    PvS <- pdir_vs_scoef(Pdir = Sel$pdir, Scoef = Sel$s_coef,
+                         outdir = s_dir, plot = TRUE)
+    
+    Cors <- Cors %>%
+      bind_rows(PvS$cors)
+  }
+  if(!is.null(Sel$pdir) && !is.null(Sel$fit)){
+    cat("Compare p_directional versus FIT...\n")
+    PvF <- pdir_vs_fit(Pdir = Sel$pdir, Fit = Sel$fit,
+                       outdir = fit_dir, plot = TRUE)
+    Cors <- Cors %>%
+      bind_rows(PvF$cors)
+  }
+  
+  if(!is.null(Cors)){
+    cat("Writing summaries...\n")
+    write_tsv(Cors, file.path(outdir, "cors.tsv"))
+  }
+  
+  return(list(Pvf = PvF, PvS = PvS))
+}
+
 args <- list(pdir = "p_directional/MGYG-HGUT-00074.tsv.gz",
              s_coef = "s_coef/MGYG-HGUT-00074.tsv",
              fit = "FIT/MGYG-HGUT-00074.tsv",
@@ -247,40 +293,22 @@ print(args)
 library(tidyverse)
 library(ggforce)
 
-compare_sel_results <- function(pdir = NULL, s_coef = NULL, fit = NULL, outdir = "./"){
-  # Read results tables
-  cat("Reading selection test results...\n")
-  Sel <- read_sel_tests(pdir = pdir, s_coef = s_coef, fit = args$pdir)
+
+if(args$type == 'single'){
+  Res <- compare_sel_results(pdir = args$pdir,
+                             s_coef = args$s_coef,
+                             fit = args$fit,
+                             outdir = args$outdir)
+}else if(args$type == 'multi'){
   
+}else{
+  stop("ERROR: only type 'single' and 'multi' are supported")
 }
 
 
-cat("Calculate number of tests...\n")
-Ntests <- count_tests(Dat = Sel)
-write_tsv(Ntests, file.path(args$outdir, "ntests.tsv"))
-
-# Prepare output dir
-cat("Prepare output directory...\n")
-if(!dir.exists(args$outdir)){
-  args$fit_dir <- file.path(args$outdir, "FIT")
-  args$s_dir <- file.path(args$outdir, "s_coef")
-  dir.create(args$outdir)
-  dir.create(args$fit_dir)
-  dir.create(args$s_dir)
-}
-
-# Compare tests
-if(!is.null(Sel$pdir) && !is.null(Sel$s_coef)){
-  cat("Compare p_directional versus selection coefficient (s)...\n")
-  PvS <- pdir_vs_scoef(Pdir = Sel$pdir, Scoef = Sel$s_coef,
-                       outdir = args$s_dir, plot = TRUE)
-}
-if(!is.null(Sel$pdir) && !is.null(Sel$fit)){
-  cat("Compare p_directional versus FIT...\n")
-  PvF <- pdir_vs_fit(Pdir = Sel$pdir, Fit = Sel$fit, outdir = args$fit_dir, plot = TRUE)
-}
 
 
-cat("Writing summaries...\n")
-write_tsv(Cors, file.path(args$outdir, "cors.tsv"))
+
+
+
 
