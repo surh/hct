@@ -18,10 +18,10 @@
 
 library(argparser)
 
-read_sel_tests <- function(pdir = NULL, s_coef = NULL, fit = NULL){
+read_sel_tests <- function(pdir = NA, s_coef = NA, fit = NA){
   res <- list(pdir = NULL, s_coef = NULL, fit = NULL)
   
-  if(!is.null(pdir)){
+  if(!is.na(pdir)){
     cat("\tReading & processing p_directional...\n")
     res$pdir <- read_tsv(pdir,
                          col_types = cols(site_id = col_character()))
@@ -31,7 +31,7 @@ read_sel_tests <- function(pdir = NULL, s_coef = NULL, fit = NULL){
     res$pdir <- res$pdir %>%
       mutate(signed_or = sign(n_increase - n_decrease) * p_directional / (1 - p_directional))
   }
-  if(!is.null(s_coef)){
+  if(!is.na(s_coef)){
     cat("\tReading & processing selection coefficient (s)...\n")
     res$s_coef <- read_tsv(s_coef,
                            col_types = cols(site_id = col_character(),
@@ -52,7 +52,7 @@ read_sel_tests <- function(pdir = NULL, s_coef = NULL, fit = NULL){
     # table(sign(Scoef$s.mean) == sign(Scoef$t.s), useNA = 'always')
     
   }
-  if(!is.null(fit)){
+  if(!is.na(fit)){
     cat("\tReading & processing FIT...\n")
     res$fit <- read_tsv(fit,
                         col_types = cols(site_id = col_character(),
@@ -337,6 +337,56 @@ if(args$type == 'single'){
                              fit = args$fit,
                              outdir = args$outdir)
 }else if(args$type == 'multi'){
+  write("Reading files in input dirs...\n")
+  pdirs <- list.files(args$pdir, full.names = TRUE, recursive = FALSE)
+  pdirs <- tibble(spec = pdirs %>% basename %>% str_remove(pattern = "[.]tsv[.]gz$"),
+         pdir = pdirs)
+  
+  scoefs <- list.files(args$s_coef, full.names = TRUE, recursive = FALSE) 
+  scoefs <- tibble(spec = scoefs %>% basename %>% str_remove(pattern = "[.]tsv$"),
+                   s_coef = scoefs)
+  
+  fits <- list.files(args$fit, full.names = TRUE, recursive = FALSE)
+  fits <- tibble(spec = fits %>% basename %>% str_remove(pattern = "[.]tsv$"),
+                 fit = fits)
+  
+  # Cat matching files
+  Files <- pdirs %>%
+    left_join(scoefs, by = "spec") %>%
+    left_join(fits, by = "spec")
+  
+  cat("\t", nrow(Files), " p_directional files...\n", sep = "")
+  cat("\t", sum(!is.na(Files$s_coef)), " also have s_coef file...\n", sep = "")
+  cat("\t", sum(!is.na(Files$fit)), " also have FIT file...\n", sep = "")
+  
+  Files <- Files %>%
+    filter(!(is.na(s_coef) && is.na(fit)))
+  cat("\t", nrow(Files), " specs to analyze...\n", sep = "")
+  
+  # Prepare output dir
+  if(!dir.exists(args$outdir)){
+    dir.create(args$outdir)
+  }
+  
+  PvS <- PvF <- NULL
+  for(i in nrow(Files)){
+    spec <- Files$spec[i]
+    cat(spec, "\n")
+    Res <- compare_sel_results(pdir = Files$pdir[i],
+                               s_coef = Files$s_coef[i],
+                               fit = Files$fit[i],
+                               outdir = file.path(args$outdir, spec))
+    
+    if(!is.null(PvF)){
+      PvF <- PvF %>%
+        bind_rows(Res$PvF %>% mutate(spec = spec))
+    }
+    if(!is.null(PvS)){
+      PvS <- PvS %>%
+        bind_rows(Res$PvS %>% mutate(spec = spec))
+    }
+  }
+  
   
 }else{
   stop("ERROR: only type 'single' and 'multi' are supported")
