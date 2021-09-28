@@ -16,12 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+library(argparser)
+
 read_sel_tests <- function(pdir = NULL, s_coef = NULL, fit = NULL){
   res <- list(pdir = NULL, s_coef = NULL, fit = NULL)
   
   if(!is.null(pdir)){
     cat("\tReading & processing p_directional...\n")
-    res$pdir <- read_tsv(args$pdir,
+    res$pdir <- read_tsv(pdir,
                          col_types = cols(site_id = col_character()))
     
     # Get signed odds ratio for p_directional. This needs to be changed to
@@ -31,7 +33,7 @@ read_sel_tests <- function(pdir = NULL, s_coef = NULL, fit = NULL){
   }
   if(!is.null(s_coef)){
     cat("\tReading & processing selection coefficient (s)...\n")
-    res$s_coef <- read_tsv(args$s_coef,
+    res$s_coef <- read_tsv(s_coef,
                            col_types = cols(site_id = col_character(),
                                             ref_id = col_character()))
     
@@ -52,7 +54,7 @@ read_sel_tests <- function(pdir = NULL, s_coef = NULL, fit = NULL){
   }
   if(!is.null(fit)){
     cat("\tReading & processing FIT...\n")
-    res$fit <- read_tsv(args$fit,
+    res$fit <- read_tsv(fit,
                         col_types = cols(site_id = col_character(),
                                          ref_id = col_character()))
     
@@ -172,7 +174,6 @@ pdir_vs_scoef <- function(Pdir, Scoef, outdir = "./", plot = TRUE){
 }
 
 
-
 pdir_vs_fit <- function(Pdir, Fit, outdir = "./", plot = TRUE){
   # Comapre p_directional vs FIT
   Dat <- Pdir %>%
@@ -229,10 +230,10 @@ pdir_vs_fit <- function(Pdir, Fit, outdir = "./", plot = TRUE){
                 Dat$z.score[Dat$p_directional >= u],
                 method = 'spearman'))
   }
-  Cors <- bind_rows(Cors,
-                    tibble(pdir_thres = thres,
-                           r = rs,
-                           method = 'FIT'))
+  
+  Cors <- tibble(pdir_thres = thres,
+                 r = rs,
+                 method = 'FIT')
   
   return(list(dat = Dat, cors = Cors))
 }
@@ -243,10 +244,6 @@ compare_sel_results <- function(pdir = NULL, s_coef = NULL, fit = NULL,
   cat("Reading selection test results...\n")
   Sel <- read_sel_tests(pdir = pdir, s_coef = s_coef, fit = fit)
   
-  cat("Calculate number of tests...\n")
-  Ntests <- count_tests(Dat = Sel)
-  write_tsv(Ntests, file.path(outdir, "ntests.tsv"))
-  
   # Prepare output dir
   cat("Prepare output directory...\n")
   if(!dir.exists(outdir)){
@@ -256,6 +253,10 @@ compare_sel_results <- function(pdir = NULL, s_coef = NULL, fit = NULL,
     dir.create(fit_dir)
     dir.create(s_dir)
   }
+  
+  cat("Calculate number of tests...\n")
+  Ntests <- count_tests(Dat = Sel)
+  write_tsv(Ntests, file.path(outdir, "ntests.tsv"))
   
   # Compare tests
   Cors <- PvS <- PvF <- NULL
@@ -283,11 +284,47 @@ compare_sel_results <- function(pdir = NULL, s_coef = NULL, fit = NULL,
   return(list(Pvf = PvF, PvS = PvS))
 }
 
-args <- list(pdir = "p_directional/MGYG-HGUT-00074.tsv.gz",
-             s_coef = "s_coef/MGYG-HGUT-00074.tsv",
-             fit = "FIT/MGYG-HGUT-00074.tsv",
-             type = 'single',
-             outdir = "output")
+process_arguments <- function(){
+  p <- arg_parser(paste("Compare multiple directional selection tests"))
+  
+  # Positional arguments
+  p <- add_argument(p, "pdir",
+                    help = paste("Results from p_directional"),
+                    type = "character")
+  p <- add_argument(p, "s_coefr",
+                    help = paste("Results from selection coefficient (s)"),
+                    type = "character")
+  p <- add_argument(p, "fit",
+                    help = paste("Results from Frequency Increase (FIT) test"),
+                    type = "character")
+  
+  # Optional arguments
+  p <- add_argument(p, "--outdir",
+                    help = paste("Directory path to store outputs."),
+                    default = "output/",
+                    type = "character")
+  p <- add_argument(p, "--type",
+                     help = paste("If single, 'pdir', 's_coef' and 'fit' must",
+                                  "be single files. If 'multi' then they",
+                                  "must be directories."),
+                     type = "character",
+                     default = "single")
+                     
+  # Read arguments
+  cat("Processing arguments...\n")
+  args <- parse_args(p)
+  
+  # Process arguments
+  
+  return(args)
+}
+
+args <- process_arguments()
+# args <- list(pdir = "p_directional/MGYG-HGUT-00074.tsv.gz",
+#              s_coef = "s_coef/MGYG-HGUT-00074.tsv",
+#              fit = "FIT/MGYG-HGUT-00074.tsv",
+#              type = 'single',
+#              outdir = "output")
 print(args)
 
 library(tidyverse)
