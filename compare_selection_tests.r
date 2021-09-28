@@ -111,50 +111,7 @@ pdir_vs_scoef <- function(Pdir, Scoef, outdir = "./", plot = TRUE){
                by = "site_id")
   
   if(plot){
-    # Compare numbers
-    p1 <- ftable(pdir.pts ~ s.pts, data = Dat) %>%
-      as_tibble() %>%
-      mutate(s.pts = as.numeric(as.character(s.pts)),
-             pdir.pts = as.numeric(as.character(pdir.pts))) %>%
-      ggplot(aes(x = pdir.pts, y = s.pts)) +
-      geom_abline(slope = 1) +
-      geom_point(aes(size = Freq)) +
-      scale_size_continuous(range=c(-1, 5)) +
-      AMOR::theme_blackbox()
-    filename <- file.path(outdir, "npts.png")
-    ggsave(filename, p1, width = 5, height = 5, dpi = 150)
-    
-    # Compare unsigned
-    p1 <- Dat %>%
-      filter(!is.na(s.pval)) %>%
-      ggplot(aes(x = p_directional / (1 - p_directional), y = -log10(s.pval))) +
-      geom_point(aes(col = s.pts)) +
-      scale_color_gradient(low = "blue", high = "red") +
-      geom_smooth(method = "lm", formula = y ~ x) +
-      AMOR::theme_blackbox()
-    filename <- file.path(outdir, "unsigned.png")
-    ggsave(filename, p1, width = 6, height = 5, dpi = 150)
-    
-    # Compare signed all
-    p1 <-  Dat %>%
-      ggplot(aes(x = signed_or, y = s.mean)) +
-      geom_point(aes(col = s.pts)) +
-      scale_color_gradient(low = "blue", high = "red") +
-      geom_smooth(method = "lm", formula = y ~ x) +
-      AMOR::theme_blackbox()
-    filename <- file.path(outdir, "signed_all.png")
-    ggsave(filename, p1, width = 6, height = 5, dpi = 150)
-    
-    # Compare signed tested
-    p1 <-  Dat %>%
-      filter(!is.na(s.pval)) %>%
-      ggplot(aes(x = signed_or, y = -log10(s.pval) * sign(s.mean))) +
-      geom_point(aes(col = s.pts)) +
-      scale_color_gradient(low = "blue", high = "red") +
-      geom_smooth(method = "lm", formula = y ~ x) +
-      AMOR::theme_blackbox()
-    filename <- file.path(outdir, "signed_tested.png")
-    ggsave(filename, p1, width = 6, height = 5, dpi = 150)
+    plot_pvs(Dat = Dat, outdir = outdir)
   }
   
   cat("\tcalculating correlations...\n")
@@ -173,6 +130,52 @@ pdir_vs_scoef <- function(Pdir, Scoef, outdir = "./", plot = TRUE){
   return(list(dat = Dat, cors = Cors))
 }
 
+plot_pvs <- function(Dat, outdir){
+  # Compare numbers
+  p1 <- ftable(pdir.pts ~ s.pts, data = Dat) %>%
+    as_tibble() %>%
+    mutate(s.pts = as.numeric(as.character(s.pts)),
+           pdir.pts = as.numeric(as.character(pdir.pts))) %>%
+    ggplot(aes(x = pdir.pts, y = s.pts)) +
+    geom_abline(slope = 1) +
+    geom_point(aes(size = Freq)) +
+    scale_size_continuous(range=c(-1, 5)) +
+    AMOR::theme_blackbox()
+  filename <- file.path(outdir, "npts.png")
+  ggsave(filename, p1, width = 5, height = 5, dpi = 150)
+  
+  # Compare unsigned
+  p1 <- Dat %>%
+    filter(!is.na(s.pval)) %>%
+    ggplot(aes(x = p_directional / (1 - p_directional), y = -log10(s.pval))) +
+    geom_point(aes(col = s.pts)) +
+    scale_color_gradient(low = "blue", high = "red") +
+    geom_smooth(method = "lm", formula = y ~ x) +
+    AMOR::theme_blackbox()
+  filename <- file.path(outdir, "unsigned.png")
+  ggsave(filename, p1, width = 6, height = 5, dpi = 150)
+  
+  # Compare signed all
+  p1 <-  Dat %>%
+    ggplot(aes(x = signed_or, y = s.mean)) +
+    geom_point(aes(col = s.pts)) +
+    scale_color_gradient(low = "blue", high = "red") +
+    geom_smooth(method = "lm", formula = y ~ x) +
+    AMOR::theme_blackbox()
+  filename <- file.path(outdir, "signed_all.png")
+  ggsave(filename, p1, width = 6, height = 5, dpi = 150)
+  
+  # Compare signed tested
+  p1 <-  Dat %>%
+    filter(!is.na(s.pval)) %>%
+    ggplot(aes(x = signed_or, y = -log10(s.pval) * sign(s.mean))) +
+    geom_point(aes(col = s.pts)) +
+    scale_color_gradient(low = "blue", high = "red") +
+    geom_smooth(method = "lm", formula = y ~ x) +
+    AMOR::theme_blackbox()
+  filename <- file.path(outdir, "signed_tested.png")
+  ggsave(filename, p1, width = 6, height = 5, dpi = 150)
+}
 
 pdir_vs_fit <- function(Pdir, Fit, outdir = "./", plot = TRUE){
   # Comapre p_directional vs FIT
@@ -183,41 +186,7 @@ pdir_vs_fit <- function(Pdir, Fit, outdir = "./", plot = TRUE){
                by = "site_id")
   
   if(plot){
-    # Compare numbers
-    p1 <- ftable(pdir.pts ~ fit.pts, data = Dat) %>%
-      as_tibble() %>%
-      mutate(fit.pts = as.numeric(as.character(fit.pts)),
-             pdir.pts = as.numeric(as.character(pdir.pts))) %>%
-      ggplot(aes(x = pdir.pts, y = fit.pts)) +
-      geom_abline(slope = 1) +
-      geom_point(aes(size = Freq)) +
-      scale_size_continuous(range=c(-1, 5)) +
-      AMOR::theme_blackbox()
-    filename <- file.path(outdir, "npts.png")
-    ggsave(filename, p1, width = 6, height = 5, dpi = 150)
-    
-    # Compare unsigned
-    p1 <- Dat %>%
-      # filter(!is.na(s.pval)) %>%
-      ggplot(aes(x = p_directional / (1 - p_directional), y = abs(z.score))) +
-      geom_point(aes(col = fit.pts)) +
-      scale_color_gradient(low = "blue", high = "red") +
-      geom_smooth(method = "lm", formula = y ~ x) +
-      # ggforce::facet_zoom(y = abs(z.score) < 10) +
-      AMOR::theme_blackbox()
-    filename <- file.path(outdir, "unsigned.png")
-    ggsave(filename, p1, width = 6, height = 5, dpi = 150)
-    
-    # Compare signed all (=tested)
-    p1 <-  Dat %>%
-      ggplot(aes(x = signed_or, y = z.score)) +
-      geom_point(aes(col = fit.pts)) +
-      scale_color_gradient(low = "blue", high = "red") +
-      geom_smooth(method = "lm", formula = y ~ x) +
-      # ggforce::facet_zoom(y = abs(z.score) < 10) +
-      AMOR::theme_blackbox()
-    filename <- file.path(outdir, "signed_all.png")
-    ggsave(filename, p1, width = 6, height = 5, dpi = 150)
+    plot_pvf(Dat = Dat, outdir = outdir)
   }
   
   # Cors
@@ -236,6 +205,44 @@ pdir_vs_fit <- function(Pdir, Fit, outdir = "./", plot = TRUE){
                  method = 'FIT')
   
   return(list(dat = Dat, cors = Cors))
+}
+
+plot_pfv <- function(Dat, outdir){
+  # Compare numbers
+  p1 <- ftable(pdir.pts ~ fit.pts, data = Dat) %>%
+    as_tibble() %>%
+    mutate(fit.pts = as.numeric(as.character(fit.pts)),
+           pdir.pts = as.numeric(as.character(pdir.pts))) %>%
+    ggplot(aes(x = pdir.pts, y = fit.pts)) +
+    geom_abline(slope = 1) +
+    geom_point(aes(size = Freq)) +
+    scale_size_continuous(range=c(-1, 5)) +
+    AMOR::theme_blackbox()
+  filename <- file.path(outdir, "npts.png")
+  ggsave(filename, p1, width = 6, height = 5, dpi = 150)
+  
+  # Compare unsigned
+  p1 <- Dat %>%
+    # filter(!is.na(s.pval)) %>%
+    ggplot(aes(x = p_directional / (1 - p_directional), y = abs(z.score))) +
+    geom_point(aes(col = fit.pts)) +
+    scale_color_gradient(low = "blue", high = "red") +
+    geom_smooth(method = "lm", formula = y ~ x) +
+    # ggforce::facet_zoom(y = abs(z.score) < 10) +
+    AMOR::theme_blackbox()
+  filename <- file.path(outdir, "unsigned.png")
+  ggsave(filename, p1, width = 6, height = 5, dpi = 150)
+  
+  # Compare signed all (=tested)
+  p1 <-  Dat %>%
+    ggplot(aes(x = signed_or, y = z.score)) +
+    geom_point(aes(col = fit.pts)) +
+    scale_color_gradient(low = "blue", high = "red") +
+    geom_smooth(method = "lm", formula = y ~ x) +
+    # ggforce::facet_zoom(y = abs(z.score) < 10) +
+    AMOR::theme_blackbox()
+  filename <- file.path(outdir, "signed_all.png")
+  ggsave(filename, p1, width = 6, height = 5, dpi = 150)
 }
 
 compare_sel_results <- function(pdir = NULL, s_coef = NULL, fit = NULL,
@@ -387,6 +394,38 @@ if(args$type == 'single'){
     }
   }
   
+  # Overall plots
+  ov_outdir <- file.path(args$outdir, "overall")
+  ov_sdir <- file.path(ov_outdir, "s_coef")
+  ov_sdir <- file.path(ov_outdir, "FIT")
+  dir.create(ov_outdir)
+  plot_pvs(PvS, ov_outdir)
+  plot_pvf(PvF, ov_outdir)
+  
+  # Overall cors
+  thres <- c(0, 0.5, 0.6, 0.7, 0.8)
+  rs <- NULL
+  for(u in thres){
+    rs <- c(rs,
+            cor(PvS$signed_or[PvS$p_directional >= u & !is.na(PvS$s.pval)],
+                (-log10(PvS$s.pval) * sign(PvS$s.mean))[PvS$p_directional >= u & !is.na(PvS$s.pval)],
+                method = 'spearman'))
+  }
+  Cors <- tibble(pdir_thres = thres,
+                 r = rs,
+                 method = 's_coef')
+  rs <- NULL
+  for(u in thres){
+    rs <- c(rs,
+            cor(PvF$signed_or[PvF$p_directional >= u],
+                PvF$z.score[PvF$p_directional >= u],
+                method = 'spearman'))
+  }
+  Cors <- Cors %>%
+    bind_rows(tibble(pdir_thres = thres,
+                     r = rs,
+                     method = 'FIT'))
+  write_tsv(Cors, file.path(ov_outdir, "cors.tsv"))
   
 }else{
   stop("ERROR: only type 'single' and 'multi' are supported")
