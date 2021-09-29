@@ -375,7 +375,7 @@ if(args$type == 'single'){
                              fit = args$fit,
                              outdir = args$outdir)
 }else if(args$type == 'multi'){
-  write("Reading files in input dirs...\n")
+  cat("Reading files in input dirs...\n")
   pdirs <- list.files(args$pdir, full.names = TRUE, recursive = FALSE)
   pdirs <- tibble(spec = pdirs %>% basename %>% str_remove(pattern = "[.]tsv[.]gz$"),
          pdir = pdirs)
