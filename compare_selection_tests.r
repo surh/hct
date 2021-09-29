@@ -209,7 +209,7 @@ pdir_vs_fit <- function(Pdir, Fit, outdir = "./", plot = TRUE){
   return(list(dat = Dat, cors = Cors))
 }
 
-plot_pvf <- function(Dat, outdir){
+plot_pvf <- function(Dat, outdir, zoom = FALSE, zoom_thres = 3){
   # Compare numbers
   p1 <- ftable(pdir.pts ~ fit.pts, data = Dat) %>%
     as_tibble() %>%
@@ -245,6 +245,31 @@ plot_pvf <- function(Dat, outdir){
     AMOR::theme_blackbox()
   filename <- file.path(outdir, "signed_all.png")
   ggsave(filename, p1, width = 6, height = 5, dpi = 150)
+  
+  if(zoom){
+    # Compare unsigned
+    p1 <- Dat %>%
+      # filter(!is.na(s.pval)) %>%
+      ggplot(aes(x = p_directional / (1 - p_directional), y = abs(z.score))) +
+      geom_point(aes(col = fit.pts)) +
+      scale_color_gradient(low = "blue", high = "red") +
+      geom_smooth(method = "lm", formula = y ~ x) +
+      ggforce::facet_zoom(y = abs(z.score) < zoom_thres) +
+      AMOR::theme_blackbox()
+    filename <- file.path(outdir, "unsigned_zoomed.png")
+    ggsave(filename, p1, width = 12, height = 5, dpi = 150)
+    
+    # Compare signed all (=tested)
+    p1 <-  Dat %>%
+      ggplot(aes(x = signed_or, y = z.score)) +
+      geom_point(aes(col = fit.pts)) +
+      scale_color_gradient(low = "blue", high = "red") +
+      geom_smooth(method = "lm", formula = y ~ x) +
+      ggforce::facet_zoom(y = abs(z.score) < zoom_thres) +
+      AMOR::theme_blackbox()
+    filename <- file.path(outdir, "signed_all_zoomed.png")
+    ggsave(filename, p1, width = 12, height = 5, dpi = 150)
+  }
 }
 
 compare_sel_results <- function(pdir = NULL, s_coef = NULL, fit = NULL,
@@ -410,7 +435,7 @@ if(args$type == 'single'){
   # Plots
   cat("\tPlotting...\n")
   plot_pvs(PvS, ov_sdir)
-  plot_pvf(PvF, ov_fitdir)
+  plot_pvf(PvF, ov_fitdir, zoom = TRUE, zoom_thres = 3)
   
   # Overall cors
   cat("\tCorrelations...\n")
@@ -442,7 +467,7 @@ if(args$type == 'single'){
   stop("ERROR: only type 'single' and 'multi' are supported")
 }
 
-
+warnings()
 
 
 
