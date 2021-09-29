@@ -69,7 +69,8 @@ read_sel_tests <- function(pdir = NA, s_coef = NA, fit = NA){
     #   mutate(pval = pchisq(fisher.chi, df = 2 * n, lower.tail = FALSE))
     # Should try inverse variance method
     res$fit <- res$fit %>%
-      filter(!is.na(pval)) %>%
+      filter(!is.na(t.fi)) %>%
+      filter(!is.infinite(t.fi)) %>%
       group_by(site_id) %>%
       summarise(y.mean = sum(Y.mean/Y.s2) / sum(1/Y.s2),
                 y.var = 1 / sum(1/Y.s2),
@@ -77,8 +78,6 @@ read_sel_tests <- function(pdir = NA, s_coef = NA, fit = NA){
       mutate(z.score = y.mean / sqrt(y.var)) %>%
       mutate(pval = 2 * pnorm(abs(z.score), mean = 0, sd = 1, lower.tail = FALSE)) %>%
       arrange(pval)
-    
-    
   }
   
   
@@ -116,15 +115,18 @@ pdir_vs_scoef <- function(Pdir, Scoef, outdir = "./", plot = TRUE){
   
   cat("\tcalculating correlations...\n")
   thres <- c(0, 0.5, 0.6, 0.7, 0.8)
-  rs <- NULL
+  rs <- nt <- NULL
   for(u in thres){
     rs <- c(rs,
             cor(Dat$signed_or[Dat$p_directional >= u & !is.na(Dat$s.pval)],
                 (-log10(Dat$s.pval) * sign(Dat$s.mean))[Dat$p_directional >= u & !is.na(Dat$s.pval)],
                 method = 'spearman'))
+    nt <- c(nt, length(Dat$signed_or[Dat$p_directional >= u & !is.na(Dat$s.pval)]))
+    
   }
   Cors <- tibble(pdir_thres = thres,
                  r = rs,
+                 n_sites = nt,
                  method = 's_coef')
   
   return(list(dat = Dat, cors = Cors))
@@ -192,18 +194,20 @@ pdir_vs_fit <- function(Pdir, Fit, outdir = "./", plot = TRUE){
   # Cors
   cat("\tcalculating correlations...\n")
   thres <- c(0, 0.5, 0.6, 0.7, 0.8)
-  rs <- NULL
+  rs <- nt <- NULL
   for(u in thres){
     rs <- c(rs,
             cor(Dat$signed_or[Dat$p_directional >= u],
                 Dat$z.score[Dat$p_directional >= u],
                 method = 'spearman'))
+    nt <- c(nt, length(Dat$signed_or[Dat$p_directional >= u]))
   }
   
   write_tsv(Dat, "test.tsv")
   
   Cors <- tibble(pdir_thres = thres,
                  r = rs,
+                 n_sites = nt,
                  method = 'FIT')
   
   return(list(dat = Dat, cors = Cors))
@@ -440,26 +444,31 @@ if(args$type == 'single'){
   # Overall cors
   cat("\tCorrelations...\n")
   thres <- c(0, 0.5, 0.6, 0.7, 0.8)
-  rs <- NULL
+  rs <- nt <- NULL
   for(u in thres){
     rs <- c(rs,
             cor(PvS$signed_or[PvS$p_directional >= u & !is.na(PvS$s.pval)],
                 (-log10(PvS$s.pval) * sign(PvS$s.mean))[PvS$p_directional >= u & !is.na(PvS$s.pval)],
                 method = 'spearman'))
+    nt <- c(nt, length(PvS$signed_or[PvS$p_directional >= u & !is.na(PvS$s.pval)]))
+    
   }
   Cors <- tibble(pdir_thres = thres,
                  r = rs,
+                 n_sites = nt,
                  method = 's_coef')
-  rs <- NULL
+  rs <- nt <-  NULL
   for(u in thres){
     rs <- c(rs,
             cor(PvF$signed_or[PvF$p_directional >= u],
                 PvF$z.score[PvF$p_directional >= u],
                 method = 'spearman'))
+    nt <- c(nt, length(PvF$signed_or[PvF$p_directional >= u]))
   }
   Cors <- Cors %>%
     bind_rows(tibble(pdir_thres = thres,
                      r = rs,
+                     n_sites = nt,
                      method = 'FIT'))
   write_tsv(Cors, file.path(ov_outdir, "cors.tsv"))
   
