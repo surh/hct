@@ -200,6 +200,8 @@ pdir_vs_fit <- function(Pdir, Fit, outdir = "./", plot = TRUE){
                 method = 'spearman'))
   }
   
+  write_tsv(Dat, "test.tsv")
+  
   Cors <- tibble(pdir_thres = thres,
                  r = rs,
                  method = 'FIT')
