@@ -203,8 +203,6 @@ pdir_vs_fit <- function(Pdir, Fit, outdir = "./", plot = TRUE){
     nt <- c(nt, length(Dat$signed_or[Dat$p_directional >= u]))
   }
   
-  write_tsv(Dat, "test.tsv")
-  
   Cors <- tibble(pdir_thres = thres,
                  r = rs,
                  n_sites = nt,
