@@ -20,6 +20,7 @@ params.map = ''
 params.outdir = 'output'
 params.prop_thres = 0.8
 params.recode = "no"
+params.max_sites = 0
 
 // Process params
 midas_dir = file(params.midas_dir)
@@ -39,6 +40,7 @@ process preprocess{
   tuple spec, file(midas_dir) from MIDAS
   file mapfile from mapfile
   val recode from params.recode
+  val max_sites from params.max_sites
 
   output:
   tuple spec, file("site_data.tsv.gz") optional true into DAT
@@ -48,7 +50,8 @@ process preprocess{
     $midas_dir \
     $mapfile \
     --recode $recode \
-    --output site_data.tsv.gz
+    --output site_data.tsv.gz \
+    --max_sites $max_sites
   """
 }
 
