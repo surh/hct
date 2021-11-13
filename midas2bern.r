@@ -161,7 +161,7 @@ process_arguments <- function(){
                      help = paste(""),
                      type = "numeric",
                      default = 5)
-  p <- add_argument(p, "-n_thres",
+  p <- add_argument(p, "--n_thres",
                     help = paste(""),
                     type = "numeric",
                     default = 3)

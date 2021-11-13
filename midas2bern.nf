@@ -50,7 +50,7 @@ process midas2bern {
   file "output/pops.tsv"
 
   """
-  Rscript ${workflow.projectDir}/midasmerge2sitefreqs.r \
+  Rscript ${workflow.projectDir}/midas2bern.r \
     $midas_dir \
     $mapfile \
     --depth_thres $depth_thres \
