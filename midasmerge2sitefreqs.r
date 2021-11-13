@@ -43,8 +43,12 @@ process_arguments <- function(){
                                  "be flipped (i.e. recoded) based on the most",
                                  "common allele in the last date. (yes or no)"),
                     type = "character", default = "yes")
+  p <- add_arguments("--max_sites",
+                     help = paste("Maximum number of sites, useful for tests.",
+                                  "If 0 include all sites."),
+                     type = "numeric",
+                     default = 0)
   
-   
   cat("Processing arguments...\n")
   args <- parse_args(p)
   
@@ -78,6 +82,15 @@ Dat <- read_midas_data(args$midas_dir,
                        map = meta %>%
                          select(sample, Group = pt),
                        cds_only = TRUE)
+
+if(args$max_sites){
+  cat("!!Selecting max_sites.\n")
+  Dat$info <- Dat$info[1:args$max_sites, ]
+  Dat$freq <- Dat$freq %>%
+    filter(site_id %in% Dat$info$site_id)
+  Dat$depth <- Dat$depth %>%
+    filter(site_id %in% Dat$info$site_id)
+}
 
 cat("Checking if more than one sample...\n")
 if(ncol(Dat$depth) <= 2){
