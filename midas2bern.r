@@ -1,12 +1,68 @@
-library(tidyverse)
+#!/usr/bin/env Rscript
 
-# This is taking from orginal pipeline and cleaning & organizing. It is only going
-# to take two timepoints. Should simplify future analysis.
-# This can probably go in HMVAR, but bern model needs to be its own thing
+# (C) Copyright 2021 Sur Herrera Paredes
+# This file is part of This program.
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+library(argparser)
+
+process_arguments <- function(){
+  p <- arg_parser(paste("Prepare data from MIDAS merged for bern."))
+  
+  # Positional arguments
+  p <- add_argument(p, "midas_dir",
+                    help = paste(""),
+                    type = "character")
+  
+  # Optional arguments
+  p <- add_argument(p, "--depth_thres",
+                     help = paste(""),
+                     type = "numeric",
+                     default = 5)
+  p <- add_arvument(p, "-n_thres",
+                    help = paste(""),
+                    type = "numeric",
+                    default = 3)
+  p <- add_argument(p, "--outdir",
+                    help = paste("Directory path to store outputs."),
+                    default = "output/",
+                    type = "character")
+  p <- add_argument(p, "--max_sites",
+                    help = paste("Zero is all sites"),
+                    type = "numeric",
+                    default = 0)
+                  
+  # Read arguments
+  cat("Processing arguments...\n")
+  args <- parse_args(p)
+  
+  # Process arguments
+  
+  return(args)
+}
 
 args <- list(midas_dir = "../../exp/2021/2021-04-19.monotonic_hct/MGYG-HGUT-00099/",
              depth_thres = 5,
              n_thres = 3)
+
+
+# This is taking from orginal pipeline and cleaning & organizing. It is only going
+# to take two timepoints. Should simplify future analysis.
+# This can probably go in HMVAR, but bern model needs to be its own thing
+library(tidyverse)
+
 
 
 meta <- tibble(pt = letters[1:5],
