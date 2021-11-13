@@ -18,65 +18,24 @@
 
 library(argparser)
 
-process_arguments <- function(){
-  p <- arg_parser(paste("Prepare data from MIDAS merged for bern."))
-  
-  # Positional arguments
-  p <- add_argument(p, "midas_dir",
-                    help = paste(""),
-                    type = "character")
-  
-  # Optional arguments
-  p <- add_argument(p, "--depth_thres",
-                     help = paste(""),
-                     type = "numeric",
-                     default = 5)
-  p <- add_arvument(p, "-n_thres",
-                    help = paste(""),
-                    type = "numeric",
-                    default = 3)
-  p <- add_argument(p, "--outdir",
-                    help = paste("Directory path to store outputs."),
-                    default = "output/",
-                    type = "character")
-  p <- add_argument(p, "--max_sites",
-                    help = paste("Zero is all sites"),
-                    type = "numeric",
-                    default = 0)
-                  
-  # Read arguments
-  cat("Processing arguments...\n")
-  args <- parse_args(p)
-  
-  # Process arguments
-  
-  return(args)
-}
-
-args <- list(midas_dir = "../../exp/2021/2021-04-19.monotonic_hct/MGYG-HGUT-00099/",
-             depth_thres = 5,
-             n_thres = 3)
-
-
-# This is taking from orginal pipeline and cleaning & organizing. It is only going
-# to take two timepoints. Should simplify future analysis.
-# This can probably go in HMVAR, but bern model needs to be its own thing
-library(tidyverse)
-
-
-
-meta <- tibble(pt = letters[1:5],
-               start = c("P316", "P102", "P16", "P373", "P219"),
-               end = c("P246", "P215", "P228", "P391", "P325" ))
-meta
-
-
-
-
+#' MIDAS merged SNPs to per site distributions
+#'
+#' @param midas_dir 
+#' @param meta 
+#' @param outdir 
+#' @param write_tables 
+#' @param depth_thres 
+#' @param npop_thres 
+#' @param max_sites 
+#'
+#' @return
+#' @export
+#' @author Sur from Fraser Lab.
 midas2sitesdist <- function(midas_dir, meta, outdir = "./",
                             write_tables = FALSE,
                             depth_thres = 5,
-                            npop_thres = 3){
+                            npop_thres = 3,
+                            max_sites = 0){
   
   if(missing(midas_dir) || missing(meta)){
     stop("ERROR: You must provide a midas_dir & meta(data) tibble.",
@@ -94,8 +53,19 @@ midas2sitesdist <- function(midas_dir, meta, outdir = "./",
   midas_map <- meta %>%
     pivot_longer(-pt,values_to = "sample", names_to = "timepoint") %>%
     rename(Group = pt)
+  cat("Rading data...\n")
   Dat <- HMVAR::read_midas_data(midas_dir = midas_dir,
                                 map = midas_map)
+  
+  if(max_sites){
+    cat("!!Keeping only max_sites...\n")
+    Dat$info <- Dat$info[ 1:max_sites, ]
+    Dat$freq <- Dat$freq %>%
+      dplyr::filter(site_id %in% Dat$info$site_id)
+    Dat$depth <- Dat$depth %>%
+      dplyr::filter(site_id %in% Dat$info$site_id)
+  }
+  
   Dat <- HMVAR::match_freq_and_depth(freq = Dat$freq,
                                      depth = Dat$depth,
                                      info = Dat$info %>%
@@ -155,11 +125,68 @@ midas2sitesdist <- function(midas_dir, meta, outdir = "./",
   return(list(Sites = Sites, Pops = Pts))
 }
 
+process_arguments <- function(){
+  p <- arg_parser(paste("Prepare data from MIDAS merged for bern."))
+  
+  # Positional arguments
+  p <- add_argument(p, "midas_dir",
+                    help = paste(""),
+                    type = "character")
+  p <- add_argument(p, "map",
+                    help = paste(""),
+                    type = "character")
+  
+  # Optional arguments
+  p <- add_argument(p, "--depth_thres",
+                     help = paste(""),
+                     type = "numeric",
+                     default = 5)
+  p <- add_argument(p, "-n_thres",
+                    help = paste(""),
+                    type = "numeric",
+                    default = 3)
+  p <- add_argument(p, "--outdir",
+                    help = paste("Directory path to store outputs."),
+                    default = "output/",
+                    type = "character")
+  p <- add_argument(p, "--max_sites",
+                    help = paste("Zero is all sites"),
+                    type = "numeric",
+                    default = 0)
+                  
+  # Read arguments
+  cat("Processing arguments...\n")
+  args <- parse_args(p)
+  
+  # Process arguments
+  
+  return(args)
+}
+
+args <- process_arguments()
+# args <- list(midas_dir = "../../exp/2021/2021-04-19.monotonic_hct/MGYG-HGUT-00099/",
+#              depth_thres = 5,
+#              n_thres = 3)
+
+# This is taking from orginal pipeline and cleaning & organizing. It is only going
+# to take two timepoints. Should simplify future analysis.
+# This can probably go in HMVAR, but bern model needs to be its own thing
+library(tidyverse)
+
+
+cat("Reading mapping file...\n")
+meta <- read_tsv(args$map,
+                 col_type = cols(pt = col_character(),
+                                 start = col_character(),
+                                 end = col_character()))
+
 
 Res <- midas2sitesdist(midas_dir = args$midas_dir, meta = meta,
-                       outdir = "test/",
-                       write_tables = FALSE,
-                       depth_thres = 5, npop_thres = 3)
+                       outdir = args$outdir,
+                       write_tables = TRUE,
+                       depth_thres = args$depth_thres,
+                       npop_thres = args$n_thres,
+                       max_sites = args$max_sites)
 Res
 
 
