@@ -16,10 +16,10 @@
 
 // Params
 params.midas_dir = ''
-params.map = ''
+params.map = '' // TO DO: We need one map per species in the end
 params.outdir = 'output'
-params.prop_thres = 0.8
-params.recode = "no"
+params.depth_thres = 5
+params.npop_thres = 3
 params.max_sites = 0
 
 // Process params
@@ -30,66 +30,36 @@ MIDAS = Channel.fromPath("$midas_dir/*", type: 'dir', maxDepth: 1)
   .map{ midas_dir -> tuple(midas_dir.name,
     file(midas_dir)) }
 
-process preprocess{
+process midas2bern {
   tag "$spec"
   label 'r'
-  publishDir "$params.outdir/site_data", mode: 'rellink',
-    pattern: "site_data.tsv.gz", saveAs: {"${spec}.tsv.gz"}
+  publishDir "$params.outdir/sites", mode: 'rellink',
+    pattern: "output/sites.tsv", saveAs: {"${spec}.tsv"}
+  publishDir "$params.outdir/pops", mode: 'rellink',
+    pattern: "output/pops.tsv", saveAs: {"${spec}.tsv"}
 
   input:
   tuple spec, file(midas_dir) from MIDAS
   file mapfile from mapfile
-  val recode from params.recode
+  val depth_thres from params.depth_thres
+  val npop_thres from params.npop_thres
   val max_sites from params.max_sites
 
   output:
-  tuple spec, file("site_data.tsv.gz") optional true into DAT
+  file "output/sites.tsv"
+  file "output/pops.tsv"
 
   """
   Rscript ${workflow.projectDir}/midasmerge2sitefreqs.r \
     $midas_dir \
     $mapfile \
-    --recode $recode \
-    --output site_data.tsv.gz \
+    --depth_thres $depth_thres \
+    --n_thres $npop_thres \
+    --outdir output \
     --max_sites $max_sites
   """
 }
 
-process dists{
-  tag "$spec"
-  label 'r'
-  publishDir "$params.outdir/pts_dist", mode: 'rellink',
-    pattern: "output/pts_dist.tsv.gz", saveAs: {"${spec}.tsv.gz"}
-  publishDir "$params.outdir/sites_dist", mode: 'rellink',
-    pattern: "output/sites_dist.tsv.gz", saveAs: {"${spec}.tsv.gz"}
-  publishDir "$params.outdir/figs/depthchange_vs_binompval/", mode: 'rellink',
-    pattern: "output/output/depthchange_vs_binompval.jpeg",
-    saveAs: {"${spec}.jpeg"}
-  publishDir "$params.outdir/figs/hexbin_binomial_inc_vs_dec/", mode: 'rellink',
-    pattern: "output/output/hexbin_binomial_inc_vs_dec.jpeg",
-    saveAs: {"${spec}.jpeg"}
-  publishDir "$params.outdir/figs/hexbin_days_vs_change/", mode: 'rellink',
-    pattern: "output/output/hexbin_days_vs_change.jpeg",
-    saveAs: {"${spec}.jpeg"}
-
-  input:
-  tuple spec, file(data) from DAT
-  val prop_thres from params.prop_thres
-
-  output:
-  file "output/depthchange_vs_binompval.jpeg"
-  file "output/hexbin_binomial_inc_vs_dec.jpeg"
-  file "output/hexbin_days_vs_change.jpeg"
-  file "output/pts_dist.tsv.gz"
-  file "output/sites_dist.tsv.gz"
-
-  """
-  Rscript $workflow.projectDir/site_and_pt_maf_direction.r \
-    $data \
-    --outdir output \
-    --prop_thres $prop_thres
-  """
-}
 // Example nextflow.config
 /*
 process{
