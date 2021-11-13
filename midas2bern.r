@@ -36,6 +36,15 @@ midas2sitesdist <- function(midas_dir, meta, outdir = "./",
                             depth_thres = 5,
                             npop_thres = 3,
                             max_sites = 0){
+
+  # midas_dir <- args$midas_dir
+  # meta <- meta
+  # outdir <- args$outdir
+  # write_tables <- TRUE
+  # depth_thres <- args$depth_thres
+  # npop_thres <- args$n_thres
+  # max_sites <- args$max_sites
+  
   
   if(missing(midas_dir) || missing(meta)){
     stop("ERROR: You must provide a midas_dir & meta(data) tibble.",
@@ -53,9 +62,20 @@ midas2sitesdist <- function(midas_dir, meta, outdir = "./",
   midas_map <- meta %>%
     pivot_longer(-pt,values_to = "sample", names_to = "timepoint") %>%
     rename(Group = pt)
-  cat("Rading data...\n")
+  cat("Reading data...\n")
   Dat <- HMVAR::read_midas_data(midas_dir = midas_dir,
                                 map = midas_map)
+  
+  cat("Keeping only samples from patients with start & end")
+  sample_ids <- setdiff(colnames(Dat$freq), "site_id")
+  midas_map <- midas_map %>%
+    dplyr::filter(sample %in% sample_ids) %>%
+    dplyr::group_by(Group) %>%
+    dplyr::filter(dplyr::n() == 2)
+  Dat$freq <- Dat$freq %>%
+    dplyr::select(site_id, midas_map$sample)
+  Dat$depth <- Dat$depth %>%
+    dplyr::select(site_id, midas_map$sample)
   
   if(max_sites){
     cat("!!Keeping only max_sites...\n")
@@ -130,10 +150,10 @@ process_arguments <- function(){
   
   # Positional arguments
   p <- add_argument(p, "midas_dir",
-                    help = paste(""),
+                    help = paste("MIDAS merged SNPs directory"),
                     type = "character")
   p <- add_argument(p, "map",
-                    help = paste(""),
+                    help = paste("Mapping file"),
                     type = "character")
   
   # Optional arguments
@@ -165,14 +185,16 @@ process_arguments <- function(){
 
 args <- process_arguments()
 # args <- list(midas_dir = "../../exp/2021/2021-04-19.monotonic_hct/MGYG-HGUT-00099/",
+#              map = "../../exp/2021/today8/bern_map.tsv",
 #              depth_thres = 5,
-#              n_thres = 3)
+#              n_thres = 3,
+#              outdir = "../../exp/2021/today8/output/",
+#              max_sites = 1000)
 
 # This is taking from orginal pipeline and cleaning & organizing. It is only going
 # to take two timepoints. Should simplify future analysis.
 # This can probably go in HMVAR, but bern model needs to be its own thing
 library(tidyverse)
-
 
 cat("Reading mapping file...\n")
 meta <- read_tsv(args$map,
@@ -181,12 +203,14 @@ meta <- read_tsv(args$map,
                                  end = col_character()))
 
 
-Res <- midas2sitesdist(midas_dir = args$midas_dir, meta = meta,
+Res <- midas2sitesdist(midas_dir = args$midas_dir,
+                       meta = meta,
                        outdir = args$outdir,
                        write_tables = TRUE,
                        depth_thres = args$depth_thres,
                        npop_thres = args$n_thres,
                        max_sites = args$max_sites)
-Res
+# Res
+cat(nrow(Res$Sites), "sites in", nrow(Res$Pops), "populations remained\n")
 
 
