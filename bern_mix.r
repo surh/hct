@@ -87,19 +87,28 @@ process_arguments <- function(){
     stop("ERROR: vq must be positive", call. = TRUE)
   }
   
+  args$max_treedepth <- 10
+  args$adapt_delta <- 0.8
+  args$rhat_thres <- 1.05
+  args$rhat_prop <- 0.8
+  
   return(args)
 }
 
 args <- process_arguments()
-# args <- list(input = "sites_dist.tsv.gz",
+# args <- list(input = "~/micropopgen/exp/2021/2021-11-12.test_midas2bern/output/sites/MGYG-HGUT-00099.tsv",
 #              q_thres = 0.1,
 #              min_patients = 5,
 #              outdir = "output",
 #              iter = 3000,
 #              warmup = 2000,
 #              chains = 4,
-#              vp = 10,
-#              vq = 10)
+#              vp = 5,
+#              vq = 5,
+#              max_treedepth = 10,
+#              adapt_delta = 0.8,
+#              rhat_thres = 1.05,
+#              rhat_prop = 0.8)
 
 library(tidyverse)
 library(rstan)
@@ -147,7 +156,7 @@ stan_file <- stan_file[i] %>%
   dirname()
 stan_file <- file.path(stan_file, "stan", "bernoulli_mix_multisite.stan")
 cat("\tusing stan model at file", stan_file, "\n")
-# stan_file <- "~/micropopgen/src/hct/stan/bernoulli_mix_multisite.stan"
+stan_file <- "~/micropopgen/src/hct/stan/bernoulli_mix_multisite.stan"
 # stan_file <- "~/micropopgen/src/hct/stan/bernoulli_mix_multisite_hyper.stan"
 m1.model <- stan_model(stan_file,
                        model_name = "bern_change")
@@ -156,18 +165,20 @@ cat("Running Stan...\n")
 # 100 sites 8 seconds
 # 1000 sites 192 seconds, 241 seconds for hyper, 500 seconds for double hyper
 # 10000 sites 4832 seconds (~1.3 hrs)
-# 100000 if trend continues linearlu, ~53 hrs or  ~2.5 days
+# 100000 if trend continues linearly, ~53 hrs or  ~2.5 days
 m1.stan <- sampling(m1.model,
                     data = stan_data,
                     chains = args$chains,
                     iter = args$iter,
                     warmup = args$warmup,
                     thin = 1,
-                    cores = args$chains)
+                    cores = args$chains,
+                    control = list(max_treedepth = args$max_treedepth,
+                                   adapt_delta = args$adapt_delta))
 # load("output/m1.stan.rdat")
 # load("~/micropopgen/exp/2021/today/output/m1.stan.rdat")
-pars <- c("P", "Q")
-print(m1.stan, pars = pars)
+# pars <- c("P", "Q")
+# print(m1.stan, pars = pars)
 # bayesplot::mcmc_pairs(m1.stan, pars = pars)
 # bayesplot::mcmc_trace(m1.stan, pars = pars)
 # bayesplot::mcmc_acf(m1.stan, pars = pars)
@@ -182,9 +193,10 @@ if(!dir.exists(args$outdir)){
 }
 
 filename <- file.path(args$outdir, "model_summaries.tsv.gz")
-write_tsv(summary(m1.stan)$summary %>%
-            as.data.frame() %>%
-            rownames_to_column(var = "var"),
+m1.tab <- summary(m1.stan)$summary %>%
+  as.data.frame() %>%
+  rownames_to_column(var = "var")
+write_tsv(m1.tab,
           filename)
 
 # Save model
@@ -192,10 +204,26 @@ cat("Saving stan model...\n")
 filename <- file.path(args$outdir, "m1.stan.rdat")
 save(m1.stan, file = filename)
 
+
+########################
+cat("Checking Rhat values...")
+if(any(m1.tab$Rhat[ m1.tab$var %in% c("P", "Q") ] > args$rhat_thres)){
+  cat("P  and/or Q chains are not well mixed...\n")
+  q()
+}
+
+prop_rhat <- sum(m1.tab$Rhat[ !m1.tab$var %in% c("P", "Q") ] <= args$rhat_thres) / (nrow(m1.tab)- 2)
+if(prop_rhat < args$rhat_prop){
+  cat("Too many params not well mixed...\n")
+  q()
+}
+#########################
+
+
 cat("Extracting posterior...\n")
 # Do I need post? or can iterate over stan object?
 post <- rstan::extract(m1.stan)
-rm(m1.stan)
+rm(m1.stan, m1.tab, prop_rhat)
 gc()
 # # First find the prob that the probability of change (p) greater than average (P)
 # P_p_diff <- post$p - as.vector(post$P)
@@ -216,22 +244,26 @@ gc()
 #   print(n = 100)
 
 cat("Calculating p_directional...\n")
-res <- rep(0, stan_data$nsites)
+res <- p_negq <- rep(0, stan_data$nsites)
 for(iter in 1:((args$iter - args$warmup) * args$chains)){
   # i <- 1
+  # iter <- 1
   # post <- matrix(1:20, nrow = 5)
   # post
   # post - 1:5
+  
+  p_negq <- p_negq+ 1*(post$q[iter, ] < post$Q[iter])
   
   res <- res + 1*( (post$p[iter,] - post$P[iter]) > 0 & (abs(post$q[iter,] - post$Q[iter]) > args$q_thres) )
 }
 
 cat("Joining results...\n")
 res <- tibble(id = 1:length(res),
-       p_directional = res / length(post$P))
+       p_directional = res / length(post$P),
+       p_negq = p_negq / length(post$P))
 res <- dat %>%
   inner_join(sites %>% left_join(res, by = "id"),
-            by = "site_id")
+            by = "site_id") %>%
 cat("Writing output...\n")
 filename <- file.path(args$outdir, "p_directional.tsv.gz")
 write_tsv(res, filename)
