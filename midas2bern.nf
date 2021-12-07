@@ -18,9 +18,14 @@
 params.midas_dir = ''
 params.map = '' // TO DO: We need one map per species in the end
 params.outdir = 'output'
+
+// Process MIDAS params
 params.depth_thres = 5
 params.npop_thres = 3
 params.max_sites = 0
+
+// bern params
+params.chains = 4
 
 // Process params
 midas_dir = file(params.midas_dir)
@@ -60,6 +65,50 @@ process midas2bern {
   """
 }
 
+
+process bern_mix{
+  cpus params.chains
+  tag "$spec"
+  label 'r'
+  publishDir "$params.outdir/stan_models", mode: 'rellink',
+    pattern: "output/m1.stan.rdat", saveAs: {"${spec}.stan.rdat"}
+  publishDir "$params.outdir/p_directional", mode: 'rellink',
+    pattern: "output/p_directional.tsv.gz", saveAs: {"${spec}.tsv.gz"}
+  publishDir "$params.outdir/model_summaries", mode: 'rellink',
+    pattern: "output/model_summaries.tsv.gz", saveAs: {"${spec}.tsv.gz"}
+
+  input:
+  tuple spec, file(sites_file) from SITES
+  val q_thres from params.q_thres
+  val min_patients from params.min_patients
+  val iter from params.iter
+  val warmup from params.warmup
+  val chains from params.chains
+  val vp from params.vp
+  val vq from params.vq
+
+  output:
+  file "output/m1.stan.rdat" optional true
+  file  "output/p_directional.tsv.gz" optional true
+  file  "output/model_summaries.tsv.gz" optional true
+
+  """
+  Rscript $workflow.projectDir/bern_mix.r \
+    $sites_file \
+    --q_thres $q_thres \
+    --min_patients $min_patients \
+    --outdir output \
+    --iter $iter \
+    --warmup $warmup \
+    --chains $chains \
+    --vp $vp \
+    --vq $vq
+  """
+
+}
+
+
+
 // Example nextflow.config
 /*
 process{
@@ -67,7 +116,7 @@ process{
   maxForks = 100
   errorStrategy = 'finish'
   stageInMode = 'rellink'
-  time = '24h'
+  time = '200h'
   memory = '10G'
   withLabel: 'r'{
     module = 'R/3.6.1'
