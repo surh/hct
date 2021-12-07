@@ -56,6 +56,9 @@ midas2sitesdist <- function(midas_dir, meta, outdir = "./",
   if(!all(c("pt", "start", "end") %in% colnames(meta))){
     stop("ERROR: columns pt, start &* end must be present in meta",
          call. = TRUE)
+  }else{
+    meta <- meta %>%
+      select(pt, start, end)
   }
   
   ### Read and process midas data

@@ -156,7 +156,7 @@ stan_file <- stan_file[i] %>%
   dirname()
 stan_file <- file.path(stan_file, "stan", "bernoulli_mix_multisite.stan")
 cat("\tusing stan model at file", stan_file, "\n")
-stan_file <- "~/micropopgen/src/hct/stan/bernoulli_mix_multisite.stan"
+# stan_file <- "~/micropopgen/src/hct/stan/bernoulli_mix_multisite.stan"
 # stan_file <- "~/micropopgen/src/hct/stan/bernoulli_mix_multisite_hyper.stan"
 m1.model <- stan_model(stan_file,
                        model_name = "bern_change")
