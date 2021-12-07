@@ -126,6 +126,8 @@ midas2sitesdist <- function(midas_dir, meta, outdir = "./",
   
   if(nrow(Dat) < 1){
     warning("No sites in enough populations...\n")
+    print(midas_map, n = nrow(midas_map))
+    print(Dat)
     return(list(Sites = NULL, Pops = NULL))
   }
   
