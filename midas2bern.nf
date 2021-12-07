@@ -25,7 +25,6 @@ params.npop_thres = 3
 params.max_sites = 0
 
 // bern params
-params.chains = 4
 params.q_thres = 0.1
 params.min_patients = 5
 params.iter = 3000
