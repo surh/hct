@@ -75,6 +75,13 @@ midas2sitesdist <- function(midas_dir, meta, outdir = "./",
     dplyr::filter(sample %in% sample_ids) %>%
     dplyr::group_by(Group) %>%
     dplyr::filter(dplyr::n() == 2)
+  
+  
+  if(nrow(midas_map) < 1){
+    warning("Samples in midas_dir do not include any complete pop...\n")
+    return(list(Sites = NULL, Pops = NULL))
+  }
+  
   Dat$freq <- Dat$freq %>%
     dplyr::select(site_id, midas_map$sample)
   Dat$depth <- Dat$depth %>%
@@ -97,6 +104,11 @@ midas2sitesdist <- function(midas_dir, meta, outdir = "./",
                                        dplyr::rename(pt = Group), 
                                      depth_thres = depth_thres)
   
+  if(nrow(Dat) < 1){
+    warning("No sites passing depth threshold...\n")
+    return(list(Sites = NULL, Pops = NULL))
+  }
+  
   cat("Calculating change at every position in every population...\n")
   Dat <- Dat %>%
     split(.$pt) %>%
@@ -111,6 +123,11 @@ midas2sitesdist <- function(midas_dir, meta, outdir = "./",
     filter(n() >= npop_thres) %>%
     ungroup() %>%
     mutate(maf_change = freq_end - freq_start)
+  
+  if(nrow(Dat) < 1){
+    warning("No sites in enough populations...\n")
+    return(list(Sites = NULL, Pops = NULL))
+  }
   
   cat("Calculating per-site distribution\n")
   Sites <- Dat %>%

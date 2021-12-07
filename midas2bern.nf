@@ -46,8 +46,8 @@ process midas2bern {
   val max_sites from params.max_sites
 
   output:
-  file "output/sites.tsv"
-  file "output/pops.tsv"
+  tuple spec, file("output/sites.tsv") optional true into SITES
+  tuple spec, file("output/pops.tsv") optional true into POPS
 
   """
   Rscript ${workflow.projectDir}/midas2bern.r \
