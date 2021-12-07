@@ -26,7 +26,6 @@ params.max_sites = 0
 
 // bern params
 params.q_thres = 0.1
-params.min_patients = 5
 params.iter = 3000
 params.warmup = 2000
 params.chains = 4
@@ -86,7 +85,7 @@ process bern_mix{
   input:
   tuple spec, file(sites_file) from SITES
   val q_thres from params.q_thres
-  val min_patients from params.min_patients
+  val min_patients from params.npop_thres
   val iter from params.iter
   val warmup from params.warmup
   val chains from params.chains
