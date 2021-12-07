@@ -79,6 +79,7 @@ midas2sitesdist <- function(midas_dir, meta, outdir = "./",
   
   if(nrow(midas_map) < 1){
     warning("Samples in midas_dir do not include any complete pop...\n")
+    print(midas_map, n = nrow(midas_map))
     return(list(Sites = NULL, Pops = NULL))
   }
   
@@ -106,6 +107,8 @@ midas2sitesdist <- function(midas_dir, meta, outdir = "./",
   
   if(nrow(Dat) < 1){
     warning("No sites passing depth threshold...\n")
+    print(midas_map, n = nrow(midas_map))
+    print(Dat)
     return(list(Sites = NULL, Pops = NULL))
   }
   
