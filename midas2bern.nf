@@ -26,6 +26,13 @@ params.max_sites = 0
 
 // bern params
 params.chains = 4
+params.q_thres = 0.1
+params.min_patients = 5
+params.iter = 3000
+params.warmup = 2000
+params.chains = 4
+params.vp = 5
+params.vq = 5
 
 // Process params
 midas_dir = file(params.midas_dir)
@@ -106,8 +113,6 @@ process bern_mix{
   """
 
 }
-
-
 
 // Example nextflow.config
 /*
