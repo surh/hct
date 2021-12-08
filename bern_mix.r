@@ -206,7 +206,7 @@ save(m1.stan, file = filename)
 
 
 ########################
-cat("Checking Rhat values...")
+cat("Checking Rhat values...\n")
 if(any(m1.tab$Rhat[ m1.tab$var %in% c("P", "Q") ] > args$rhat_thres)){
   warning("P  and/or Q chains are not well mixed...\n")
   file.create("CHECK_RHAT")
@@ -265,12 +265,12 @@ for(iter in 1:((args$iter - args$warmup) * args$chains)){
 cat("Joining results...\n")
 res <- tibble(id = 1:length(res),
        p_directional = res / length(post$P),
-       p_neg = res_neg/length(post$P),
-       p_pos = res_pos/length(post$P),
+       p_neg = res_neg / length(post$P),
+       p_pos = res_pos / length(post$P),
        p_negq = p_negq / length(post$P))
 res <- dat %>%
   inner_join(sites %>% left_join(res, by = "id"),
-            by = "site_id") %>%
+            by = "site_id")
 cat("Writing output...\n")
 filename <- file.path(args$outdir, "p_directional.tsv.gz")
 write_tsv(res, filename)
