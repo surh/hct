@@ -246,7 +246,7 @@ gc()
 #   print(n = 100)
 
 cat("Calculating p_directional...\n")
-res <- p_negq <- rep(0, stan_data$nsites)
+res <- p_negq <- res_neg <- res_pos <- rep(0, stan_data$nsites)
 for(iter in 1:((args$iter - args$warmup) * args$chains)){
   # i <- 1
   # iter <- 1
@@ -256,12 +256,17 @@ for(iter in 1:((args$iter - args$warmup) * args$chains)){
   
   p_negq <- p_negq+ 1*(post$q[iter, ] < post$Q[iter])
   
+  res_neg <- res_neg + 1*( (post$p[iter,] - post$P[iter]) > 0 & ((post$q[iter,] - post$Q[iter]) < args$q_thres) )
+  res_pos <- res_pos + 1*( (post$p[iter,] - post$P[iter]) > 0 & ((post$q[iter,] - post$Q[iter]) > args$q_thres) )
+  
   res <- res + 1*( (post$p[iter,] - post$P[iter]) > 0 & (abs(post$q[iter,] - post$Q[iter]) > args$q_thres) )
 }
 
 cat("Joining results...\n")
 res <- tibble(id = 1:length(res),
        p_directional = res / length(post$P),
+       p_neg = res_neg/length(post$P),
+       p_pos = res_pos/length(post$P),
        p_negq = p_negq / length(post$P))
 res <- dat %>%
   inner_join(sites %>% left_join(res, by = "id"),
