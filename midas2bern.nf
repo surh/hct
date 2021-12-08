@@ -36,7 +36,7 @@ params.vq = 5
 // Process params
 midas_dir = file(params.midas_dir)
 map_dir = file(params.map_dir)
-mapfile = file(params.map)
+// mapfile = file(params.map)
 
 MIDAS = Channel.fromPath("$midas_dir/*", type: 'dir', maxDepth: 1)
   .map{ midas_dir -> tuple(midas_dir.name,
