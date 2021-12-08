@@ -81,6 +81,8 @@ process bern_mix{
     pattern: "output/p_directional.tsv.gz", saveAs: {"${spec}.tsv.gz"}
   publishDir "$params.outdir/model_summaries", mode: 'rellink',
     pattern: "output/model_summaries.tsv.gz", saveAs: {"${spec}.tsv.gz"}
+  publishDir "$params.outdir/CHECK_RHAT", mode: 'rellink',
+    pattern: "CHECK_RHAT", saveAs: {"$spec"}
 
   input:
   tuple spec, file(sites_file) from SITES
@@ -96,6 +98,7 @@ process bern_mix{
   file "output/m1.stan.rdat" optional true
   file  "output/p_directional.tsv.gz" optional true
   file  "output/model_summaries.tsv.gz" optional true
+  file "CHECK_RHAT" optional true
 
   """
   Rscript $workflow.projectDir/bern_mix.r \

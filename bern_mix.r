@@ -208,13 +208,15 @@ save(m1.stan, file = filename)
 ########################
 cat("Checking Rhat values...")
 if(any(m1.tab$Rhat[ m1.tab$var %in% c("P", "Q") ] > args$rhat_thres)){
-  cat("P  and/or Q chains are not well mixed...\n")
+  warning("P  and/or Q chains are not well mixed...\n")
+  file.create("CHECK_RHAT")
   q()
 }
 
 prop_rhat <- sum(m1.tab$Rhat[ !m1.tab$var %in% c("P", "Q") ] <= args$rhat_thres) / (nrow(m1.tab)- 2)
 if(prop_rhat < args$rhat_prop){
-  cat("Too many params not well mixed...\n")
+  warning("Too many params not well mixed...\n")
+  file.create("CHECK_RHAT")
   q()
 }
 #########################
