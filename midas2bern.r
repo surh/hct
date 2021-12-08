@@ -209,11 +209,11 @@ process_arguments <- function(){
 }
 
 args <- process_arguments()
-# args <- list(midas_dir = "../../exp/2021/2021-04-19.monotonic_hct/MGYG-HGUT-00099/",
-#              map = "../../exp/2021/today8/bern_map.tsv",
+# args <- list(midas_dir = "MGYG-HGUT-02478/",
+#              map = "metadata_day0_day14_fos.tsv",
 #              depth_thres = 5,
 #              n_thres = 3,
-#              outdir = "../../exp/2021/today8/output/",
+#              outdir = "output",
 #              max_sites = 1000)
 
 # This is taking from orginal pipeline and cleaning & organizing. It is only going
