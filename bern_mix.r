@@ -86,6 +86,9 @@ process_arguments <- function(){
   if(args$vq <= 0){
     stop("ERROR: vq must be positive", call. = TRUE)
   }
+  if(args$q_thres < 0 || args$q_thres > 1){
+    stop("ERROR: q_thres must be in the range [0, 1]", call. = TRUE)
+  }
   
   args$max_treedepth <- 10
   args$adapt_delta <- 0.8
@@ -256,7 +259,7 @@ for(iter in 1:((args$iter - args$warmup) * args$chains)){
   
   p_negq <- p_negq+ 1*(post$q[iter, ] < post$Q[iter])
   
-  res_neg <- res_neg + 1*( (post$p[iter,] - post$P[iter]) > 0 & ((post$q[iter,] - post$Q[iter]) < args$q_thres) )
+  res_neg <- res_neg + 1*( (post$p[iter,] - post$P[iter]) > 0 & ((post$q[iter,] - post$Q[iter]) < -args$q_thres) )
   res_pos <- res_pos + 1*( (post$p[iter,] - post$P[iter]) > 0 & ((post$q[iter,] - post$Q[iter]) > args$q_thres) )
   
   res <- res + 1*( (post$p[iter,] - post$P[iter]) > 0 & (abs(post$q[iter,] - post$Q[iter]) > args$q_thres) )
