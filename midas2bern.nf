@@ -96,8 +96,8 @@ process bern_mix{
 
   output:
   file "output/m1.stan.rdat" optional true
-  file  "output/p_directional.tsv.gz" optional true
-  file  "output/model_summaries.tsv.gz" optional true
+  file "output/p_directional.tsv.gz" optional true
+  file "output/model_summaries.tsv.gz" optional true
   file "CHECK_RHAT" optional true
 
   """
