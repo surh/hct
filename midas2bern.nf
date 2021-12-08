@@ -16,7 +16,8 @@
 
 // Params
 params.midas_dir = ''
-params.map = '' // TO DO: We need one map per species in the end
+// params.map = '' // TO DO: We need one map per species in the end
+params.map_dir = ''
 params.outdir = 'output'
 
 // Process MIDAS params
@@ -34,11 +35,16 @@ params.vq = 5
 
 // Process params
 midas_dir = file(params.midas_dir)
+map_dir = file(params.map_dir)
 mapfile = file(params.map)
 
 MIDAS = Channel.fromPath("$midas_dir/*", type: 'dir', maxDepth: 1)
   .map{ midas_dir -> tuple(midas_dir.name,
     file(midas_dir)) }
+
+MAPS = Channel.fromPath("$map_dir/*", type: 'file', maxDepth: 1)
+  .map{ mapfile -> tuple(mapfile.name.replaceAll(/\.tsv/, ''),
+    file(mapfile))}
 
 process midas2bern {
   tag "$spec"
@@ -49,8 +55,9 @@ process midas2bern {
     pattern: "output/pops.tsv", saveAs: {"${spec}.tsv"}
 
   input:
-  tuple spec, file(midas_dir) from MIDAS
-  file mapfile from mapfile
+  // tuple spec, file(midas_dir) from MIDAS
+  // file mapfile from mapfile
+  tuple spec, file(midas_dir), file(mapfile) from MIDAS.join(MAPS)
   val depth_thres from params.depth_thres
   val npop_thres from params.npop_thres
   val max_sites from params.max_sites
