@@ -21,7 +21,8 @@
 
 # setwd("/cashew/users/sur/exp/fraserv/2022/today2/output")
 args <- list(stan_model = "stan_models/MGYG-HGUT-03439.stan.rdat",
-             output = "checks")
+             output = "checks",
+             max_treedepth = 10)
 
 library(tidyverse)
 library(rstan)
@@ -37,34 +38,65 @@ print(m1.stan, pars = vars)
 bayesplot::mcmc_trace(m1.stan, pars = vars)
 
 
-sampler_params <- get_sampler_params(m1.stan, inc_warmup = TRUE)
-sampler_params %>% bind_rows
+sampler_params <- get_sampler_params(m1.stan, inc_warmup = FALSE)
+dat <- do.call(rbind, sampler_params) %>%
+  as_tibble() %>% as.list() %>%
+  map_dfr(my_summary, .id = "var") %>%
+  print(digits = 3)
+
+# Check for exceeded treedepth & divergent transitions
+if((dat %>% filter(var == "treedepth__"))["max"] > args$max_treedepth)
+  warning("some iterations exceeded max_treedepth")
+
+if((dat %>% filter(var == "divergent__"))["mean"] > 0)
+  warning("There were divergent transitions")
 
 
-bayesplot::mcmc_pairs(m1.stan, pars = vars)
+# c(args[c("output", "stan_model")], list(test = 1))
+# 
+# sampler_params %>%
+#   map(my_summary, digits = 3)
+# 
 
-bayesplot::mcmc_pairs(m1.stan, pars = c(vars, "lp__"))
-
-m1.stan
-
-
-
-
-
-
-# setwd("/cashew/users/sur/exp/fraserv/2022/today3/preHCT_posHCT_2/output/model_summaries/")
-# setwd("/cashew/users/sur/exp/fraserv/2022/today3/preFOS_posFOS_control_2/output/model_summaries/")
-setwd("/cashew/users/sur/exp/fraserv/2022/today2/output/model_summaries/")
+par <- "energy__"
+dat <- c(rstan::extract(m1.stan, pars = c(vars, "lp__")),
+  list(sampler_params %>%
+         map(~ .x[ , par]) %>%
+         unlist
+  ))
 
 
-library(tidyverse)
+# Prepare pairs plot with lp & energy
+dat <- as.array(m1.stan, pars = c(vars, "lp__")) %>%
+  apply(2, function(mat){
+    mat
+  }, simplify = FALSE) 
+ 
+# str(sampler_params)
+# str(dat)
 
+if(length(dat) != length(sampler_params))
+  stop("ERROR")
 
-# Dat <- read_tsv("MGYG-HGUT-02438.tsv.gz")
-# Dat <- read_tsv("MGYG-HGUT-01029.tsv.gz")
-# Dat <- read_tsv("MGYG-HGUT-00144.tsv.gz")
-Dat <- read_tsv("MGYG-HGUT-03439.tsv.gz")
+for(i in 1:length(dat)){
+  dat[[i]] <- cbind(dat[[i]], energy__ = sampler_params[[i]][,"energy__"])
+}
+
+bayesplot::mcmc_pairs(dat)
+# There should be a negative relationship between lp__ and energy__.
+# Primitive parameters that are correlated with the energy__ margin in the pairs
+# plot are a good place to start thinking about reparameterizations.
+
+# bayesplot::mcmc_pairs(sampler_params, pars = c("accept_stat__", "energy__"))
+
+# Switch to checking summaries
+# Dat <- read_tsv("MGYG-HGUT-03439.tsv.gz")
+Dat <- summary(m1.stan)$summary %>%
+  as.data.frame %>%
+  rownames_to_column(var = "var") %>%
+  as_tibble()
 Dat
+
 
 Dat %>%
   mutate(var_type = str_remove(var, "[\\[][0-9]+[\\]]")) %>%
