@@ -19,10 +19,26 @@
 
 # Script to check model results from from stan model
 
+my_summary <- function(x){
+  qs <- quantile(x, probs = c(0.25, 0.5, 0.75))
+  tibble(min = min(x),
+         Q1 =qs[1],
+         median = qs[2],
+         mean = mean(x),
+         Q3 = qs[3],
+         max = max(x))
+}
+
+
+
 # setwd("/cashew/users/sur/exp/fraserv/2022/today2/output")
-args <- list(stan_model = "stan_models/MGYG-HGUT-03439.stan.rdat",
-             output = "checks",
-             max_treedepth = 10)
+# args <- list(stan_model = "/cashew/users/sur/exp/fraserv/2022/today3/preFOS_posFOS_control_3/output/stan_models/MGYG-HGUT-00144.stan.rdat",
+#              output = "checks",
+#              max_treedepth = 10)
+
+knitr::opts_chunk$set(fig.width = 10)
+args <- list(stan_model = opts[1],
+             max_treedepth = as.numeric(opts[2]))
 
 library(tidyverse)
 library(rstan)
@@ -116,7 +132,6 @@ Dat %>%
   filter(var_type == "q") %>%
   ggplot(aes(x = `50%`)) +
   geom_histogram(bins = 10)
-Dat
 
 Dat %>%
   mutate(var_type = str_remove(var, "[\\[][0-9]+[\\]]")) %>%
@@ -124,18 +139,102 @@ Dat %>%
   summarise(avg = mean(mean),
             min = min(mean),
             max = max(mean))
-Dat
+
+################ ps ######################
+dat <- Dat %>%
+  mutate(var_type = str_remove(var, "[\\[][0-9]+[\\]]")) %>%
+  filter(var_type == "p") %>%
+  select(`50%`) %>%
+  unlist %>% as.vector
+beta.fit <- MASS::fitdistr(x = dat, densfun = "beta",
+                           start = list(shape1 = mean(dat) * 10,
+                                        shape2 = (1 - mean(dat)) * 10))
+print(beta.fit)
+
+# hist(rbeta(n = 1000, shape1 = mean(dat) * 10, shape2 = 1 - mean(dat) * 10))
+# hist(rbeta(n = 1000, shape1 = beta.fit$estimate['shape1'], shape2 = beta.fit$estimate['shape2']))
+
+# m = shape1 / v
+# v = shape2 / (1 - m)
+# 
+# m = shape1 / ( shape2 / (1 -m) )
+# m = shape1 * (1 - m) / shape2
+# m * shape2 = shape1 - shape1 * m
+# m * (shape1 + shape2) = shape1
+# 
+# m = shape1 / (shape1 + shape2)
+# v = shape2 / (1 - m)
+m <- beta.fit$estimate['shape1'] / (beta.fit$estimate['shape1'] + beta.fit$estimate['shape2'])
+v <- beta.fit$estimate['shape2'] / (1 - m)
+print(m)
+print(v)
+
+print(mean(dat))
+
+tibble(var = dat,
+       dbeta =  dbeta(x = dat,
+                      shape1 = m * v,
+                      shape2 = (1 - m)*v)) %>%
+  ggplot(aes(x = var)) +
+  geom_density(col = "red", fill = "red", alpha = 0.3) +
+  geom_line(aes(y = dbeta)) +
+  # ylim(c(0, 0.03)) +
+  theme_classic()
 
 
-n <- 9218
+rm(dat, m, v, beta.fit)
+################ qs ######################
+dat <- Dat %>%
+  mutate(var_type = str_remove(var, "[\\[][0-9]+[\\]]")) %>%
+  filter(var_type == "q") %>%
+  select(`50%`) %>%
+  unlist %>% as.vector
+beta.fit <- MASS::fitdistr(x = dat, densfun = "beta",
+                           start = list(shape1 = mean(dat) * 10,
+                                        shape2 = (1 - mean(dat)) * 10))
+print(beta.fit)
 
-m <- 0.0158
-v <- 7
-hist(rbeta(n = n, shape1 = m * v, shape2 = (1 - m) * v), breaks = 20)
-range(rbeta(n = n, shape1 = m * v, shape2 = (1 - m) * v))
+# hist(rbeta(n = 1000, shape1 = mean(dat) * 10, shape2 = 1 - mean(dat) * 10))
+# hist(rbeta(n = 1000, shape1 = beta.fit$estimate['shape1'], shape2 = beta.fit$estimate['shape2']))
 
-m <- 0.476
-v <- 30
-hist(rbeta(n = n, shape1 = m * v, shape2 = (1 - m) * v), breaks = 20)
-range(rbeta(n = n, shape1 = m * v, shape2 = (1 - m) * v))
+# m = shape1 / v
+# v = shape2 / (1 - m)
+# 
+# m = shape1 / ( shape2 / (1 -m) )
+# m = shape1 * (1 - m) / shape2
+# m * shape2 = shape1 - shape1 * m
+# m * (shape1 + shape2) = shape1
+# 
+# m = shape1 / (shape1 + shape2)
+# v = shape2 / (1 - m)
+m <- beta.fit$estimate['shape1'] / (beta.fit$estimate['shape1'] + beta.fit$estimate['shape2'])
+v <- beta.fit$estimate['shape2'] / (1 - m)
+print(m)
+print(v)
+
+print(mean(dat))
+
+tibble(var = dat,
+       dbeta =  dbeta(x = dat,
+                      shape1 = m * v,
+                      shape2 = (1 - m)*v)) %>%
+  ggplot(aes(x = var)) +
+  geom_density(col = "red", fill = "red", alpha = 0.3) +
+  geom_line(aes(y = dbeta)) +
+  # ylim(c(0, 0.03)) +
+  theme_classic()
+
+
+
+
+# n <- 1000
+# m <- 0.49
+# v <- 10
+# hist(rbeta(n = n, shape1 = m * v, shape2 = (1 - m) * v), breaks = 20)
+# range(rbeta(n = n, shape1 = m * v, shape2 = (1 - m) * v))
+# 
+# m <- 0.476
+# v <- 30
+# hist(rbeta(n = n, shape1 = m * v, shape2 = (1 - m) * v), breaks = 20)
+# range(rbeta(n = n, shape1 = m * v, shape2 = (1 - m) * v))
 
