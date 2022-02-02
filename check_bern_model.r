@@ -89,6 +89,12 @@ bayesplot::mcmc_pairs(dat)
 
 # bayesplot::mcmc_pairs(sampler_params, pars = c("accept_stat__", "energy__"))
 
+
+# ShinyStan
+# shinystan::launch_shinystan(m1.stan)
+
+
+
 # Switch to checking summaries
 # Dat <- read_tsv("MGYG-HGUT-03439.tsv.gz")
 Dat <- summary(m1.stan)$summary %>%
