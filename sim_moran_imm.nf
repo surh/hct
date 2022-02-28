@@ -23,7 +23,7 @@ params.outdir = "output"
 SIMS = Channel
   .fromPath(params.sims_params)
   .splitCsv(header:true, sep:"\t")
-  .map{ row -> tuple(row.simid,
+  .map{ row -> tuple(row.sim_id,
     row.f,
     row.g,
     row.x_0,
@@ -33,7 +33,9 @@ SIMS = Channel
     row.prop_selected,
     row.popsize,
     row.T,
-    row.seed) }
+    row.seed)}
+
+
 
 
 process sim_moran_imm {
@@ -43,7 +45,7 @@ process sim_moran_imm {
   label 'r'
 
   input:
-  tuple sim_id, f, g, x_0, nsites, npops, p_imm, prop_selected,
+  tuple val(sim_id), f, g, x_0, nsites, npops, p_imm, prop_selected,
     popsize, T, seed from SIMS
 
   output:
