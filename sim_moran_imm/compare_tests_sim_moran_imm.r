@@ -16,8 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with This software.  If not, see <https://www.gnu.org/licenses/>.
 
-
-
 args <- list(s_coef = "/home/sur/micropopgen/exp/2022/today2/comparison_results/s_coef/sim_1.tsv",
              FIT = "/home/sur/micropopgen/exp/2022/today2/comparison_results/FIT/sim_1.tsv",
              pdir = "/home/sur/micropopgen/exp/2022/today2/comparison_results/p_directional/sim_1.tsv.gz",
@@ -88,6 +86,9 @@ if(!dir.exists(args$outdir)){
   
   args$statplot <- file.path(args$outdir, "statplot")
   dir.create(args$statplot)
+  
+  args$confdir <- file.path(args$outdir, "confmat")
+  dir.create(args$confdir)
   
 }else{
   stop("ERROR: output directory already exists", call. = TRUE)
@@ -226,55 +227,198 @@ ggsave(filename, p1, width = 5, height = 4)
 #' at one threshold.
 
 #+ confusion tables
+Conf <- NULL
 cat("Getting confussion tables...\n")
-# s_coef %>%
-#   left_join(info, by = "site_id") %>%
-#   transmute(significant = pval < 0.05, selected) %>%
-#   ftable 
 
+#
+cat("\ts_coef pval...\n")
 tab <- s_coef %>%
   left_join(info, by = "site_id")
 tab <- caret::confusionMatrix(data = factor(tab$pval < 0.05),
                               reference = factor(tab$selected),
                               positive = "TRUE")
-print(tab$table)
+p1 <- tab$table %>%
+  as_tibble() %>%
+  ggplot(aes(x = Reference, y = Prediction)) +
+  geom_point(aes(size = n), shape = 19, col = 'steelblue') +
+  geom_text(aes(label = n)) +
+  geom_vline(xintercept = 1.5) +
+  geom_hline(yintercept = 1.5) +
+  ggtitle(label = "Selection coefficient (s) p-values") +
+  theme_classic() +
+  theme(legend.position = 'none',
+        axis.title = element_text(color = "black", face = 'bold'),
+        plot.title = element_text(hjust = 1.2))
+filename <- file.path(args$confdir, "s_coef_pval_confmat.png")
+ggsave(filename, p1, width = 3, height = 3)
 Conf <- Conf %>% 
   bind_rows(tab %>%
               broom::tidy() %>%
               select(-class) %>%
               mutate(test = "s_coef_pval"))
 
-s_coef %>%
+#
+cat("\ts_coef qval...\n")
+tab <- s_coef %>%
   left_join(info, by = "site_id") %>%
-  mutate(qval = p.adjust(pval, method = 'fdr')) %>%
-  transmute(significant = qval < 0.05, selected) %>%
-  ftable
+  mutate(qval = p.adjust(pval, method = 'fdr'))
+tab <- caret::confusionMatrix(data = factor(tab$qval < 0.05),
+                              reference = factor(tab$selected),
+                              positive = "TRUE")
+p1 <- tab$table %>%
+  as_tibble() %>%
+  ggplot(aes(x = Reference, y = Prediction)) +
+  geom_point(aes(size = n), shape = 19, col = 'steelblue') +
+  geom_text(aes(label = n)) +
+  geom_vline(xintercept = 1.5) +
+  geom_hline(yintercept = 1.5) +
+  ggtitle(label = "Selection coefficient (s) q-values") +
+  theme_classic() +
+  theme(legend.position = 'none',
+        axis.title = element_text(color = "black", face = 'bold'),
+        plot.title = element_text(hjust = 1.2))
+filename <- file.path(args$confdir, "s_coef_qval_confmat.png")
+ggsave(filename, p1, width = 3, height = 3)
+Conf <- Conf %>% 
+  bind_rows(tab %>%
+              broom::tidy() %>%
+              select(-class) %>%
+              mutate(test = "s_coef_qval"))
 
-FIT %>%
-  left_join(info, by = "site_id") %>%
-  transmute(significant = pval < 0.05, selected) %>%
-  ftable
+#
+cat("\tFIT pval...\n")
+tab <- FIT %>%
+  left_join(info, by = "site_id")
+tab <- caret::confusionMatrix(data = factor(tab$pval < 0.05),
+                              reference = factor(tab$selected),
+                              positive = "TRUE")
+p1 <- tab$table %>%
+  as_tibble() %>%
+  ggplot(aes(x = Reference, y = Prediction)) +
+  geom_point(aes(size = n), shape = 19, col = 'steelblue') +
+  geom_text(aes(label = n)) +
+  geom_vline(xintercept = 1.5) +
+  geom_hline(yintercept = 1.5) +
+  ggtitle(label = "FIT p-values") +
+  theme_classic() +
+  theme(legend.position = 'none',
+        axis.title = element_text(color = "black", face = 'bold'))
+filename <- file.path(args$confdir, "FIT_pval_confmat.png")
+ggsave(filename, p1, width = 3, height = 3)
+Conf <- Conf %>% 
+  bind_rows(tab %>%
+              broom::tidy() %>%
+              select(-class) %>%
+              mutate(test = "FIT_pval"))
 
-FIT %>%
+#
+cat("\tFIT qval...\n")
+tab <- FIT %>%
   left_join(info, by = "site_id") %>%
-  mutate(qval = p.adjust(pval, method = 'fdr')) %>%
-  transmute(significant = qval < 0.05, selected) %>%
-  ftable
+  mutate(qval = p.adjust(pval, method = 'fdr')) 
+tab <- caret::confusionMatrix(data = factor(tab$qval < 0.05),
+                              reference = factor(tab$selected),
+                              positive = "TRUE")
+p1 <- tab$table %>%
+  as_tibble() %>%
+  ggplot(aes(x = Reference, y = Prediction)) +
+  geom_point(aes(size = n), shape = 19, col = 'steelblue') +
+  geom_text(aes(label = n)) +
+  geom_vline(xintercept = 1.5) +
+  geom_hline(yintercept = 1.5) +
+  ggtitle(label = "FIT q-values") +
+  theme_classic() +
+  theme(legend.position = 'none',
+        axis.title = element_text(color = "black", face = 'bold'))
+filename <- file.path(args$confdir, "FIT_qval_confmat.png")
+ggsave(filename, p1, width = 3, height = 3)
+Conf <- Conf %>% 
+  bind_rows(tab %>%
+              broom::tidy() %>%
+              select(-class) %>%
+              mutate(test = "FIT_qval"))
 
-pdir %>%
+#
+cat("\tP(directional) qval...\n")
+tab <- pdir %>%
   left_join(info, by = "site_id") %>%
-  transmute(significant = p_directional > 0.5, selected) %>%
-  ftable
+  transmute(significant = p_directional > 0.5, selected)
+tab <- caret::confusionMatrix(data = factor(tab$significant),
+                              reference = factor(tab$selected),
+                              positive = "TRUE")
+p1 <- tab$table %>%
+  as_tibble() %>%
+  ggplot(aes(x = Reference, y = Prediction)) +
+  geom_point(aes(size = n), shape = 19, col = 'steelblue') +
+  geom_text(aes(label = n)) +
+  geom_vline(xintercept = 1.5) +
+  geom_hline(yintercept = 1.5) +
+  ggtitle(label = "P(directional)") +
+  theme_classic() +
+  theme(legend.position = 'none',
+        axis.title = element_text(color = "black", face = 'bold'))
+filename <- file.path(args$confdir, "pdir_confmat.png")
+ggsave(filename, p1, width = 3, height = 3)
+Conf <- Conf %>% 
+  bind_rows(tab %>%
+              broom::tidy() %>%
+              select(-class) %>%
+              mutate(test = "pdir"))
 
-pdir %>%
+#
+cat("\tP(directional,+)...\n")
+tab <- pdir %>%
   left_join(info, by = "site_id") %>%
-  transmute(significant = p_pos > 0.5, selected) %>%
-  ftable
+  transmute(significant = p_pos > 0.5, selected)
+tab <- caret::confusionMatrix(data = factor(tab$significant),
+                              reference = factor(tab$selected),
+                              positive = "TRUE")
+p1 <- tab$table %>%
+  as_tibble() %>%
+  ggplot(aes(x = Reference, y = Prediction)) +
+  geom_point(aes(size = n), shape = 19, col = 'steelblue') +
+  geom_text(aes(label = n)) +
+  geom_vline(xintercept = 1.5) +
+  geom_hline(yintercept = 1.5) +
+  ggtitle(label = "P(directional,+)") +
+  theme_classic() +
+  theme(legend.position = 'none',
+        axis.title = element_text(color = "black", face = 'bold'))
+filename <- file.path(args$confdir, "ppos_confmat.png")
+ggsave(filename, p1, width = 3, height = 3)
+Conf <- Conf %>% 
+  bind_rows(tab %>%
+              broom::tidy() %>%
+              select(-class) %>%
+              mutate(test = "ppos"))
 
-pdir %>%
+#
+cat("\tP(directional,-)...\n")
+tab <- pdir %>%
   left_join(info, by = "site_id") %>%
-  transmute(significant = p_neg > 0.5, selected) %>%
-  ftable
+  transmute(significant = p_neg > 0.5, selected)
+tab <- caret::confusionMatrix(data = factor(tab$significant),
+                              reference = factor(tab$selected),
+                              positive = "TRUE")
+p1 <- tab$table %>%
+  as_tibble() %>%
+  ggplot(aes(x = Reference, y = Prediction)) +
+  geom_point(aes(size = n), shape = 19, col = 'steelblue') +
+  geom_text(aes(label = n)) +
+  geom_vline(xintercept = 1.5) +
+  geom_hline(yintercept = 1.5) +
+  ggtitle(label = "P(directional,-)") +
+  theme_classic() +
+  theme(legend.position = 'none',
+        axis.title = element_text(color = "black", face = 'bold'))
+filename <- file.path(args$confdir, "pneg_confmat.png")
+ggsave(filename, p1, width = 3, height = 3)
+Conf <- Conf %>% 
+  bind_rows(tab %>%
+              broom::tidy() %>%
+              select(-class) %>%
+              mutate(test = "pneg"))
+
 
 
 
