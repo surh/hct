@@ -19,11 +19,18 @@
 params.simdirs = 'sims/'
 params.sims_params = ''
 params.outdir = 'output/'
-// FIT parameters
 
+// FIT parameters
 params.fit_n_timepoints = 3
 
 // Bern parameters
+params.q_thres = 0.1
+params.min_patients = 5
+params.iter = 3000
+params.warmup = 2000
+params.chains = 4
+params.vp = 5
+params.vq = 5
 
 // Load simulation parameters
 SIMPARS = Channel
@@ -62,7 +69,7 @@ process s_coef{
   tuple sim_id, file("s_coef.tsv") into SCOEFS
 
   """
-  $workflow.projectDir/s_coef_sim_moran_imm.r \
+  Rscript $workflow.projectDir/s_coef_sim_moran_imm.r \
     $simdir \
     --N $popsize \
     --T $T \
@@ -70,7 +77,6 @@ process s_coef{
     --output s_coef.tsv
   """
 }
-
 
 process FIT{
   label 'r'
@@ -80,16 +86,82 @@ process FIT{
 
   input:
   tuple val(sim_id), file(simdir), f, g, x_0, nsites,
-    npops, p_imm, prop_selected, popsize, T, seed from SIMS1
+    npops, p_imm, prop_selected, popsize, T, seed from SIMS2
   val n_timepoints from params.fit_n_timepoints
 
   output:
   tuple sim_id, file("FIT.tsv") into FITS
 
   """
-  $workflow.projectDir/s_coef_sim_moran_imm.r \
+  Rscript $workflow.projectDir/s_coef_sim_moran_imm.r \
     $simdir \
     --n_timepoints $n_timepoints \
     --output FIT.tsv
   """
 }
+
+process bern_mix{
+  cpus params.chains
+  tag "$sim_id"
+  label 'r'
+  publishDir "$params.outdir/stan_models", mode: 'rellink',
+    pattern: "output/m1.stan.rdat", saveAs: {"${spec}.stan.rdat"}
+  publishDir "$params.outdir/p_directional", mode: 'rellink',
+    pattern: "output/p_directional.tsv.gz", saveAs: {"${spec}.tsv.gz"}
+  publishDir "$params.outdir/model_summaries", mode: 'rellink',
+    pattern: "output/model_summaries.tsv.gz", saveAs: {"${spec}.tsv.gz"}
+
+  input:
+  tuple val(sim_id), file(simdir), f, g, x_0, nsites,
+    npops, p_imm, prop_selected, popsize, T, seed from SIMS3
+  val q_thres from params.q_thres
+  val min_patients from params.min_patients
+  val iter from params.iter
+  val warmup from params.warmup
+  val chains from params.chains
+  val vp from params.vp
+  val vq from params.vq
+
+  output:
+  file "output/m1.stan.rdat" optional true
+  tuple sim_id, "output/p_directional.tsv.gz" optional true into PDIRS
+  file  "output/model_summaries.tsv.gz" optional true
+
+  """
+  Rscript $workflow.projectDir/../bern_mix.r \
+    $simdir/sites.tsv \
+    --q_thres $q_thres \
+    --min_patients $min_patients \
+    --outdir output \
+    --iter $iter \
+    --warmup $warmup \
+    --chains $chains \
+    --vp $vp \
+    --vq $vq
+  """
+}
+
+// Example nextflow.config
+/*
+process{
+  queue = 'hbfraser,hns'
+  maxForks = 100
+  errorStrategy = 'finish'
+  stageInMode = 'rellink'
+  time = '4h'
+  memory = '2G'
+  withLabel: 'r'{
+    module = 'R/4.1.0'
+    // module = "R/4.0.2:v8/8.4.371.22" // Make sure you have ~/.R/Makevars with CXX14
+  }
+  withLabel: 'py3'{
+    conda = '/opt/modules/pkgs/anaconda/4.8/envs/fraserconda'
+    # conda = '/home/groups/hbfraser/modules/packages/conda/4.6.14/envs/fraserconda'
+  }
+}
+executor{
+  name = 'slurm'
+  queueSize = 500
+  submitRateLitmit = '1 sec'
+}
+*/
