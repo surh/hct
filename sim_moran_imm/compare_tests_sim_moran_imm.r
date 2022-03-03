@@ -523,7 +523,8 @@ write_tsv(ROC, filename)
 AUC <- ROC %>%
   split(.$test) %>%
   map_dfr(function(d){
-    tibble(AUC = integrate(f = approxfun(x = d$fpr, y = d$tpr, ties = min),
+    tibble(AUC = integrate(f = approxfun(x = d$fpr, y = d$tpr,
+                                         ties = min, yleft = 0, yright = 1),
               lower = 0, upper = 1,
               abs.tol = 0.01,
               subdivisions = 1000)$value)
@@ -533,5 +534,3 @@ write_tsv(AUC, filename)
 
 #+ ROC AUC table, results='asis'
 knitr::kable(AUC, caption = "AUC of ROC curves")
-
-
