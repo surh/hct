@@ -93,7 +93,7 @@ process FIT{
   tuple sim_id, file("FIT.tsv") into FITS
 
   """
-  Rscript $workflow.projectDir/s_coef_sim_moran_imm.r \
+  Rscript $workflow.projectDir/FIT_sim_moran_imm.r \
     $simdir \
     --n_timepoints $n_timepoints \
     --output FIT.tsv
@@ -153,10 +153,6 @@ process{
   withLabel: 'r'{
     module = 'R/4.1.0'
     // module = "R/4.0.2:v8/8.4.371.22" // Make sure you have ~/.R/Makevars with CXX14
-  }
-  withLabel: 'py3'{
-    conda = '/opt/modules/pkgs/anaconda/4.8/envs/fraserconda'
-    # conda = '/home/groups/hbfraser/modules/packages/conda/4.6.14/envs/fraserconda'
   }
 }
 executor{
