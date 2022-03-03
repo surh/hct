@@ -90,6 +90,9 @@ if(!dir.exists(args$outdir)){
   args$confdir <- file.path(args$outdir, "confmat")
   dir.create(args$confdir)
   
+  args$rocdir <- file.path(args$outdir, "roc")
+  dir.create(args$roc)
+  
 }else{
   stop("ERROR: output directory already exists", call. = TRUE)
 }
@@ -420,20 +423,44 @@ Conf <- Conf %>%
               mutate(test = "pneg"))
 
 
+cat("Writing confussion table params...\n")
+filename <- file.path(args$confdir, "confusion_table_params.tsv")
+write_tsv(Conf, filename)
 
+#+ conf comparison
+# Conf %>%
+#   print(n = 14)
+# Conf %>% filter(term == "accuracy")
+p1 <- Conf %>%
+  filter(term == "pos_pred_value") %>%
+  ggplot(aes(x = test, y = estimate)) +
+  geom_bar(stat = "identity") +
+  ggtitle(label = "Positive Predictive Value") +
+  AMOR::theme_blackbox()
+filename <- file.path(args$confdir, "ppv.png")
+ggsave(filename, p1, width = 5, height = 4)
 
-## ROC curves
+p1 <- Conf %>%
+  filter(term == "balanced_accuracy") %>%
+  ggplot(aes(x = test, y = estimate)) +
+  geom_bar(stat = "identity") +
+  ggtitle(label = "(Sensitivity + Specificity) / 2") +
+  AMOR::theme_blackbox()
+filename <- file.path(args$confdir, "balanced_accuracy.png")
+ggsave(filename, p1, width = 5, height = 4)
 
-ROC curves allow us to compare the performance of classifier methods
-at all thresholds.
+#' ## ROC curves
+#' 
+#' ROC curves allow us to compare the performance of classifier methods
+#' at all thresholds.
+#' 
+#' An important caveat is that the number of tests is not identical
+#' across methods since the selection coefficient & FIT tests discard some
+#' observations and sites that don't fit their inclusion criteria, while
+#' the P(directional) statistics always include all sites and populations
+#' simulated.
 
-An important caveat is that the number of tests is not identical
-across methods since the selection coefficient & FIT tests discard some
-observations and sites that don't fit their inclusion criteria, while
-the P(directional) statistics always include all sites and populations
-simulated.
-
-```{r roc curves}
+#+ roc curves
 ROC <- bind_rows(s_coef %>%
   left_join(info, by = "site_id") %>%
   transmute(truth = selected,
@@ -480,20 +507,19 @@ p1 <- ROC %>%
   ggplot(aes(x = fpr, y = tpr, group = test))+
   geom_line(aes(col = test)) +
   AMOR::theme_blackbox()
-p1
-filename <- file.path(args$outdir, "roc_curves.png")
+filename <- file.path(args$rocdir, "roc_curves.png")
 ggsave(filename, p1, width = 6, height = 4)
 
-filename <- file.path(args$outdir, "roc_curves.tsv")
+filename <- file.path(args$rocdir, "roc_curves.tsv")
 write_tsv(ROC, filename)
-```
 
-When lines of different ROC curves intersect it can be hard to make a decision
-regarding a method. A standard way to summarise the information of ROC
-curves is by calculating the Area Under the Curve (AUC). EWe use the trapezoid
-rule.
 
-```{r ROC AUC}
+#' When lines of different ROC curves intersect it can be hard to make a decision
+#' regarding a method. A standard way to summarise the information of ROC
+#' curves is by calculating the Area Under the Curve (AUC). EWe use the trapezoid
+#' rule.
+
+#+ r ROC AUC
 AUC <- ROC %>%
   split(.$test) %>%
   map_dfr(function(d){
@@ -502,11 +528,10 @@ AUC <- ROC %>%
               abs.tol = 0.01,
               subdivisions = 1000)$value)
   }, .id = "test")
-filename <- file.path(args$outdir, "roc_auc.tsv")
+filename <- file.path(args$rocdir, "roc_auc.tsv")
 write_tsv(AUC, filename)
-```
 
-```{r ROC AUC table, results='asis'}
+#+ ROC AUC table, results='asis'
 knitr::kable(AUC, caption = "AUC of ROC curves")
 
 
