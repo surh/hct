@@ -105,11 +105,11 @@ process bern_mix{
   tag "$sim_id"
   label 'r'
   publishDir "$params.outdir/stan_models", mode: 'rellink',
-    pattern: "output/m1.stan.rdat", saveAs: {"${spec}.stan.rdat"}
+    pattern: "output/m1.stan.rdat", saveAs: {"${sim_id}.stan.rdat"}
   publishDir "$params.outdir/p_directional", mode: 'rellink',
-    pattern: "output/p_directional.tsv.gz", saveAs: {"${spec}.tsv.gz"}
+    pattern: "output/p_directional.tsv.gz", saveAs: {"${sim_id}.tsv.gz"}
   publishDir "$params.outdir/model_summaries", mode: 'rellink',
-    pattern: "output/model_summaries.tsv.gz", saveAs: {"${spec}.tsv.gz"}
+    pattern: "output/model_summaries.tsv.gz", saveAs: {"${sim_id}.tsv.gz"}
 
   input:
   tuple val(sim_id), file(simdir), f, g, x_0, nsites,
