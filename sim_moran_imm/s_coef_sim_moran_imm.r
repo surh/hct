@@ -41,7 +41,7 @@ process_arguments <- function(){
                                  "at the beginning of the simulation."),
                     type = "numeric",
                     default = 100)
-  p <- add_argument("--output",
+  p <- add_argument(p, "--output",
                     help = paste("File to write output"),
                     type = "character",
                     default = "s_coef.tsv")

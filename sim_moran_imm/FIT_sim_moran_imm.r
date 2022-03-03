@@ -33,7 +33,7 @@ process_arguments <- function(){
                                  "Timepoints will be evenly spaced."),
                     type = "numeric",
                     default = 3)
-  p <- add_argument("--output",
+  p <- add_argument(p, "--output",
                     help = paste("File to write output"),
                     type = "character",
                     default = "FIT.tsv")
