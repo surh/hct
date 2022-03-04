@@ -16,13 +16,56 @@
 # You should have received a copy of the GNU General Public License
 # along with This software.  If not, see <https://www.gnu.org/licenses/>.
 
-args <- list(s_coef = "/home/sur/micropopgen/exp/2022/today2/comparison_results/s_coef/sim_1.tsv",
-             FIT = "/home/sur/micropopgen/exp/2022/today2/comparison_results/FIT/sim_1.tsv",
-             pdir = "/home/sur/micropopgen/exp/2022/today2/comparison_results/p_directional/sim_1.tsv.gz",
-             info = "/home/sur/micropopgen/exp/2022/today2/sims/sim_1/snps_info.txt",
-             outdir = "comp_test/")
+#+ read arguments, echo = FALSE
+library(argparser)
+
+process_arguments <- function(){
+  p <- arg_parser(paste("Script to compare P(directional) detection of",
+                        "selection with methods from Feder et al.",
+                        "Script ready for knitr::spin()."))
+  
+  # Optional arguments
+  p <- add_argument(p, "--s_coef",
+                     help = paste("File with selection coefficient estimates."),
+                     type = "character",
+                     default = "")
+  p <- add_argument(p, "--FIT",
+                    help = paste("File with estimates from FIT."),
+                    type = "character",
+                    default = "")
+  p <- add_argument(p, "--pdir",
+                    help = paste("File with P(directional) estimates."),
+                    type = "character",
+                    default = "")
+  p <- add_argument(p, "--info",
+                    help = paste("File with ground truth for SNPs."),
+                    type = "character",
+                    default = "")
+  p <- add_argument(p, "--outdir",
+                    help = paste(""),
+                    type = "character",
+                    default = "output")
+                     
+  # Read arguments
+  cat("Processing arguments...\n")
+  args <- parse_args(p)
+  
+  return(args)
+}
+
+args <- process_arguments()
+# args <- list(s_coef = "/home/sur/micropopgen/exp/2022/today2/comparison_results/s_coef/sim_1.tsv",
+#              FIT = "/home/sur/micropopgen/exp/2022/today2/comparison_results/FIT/sim_1.tsv",
+#              pdir = "/home/sur/micropopgen/exp/2022/today2/comparison_results/p_directional/sim_1.tsv.gz",
+#              info = "/home/sur/micropopgen/exp/2022/today2/sims/sim_1/snps_info.txt",
+#              outdir = "comp_test/")
 library(tidyverse)
 
+#+ print args
+print(args)
+
+
+#+ functions, echo=FALSE
 #' Title
 #'
 #' @param d tibble or data frame. Must have columns `truth` & `score`. The
