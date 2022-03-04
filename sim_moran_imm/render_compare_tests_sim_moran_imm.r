@@ -36,7 +36,7 @@ if(sum(ii) == 0){
 }
 r_script <- cmd_args[ ii ] %>% str_remove("^--file=")
 script_dir <- dirname(r_script)
-script_to_render <- file.path(script_dir, "comare_tests_sim_moran_imm.r")
+script_to_render <- file.path(script_dir, "compare_tests_sim_moran_imm.r")
 
 # args <- list(s_coef = "/home/sur/micropopgen/exp/2022/today2/comparison_results/s_coef/sim_1.tsv",
 #              FIT = "/home/sur/micropopgen/exp/2022/today2/comparison_results/FIT/sim_1.tsv",
