@@ -49,11 +49,15 @@ SIMPARS = Channel
     row.seed)}
 
 // Get list of simulation directories
-SIMDIRS = Channel.fromPath("$params.simdirs/*", type:'dir', maxDepth: 1)
+Channel.fromPath("$params.simdirs/*", type:'dir', maxDepth: 1)
   .map{simdir -> tuple(simdir.name, file(simdir))}
+  .into{SIMDIRS; SIMDIRS_TEMP}
 
 // Splitting for each selection method
 SIMDIRS.join(SIMPARS).into{SIMS1; SIMS2; SIMS3}
+
+INFOS = SIMDIRS_TEMP
+  .map{sim_id, simdir -> tuple(sim_id, file("$simdir/snps_info.txt"))}
 
 process s_coef{
   label 'r'
@@ -141,6 +145,34 @@ process bern_mix{
     --chains $chains \
     --vp $vp \
     --vq $vq
+  """
+}
+
+process compare{
+  tag "$sim_id"
+  label 'r'
+  publishDir "$params.outdir/comp_htmls/", mode: 'rellink',
+    pattern: "compare_tests_sim_moran_imm.html",
+    saveAs:{"${sim_id}.html"}
+  publishDir "$params.outdir/comparisons/", mode: 'rellink',
+    pattern: "output/",
+    saveAs:{"$sim_id"}
+
+  input:
+  tuple val(sim_id), file(s_coef), file(fit),
+    file(pdir), file(info) from SCOEFS.join(FITS).join(PDIR).join(INFOS)
+
+  output:
+  file "output/"
+  file "compare_tests_sim_moran_imm.html"
+  
+  """
+  Rscript $workflow.projectDir/render_compare_tests_sim_moran_imm.r \
+    --s_coef $scoef \
+    --FIT $fit \
+    --pdir $pdir\
+    --info $info \
+    --outdir output
   """
 }
 
