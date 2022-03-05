@@ -160,12 +160,12 @@ process compare{
 
   input:
   tuple val(sim_id), file(s_coef), file(fit),
-    file(pdir), file(info) from SCOEFS.join(FITS).join(PDIR).join(INFOS)
+    file(pdir), file(info) from SCOEFS.join(FITS).join(PDIRS).join(INFOS)
 
   output:
   file "output/"
   file "compare_tests_sim_moran_imm.html"
-  
+
   """
   Rscript $workflow.projectDir/render_compare_tests_sim_moran_imm.r \
     --s_coef $scoef \
