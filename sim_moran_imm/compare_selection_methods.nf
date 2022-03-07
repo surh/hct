@@ -155,7 +155,7 @@ process compare{
     pattern: "compare_tests_sim_moran_imm.html",
     saveAs:{"${sim_id}.html"}
   publishDir "$params.outdir/comparisons/", mode: 'rellink',
-    pattern: "output/",
+    pattern: "output",
     saveAs:{"$sim_id"}
 
   input:
