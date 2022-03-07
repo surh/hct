@@ -84,6 +84,7 @@ process s_coef{
 
 process FIT{
   label 'r'
+  label 'long'
   tag "$sim_id"
   publishDir "$params.outdir/FIT/", mode: 'rellink',
     saveAs: {"${sim_id}.tsv"}
@@ -108,6 +109,7 @@ process bern_mix{
   cpus params.chains
   tag "$sim_id"
   label 'r'
+  label 'bern'
   publishDir "$params.outdir/stan_models", mode: 'rellink',
     pattern: "output/m1.stan.rdat", saveAs: {"${sim_id}.stan.rdat"}
   publishDir "$params.outdir/p_directional", mode: 'rellink',
@@ -188,6 +190,13 @@ process{
   withLabel: 'r'{
     module = 'R/4.1.0'
     // module = "R/4.0.2:v8/8.4.371.22" // Make sure you have ~/.R/Makevars with CXX14
+  }
+  withLabel: 'long'{
+    time = '48h'
+  }
+  withLabel: 'bern'{
+    time = '48h'
+    memory = '8G'
   }
 }
 executor{
