@@ -168,7 +168,7 @@ process compare{
 
   """
   Rscript $workflow.projectDir/render_compare_tests_sim_moran_imm.r \
-    --s_coef $scoef \
+    --s_coef $s_coef \
     --FIT $fit \
     --pdir $pdir\
     --info $info \
