@@ -245,11 +245,11 @@ s1 10000 late()
 	writeFile(runId + ".time", runIdShort+"\tWF\tfwd\t"+c3, append=T);
 	
 	// Write snp_info.txt
-	writeFile("snps_info.txt", "snp_id\tref_id\tref_pos\tm_type\t");
+	writeFile("snps_info.txt", "snp_id\tref_id\tref_pos\ts_coef\t");
 	for (mut in sim.mutations){
 		m_id = mut.id;
 		m_pos = mut.position;
-		m_type = paste(mut.mutationType);
+		m_type = mut.selectionCoeff;
 	
 		line = paste(c(m_id, "chr1", m_pos, m_type), sep = "\t");
 		// line = paste(line + "\n");
