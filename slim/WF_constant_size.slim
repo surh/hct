@@ -158,6 +158,7 @@ initialize()
 	system("ms", args=ms_args);
 	
 	// read the ms output file
+	// Here I probably need to add option to make some of those mutations selected
 	readMS(runId + ".ms");
 	
 	c2 = clock();
@@ -243,7 +244,18 @@ s1 10000 late()
 	c3 = sim.getValue("time_end") - sim.getValue("time_beg");
 	writeFile(runId + ".time", runIdShort+"\tWF\tfwd\t"+c3, append=T);
 	
-	//	catn("generation " + sim.generation);
+	// Write snp_info.txt
+	writeFile("snps_info.txt", "snp_id\tref_id\tref_pos\tm_type\t");
+	for (mut in sim.mutations){
+		m_id = mut.id;
+		m_pos = mut.position;
+		m_type = paste(mut.mutationType);
 	
+		line = paste(c(m_id, "chr1", m_pos, m_type), sep = "\t");
+		// line = paste(line + "\n");
+		writeFile("snps_info.txt", line, append = T);
+	}
+
+	//	catn("generation " + sim.generation);
 	sim.simulationFinished();
 }
