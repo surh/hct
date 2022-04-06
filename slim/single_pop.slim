@@ -125,7 +125,7 @@ initialize()
 	defineConstant("prop_selection", 0.01); // Proportion of de novo mutation with fitness advantage
 
 	defineConstant("standing_variation", "standing_variation.ms"); // ms file with standing variation
-	defineConstant("info", "starting_pop/snps_info.txt"); // tsv file with header & sites for selection in the 5-th column
+	defineConstant("info_file", "starting_pop/snps_info.txt"); // tsv file with header & sites for selection in the 5-th column
 	
 	
 	// Following are defined by original authors   
@@ -164,6 +164,42 @@ initialize()
 	// Here I probably need to add option to make some of those mutations selected
 	readMS(standing_variation);
 	
+	
+	// Read info file and get positions under selection	
+	sel_ii = NULL;
+	info = readFile(info_file);
+	for( i in 0:(length(info) - 1) ){
+		if(i == 0){
+			if(info[i] == "site_id\tref_id\tref_pos\tmaf\tsel"){
+				cat("Header matches\n");
+			}else{
+				stop("Header doesn't match\n");
+			}
+		}else{
+			line = strsplit(info[i], "\t");
+			pos = asInteger(line[2]);
+			sel = asFloat(line[4]);
+		
+			// Right now I'm not using sel except as
+			// a flag, and not using pos
+			// NOTE: I am not using pos because there is
+			// discrepancy in the rounding to positions that I
+			// get from R and eidos, so I cannot easily 
+			// mix processing from both scripts
+			if(sel != 0){
+				sel_ii = c(sel_ii, i - 1);
+			}
+		}
+	}
+	cat("Found " + length(sel_ii) + " positions to change their selection coefficient\n")
+
+	// Update selection coefficient of mutations under selection
+	cat("Updating selecction coefficients\n")
+	for(i in sel_ii){
+		cat(">" + sim.mutations.position[i] + "\n")
+		sim.mutations[i].setSelectionCoeff(scoef1)
+	}
+
 	c2 = clock();
 	c3 = c2 - c1;
 	writeFile(runId + ".time", runIdShort+"\tWF\tburnin\t"+c3, append=F);
