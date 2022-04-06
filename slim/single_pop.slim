@@ -126,7 +126,8 @@ initialize()
 
 	defineConstant("standing_variation", "standing_variation.ms"); // ms file with standing variation
 	defineConstant("info_file", "starting_pop/snps_info.txt"); // tsv file with header & sites for selection in the 5-th column
-	
+	defineConstant("print_period", 10); // How many generations between sampling
+	defineConstant("outdir", "sim/"); // Directory for writint output
 	
 	// Following are defined by original authors   
 	defineConstant("Theta", 2*Ne*Mu); // Theta
@@ -136,9 +137,10 @@ initialize()
 	defineConstant("x2", rdunif(1, 1, 10000000)); // random seed for ms
 	defineConstant("x3", rdunif(1, 1, 10000000)); // random seed for ms
 	initializeMutationRate(Mu);
-	initializeMutationType("m1", 1.0, "f", 0.0);
-	initializeMutationType("m2", 1.0, "f", scoef1);
-	initializeGenomicElementType("g1", c(m1, m2), c(1.0 - prop_selection, prop_selection));
+	initializeMutationType("m1", 1.0, "f", 0.0); // Standing mutations
+	initializeMutationType("m2", 1.0, "f", 0.0); // de novo neutral mutations
+	initializeMutationType("m3", 1.0, "f", scoef1); // de novo selected mutations
+	initializeGenomicElementType("g1", c(m2, m3), c(1.0 - prop_selection, prop_selection));
 	initializeGenomicElement(g1, 0, genomeSize - 1);
 	initializeRecombinationRate(0); // In SLiM recombination is between sister chromatids
 }
@@ -191,13 +193,13 @@ initialize()
 			}
 		}
 	}
-	cat("Found " + length(sel_ii) + " positions to change their selection coefficient\n")
+	cat("Found " + length(sel_ii) + " positions to change their selection coefficient\n");
 
 	// Update selection coefficient of mutations under selection
-	cat("Updating selecction coefficients\n")
+	cat("Updating selecction coefficients\n");
 	for(i in sel_ii){
-		cat(">" + sim.mutations.position[i] + "\n")
-		sim.mutations[i].setSelectionCoeff(scoef1)
+		cat(">" + sim.mutations.position[i] + "\t" + sim.mutations[i].id +"\n");
+		sim.mutations[i].setSelectionCoeff(1.0);
 	}
 
 	c2 = clock();
@@ -227,11 +229,11 @@ late()
 	// but for haploid, mutations are fixed at 0.5)
 	//	muts = sim.mutationsOfType(m1);
 	// Removing all fixed mutations, not only m1, do I want to do this?
-	muts = sim.mutations;
-	freqs = sim.mutationFrequencies(NULL, muts);
-	fixed_muts = muts[freqs == 0.5];
-	if (size(fixed_muts) > 0)
-		sim.subpopulations.genomes.removeMutations(fixed_muts, T);
+	// muts = sim.mutations;
+	// freqs = sim.mutationFrequencies(NULL, muts);
+	// fixed_muts = muts[freqs == 0.5];
+	// if (size(fixed_muts) > 0)
+	//	sim.subpopulations.genomes.removeMutations(fixed_muts, T);
 	
 	// Gene Conversion event
 	// each individual has a proba of gene conversion per bp
@@ -284,17 +286,36 @@ s1 10000 late()
 	writeFile(runId + ".time", runIdShort+"\tWF\tfwd\t"+c3, append=T);
 	
 	// Write snp_info.txt
-	writeFile("snps_info.txt", "snp_id\tref_id\tref_pos\ts_coef\t");
+	writeFile("snps_info.txt", "snp_id\tref_id\tref_pos\ts_coef\tm_type");
 	for (mut in sim.mutations){
 		m_id = mut.id;
 		m_pos = mut.position;
-		m_type = mut.selectionCoeff;
+		m_scoef = mut.selectionCoeff;
+		m_type = paste(mut.mutationType);
+		
+		if(sum(m_type == c("MutationType<m1>", "MutationType<m2>", "MutationType<m3>")) == 1){
+			if(m_type == "MutationType<m1>"){
+				m_type = "m1";
+			}
+			
+			if(m_type == "MutationType<m2>"){
+				m_type = "m2";
+			}
+			
+			if(m_type == "MutationType<m3>"){
+				m_type = "m3";
+			}
+						
+		}else{
+			stop("Unknown mutation type");
+		}
 	
-		line = paste(c(m_id, "chr1", m_pos, m_type), sep = "\t");
+		line = paste(c(m_id, "chr1", m_pos, m_scoef, m_type), sep = "\t");
 		// line = paste(line + "\n");
 		writeFile("snps_info.txt", line, append = T);
 	}
-
+	
+	sim.outputFull("full_output.txt");
 	//	catn("generation " + sim.generation);
 	sim.simulationFinished();
 }
