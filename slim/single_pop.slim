@@ -92,7 +92,7 @@ function (void)readMS(string$ path)
 	sim.addSubpop("p1000", 1);
 	g = p1000.individuals.genome1;
 	L = sim.chromosome.lastPosition;
-	intPositions = asInteger(round(positions * L));
+	intPositions = asInteger(floor(positions * L));
 	muts = g.addNewMutation(m1, 0.0, intPositions);
 	
 	// add the appropriate mutations to each first genome (haploid)

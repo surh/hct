@@ -154,7 +154,8 @@ process_popdir <- function(pop_dir,
       # Produce output
       info %>%
         full_join(dat$info %>%
-                    select(ref_id, ref_pos, maf)) %>%
+                    select(ref_id, ref_pos, maf),
+                  by = c("ref_id", "ref_pos")) %>%
         mutate(gen = gen_label,
                s_coef = as.numeric(s_coef))
     }, pop_dir = pop_dir,
@@ -223,8 +224,9 @@ Info <- dat$info %>%
   rename(gen_0 = maf)
 Info
 
-
-
+cat("THIS IS TEMPORARY, FIX BEFORE REAL RUN")
+Sel_info <- HMVAR::read_midas_info("standing_variation/snps_info.txt")
+Info$s_coef <- as.numeric(Sel_info$sel)
 
 # list.dirs(args$sim_dir, recursive = FALSE, full.names = T)[1] %>%
 #   map(function(pop_dir){
@@ -237,29 +239,35 @@ if(!dir.exists(args$outdir)){
 }
 
 
-list.dirs(args$sim_dir,
+Changes <- list.dirs(args$sim_dir,
           recursive = FALSE,
           full.names = TRUE)[1:2] %>%
   set_names() %>%
   map(process_popdir,
       n_genomes = args$n_genomes,
       genome_size = args$genome_size,
-      filter = FALSE) %>%
+      filter = FALSE) 
   map(function(Pop, Gen0, filter = FALSE){
+    Pop <- Changes[[1]]
+    Gen0 <- Info
+    filter <- TRUE
+    
     # Merge with starting variation
-    Pop <- Pop %>%
+    
+    Pop %>%
       full_join(Gen0 %>%
-                  select(ref_id, ref_pos, m_type, gen_0),
-                by = c("ref_id", "ref_pos", "m_type")) %>%
-      select(site_id = snp_id, ref_id, ref_pos, s_coef, m_type, gen_0, everything())
+                  select(ref_id, ref_pos, m_type, s_coef, gen_0),
+                by = c("ref_id", "ref_pos", "s_coef", "m_type")) %>%
+      select(site_id = snp_id, ref_id, ref_pos, s_coef, m_type, gen_0, everything()) %>%
+      filter(s_coef != 0) %>% print(n = 30)
     
     # Remove undetected
     if(filter)
       Pop <- remove_undetected(Pop)
     
     Pop
-  }, Gen0 = Info, filter = TRUE) %>%
-  imap(function(Pop, pop_dir, base_dir){
+  }, Gen0 = Info, filter = TRUE)
+  imap_dfr(function(Pop, pop_dir, base_dir){
     pop_id <- basename(pop_dir)
     outdir <- file.path(base_dir, pop_id)
     dir.create(outdir)
@@ -273,13 +281,46 @@ list.dirs(args$sim_dir,
                              starts_with("gen_")),
               filename)
     
+    # # Calculate maf changes used for sites counts (for bern)
+    # generations <- colnames(Pop)
+    # generations <- generations[ str_detect(generations, "^gen_") ]
+    # generations <- str_remove(generations, "^gen_") %>% as.numeric()
+    # # generations 
+    # t_0 <- min(generations)
+    # t_n <- max(generations)
+    # samples <- paste0("gen_", c(t_0, t_n))
+    # 
+    # # Select start and end and calculate maf change
+    # Pop <- Pop %>%
+    #   select(site_id, all_of(samples))
+    # # Pop
+    # colnames(Pop) <- c("site_id", "t_0", "t_n")
+    # 
+    # 
+    # Pop %>%
+    #   mutate(t_0 = replace_na(t_0, 0),
+    #          t_n = replace_na(t_n, 0)) %>%
+    #   mutate(maf_change = t_n - t_0,
+    #          pop_id = pop_id)
   }, base_dir = args$outdir)
 
+filename <- file.path(args$outdir, "maf_changes.tsv")
+write_tsv(Changes, filename)
+Changes
+
+Sites <- Changes %>%
+  group_by(site_id) %>%
+  summarise(n_decrease = sum(maf_change < 0),
+            n_equal = sum(maf_change == 0),
+            n_increase = sum(maf_change >0)) %>%
+  mutate(n_patients = n_decrease + n_equal + n_increase)
+Sites %>%
+  arrange(desc(n_patients))
+filename <- file.path(args$outdir, "sites.tsv")
+write_tsv(Sites, filename)
 
 
 
-
-
-
-
+Pop <- Pops[[1]]
+Pop
 
