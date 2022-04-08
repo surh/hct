@@ -121,7 +121,7 @@ function (void)write_sample_pop(string$ outpath, integer$ n_samples, integer$ ge
 	// Output custom info file
 	// Write snp_info.txt
 	filename = outpath + "/gen_" + generation + "_snp_info.txt";
-	writeFile(filename, "snp_id\tref_id\tref_pos\ts_coef\tm_type");
+	writeFile(filename, "site_id\tref_id\tref_pos\ts_coef\tm_type");
 	for (mut in sim.mutations){
 		m_id = mut.id;
 		m_pos = mut.position;
