@@ -37,7 +37,7 @@ while(i <= length(ms)){
   }else if( str_detect(ms[[i]], "^positions:") ){
     positions <- str_remove(ms[[i]], "^positions:")
     positions <- str_split(trimws(positions, which = "both"), " ")[[1]]
-    positions <- round(as.numeric(positions) * params$genome_size)
+    positions <- floor(as.numeric(positions) * params$genome_size)
     
     if(length(positions) != n_sites){
       stop("ERROR: number of positions doesn't match number of sites",
