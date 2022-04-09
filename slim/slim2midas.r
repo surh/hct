@@ -112,7 +112,10 @@ process_popdir <- function(pop_dir,
                            n_genomes = 10,
                            genome_size = 1e6,
                            filter = TRUE){
-  # pop_dir <- file.path(args$sim_dir, "pop_1")
+  # pop_dir <- file.path(args$sim_dir, "pop_10")
+  # n_genomes <- 10
+  # genome_size <- 1e6
+  # filter <- FALSE
   
   pop_id <- basename(pop_dir)
   cat("\tProcessing population ", pop_id, "\n")
@@ -126,7 +129,7 @@ process_popdir <- function(pop_dir,
   Pop <- generations %>%
     # set_names() %>%
     map_dfr(function(g, pop_dir, n_genomes = 10, genome_size = 1e6){
-      # g <- 10
+      # g <- 50
       # Reading ms file for current generation sample
       cat("\t>Generation ", g, "\n")
       dat <- read_ms( file.path(pop_dir, paste0("gen_", g, ".ms")) )
@@ -166,7 +169,7 @@ process_popdir <- function(pop_dir,
   # Rearrange into table
   cat("\tRearranging allele frequenciess..\n")
   Pop <- Pop %>% 
-    pivot_wider(id_cols = c(snp_id, ref_id, ref_pos, s_coef, m_type),
+    pivot_wider(id_cols = c(site_id, ref_id, ref_pos, s_coef, m_type),
                 values_from = "maf", names_from = "gen")
   # Pop
   
@@ -204,7 +207,6 @@ args <- list(start_dir = "standing_variation/",
              seed = 2308123)
 
 
-set.seed(args$seed)
 dat <- read_ms("standing_variation/standing_variation.ms")
 # genomes <- sample(colnames(dat$freq)[-1], size = args$n_genomes)
 genomes <- colnames(dat$freq)[-1]
@@ -226,7 +228,18 @@ Info
 
 cat("THIS IS TEMPORARY, FIX BEFORE REAL RUN")
 Sel_info <- HMVAR::read_midas_info("standing_variation/snps_info.txt")
+Sel_info <- Sel_info %>%
+  mutate(sel = as.numeric(sel))
+Info
+# # Adding sel coef
+# Info <- Info %>%
+#   full_join(Sel_info %>%
+#               select(ref_id, ref_pos, s_coef = sel),
+#             by = c("ref_id", "ref_pos")) %>%
+#   select(site_id, ref_id, ref_pos, s_coef, m_type, gen_0)
+
 Info$s_coef <- as.numeric(Sel_info$sel)
+# Info
 
 # list.dirs(args$sim_dir, recursive = FALSE, full.names = T)[1] %>%
 #   map(function(pop_dir){
@@ -258,7 +271,7 @@ Changes <- list.dirs(args$sim_dir,
       full_join(Gen0 %>%
                   select(ref_id, ref_pos, m_type, s_coef, gen_0),
                 by = c("ref_id", "ref_pos", "s_coef", "m_type")) %>%
-      select(site_id = snp_id, ref_id, ref_pos, s_coef, m_type, gen_0, everything()) %>%
+      select(site_id, ref_id, ref_pos, s_coef, m_type, gen_0, everything()) %>%
       filter(s_coef != 0) %>% print(n = 30)
     
     # Remove undetected

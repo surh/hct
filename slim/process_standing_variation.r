@@ -2,11 +2,11 @@
 library(tidyverse)
 
 
-params <- list(ms_file = "standing_variation.ms",
+params <- list(ms_file = "standing_variation/standing_variation.ms",
                genome_size = 1e6,
                prop_selected = 0.01,
                min_maf = 0.05,
-               outdir = "starting_pop")
+               outdir = "standing_variation/")
 
 
 ms <- read_lines(params$ms_file)
@@ -143,7 +143,7 @@ if(!dir.exists(params$outdir)){
 }
 
 write_tsv(Res, file.path(params$outdir, "snps_info.txt"))
-write_tsv(Geno, file.path(params$outdir, "snps_freqs.txt"))
+write_tsv(Geno, file.path(params$outdir, "snps_freq.txt"))
 
 
 
