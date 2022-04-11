@@ -240,7 +240,7 @@ initialize()
 		cat(">" + sim.mutations.position[i] + "\t" + sim.mutations[i].id +"\n");
 		sim.mutations[i].setSelectionCoeff(1.0);
 	}
-
+		
 	c2 = clock();
 	c3 = c2 - c1;
 	writeFile(runId + ".time", runIdShort+"\tWF\tburnin\t"+c3, append=F);
@@ -292,7 +292,7 @@ late()
 	}
 	
 	// Print periodically
-	if( (sim.generation > 0) & (sim.generation % print_period == 0) ){
+	if( (sim.generation == 1) | (sim.generation % print_period == 0) ){
 			write_sample_pop(outdir, sampleSize, sim.generation);
 	}
 }
