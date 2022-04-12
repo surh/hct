@@ -98,12 +98,102 @@ read_ms <- function(file){
   return(list(info = Res[[1]], freq = Geno[[1]]))
 }
 
+
+#' Title
+#'
+#' @param file 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+read_slimout <- function(file){
+  # file <- "sim_x/pop_1/gen_1.slimout"
+  
+  slim <- readr::read_lines(file)
+  
+  mut_flag <- FALSE
+  geno_flag <- FALSE
+  info <- NULL
+  geno <- NULL
+  for(line in slim){
+    if(str_detect(line, "^#"))
+      next
+    
+    if(line == "Mutations:"){
+      mut_flag <- TRUE
+      geno_flag <- FALSE
+      cat("\t>Detected beginning of mutations...\n")
+      next
+    }
+    if(line == "Genomes:"){
+      mut_flag <- FALSE
+      geno_flag <- TRUE
+      cat("\t>Detected beginning of genomes...\n")
+      next
+    }
+    
+    
+    if(!mut_flag && !geno_flag){
+      print(line)
+      stop("ERROR: unexpected file region", call. = TRUE)
+    }
+    
+    # line <- slim[6]
+    line <- str_split(line, pattern = " ")[[1]]
+    # line
+    
+    if(mut_flag && !geno_flag){
+      info <- info %>%
+        bind_rows(as_tibble(matrix(line, nrow = 1)))
+    }else if(!mut_flag && geno_flag){
+      
+      geno <- geno %>%
+        bind_rows(tibble(genome_id = line[1],
+                         mut_id = line[-(1:2)]))
+      
+    }
+    
+  }
+  
+  colnames(info) <- c("mut_id", "site_id", "m_type",
+                      "ref_pos", "s_coef", "d_coef",
+                      "orig", "generation", "prevalence")
+  # info
+  
+  geno <- geno %>%
+    mutate(genome_id = str_remove(genome_id, "^p[*][:]")) %>%
+    mutate(genome_id = paste0("i", genome_id)) %>%
+    mutate(count = 1) %>%
+    pivot_wider(names_from = "genome_id",
+                values_from = "count",
+                values_fill = 0)
+  # geno
+  
+  mut2site <- set_names(info$site_id, nm = info$mut_id)
+  geno <- geno %>%
+    mutate(mut_id = mut2site[mut_id] %>% as.character()) %>%
+    rename(site_id = mut_id)
+  # geno
+  
+  info <- info %>%
+    transmute(site_id,
+              ref_id = "chr1",
+              ref_pos = as.numeric(ref_pos),
+              m_type,
+              s_coef = as.numeric(s_coef),
+              generation = as.numeric(generation),
+              prevalence = as.numeric(generation))
+  
+  
+  return(list(info = info, freq = geno))
+}
+
 #' Process simulation of one population
 #'
 #' @param pop_dir 
 #' @param n_genomes 
 #' @param genome_size 
-#' @param filter 
 #'
 #' @return
 #' @export
@@ -111,15 +201,14 @@ read_ms <- function(file){
 #' @examples
 process_popdir <- function(pop_dir,
                            n_genomes = 10,
-                           genome_size = 1e6,
-                           filter = TRUE){
+                           genome_size = 1e6){
   # pop_dir <- file.path(args$sim_dir, "pop_10")
   # n_genomes <- 10
   # genome_size <- 1e6
   # filter <- FALSE
   
   pop_id <- basename(pop_dir)
-  cat("\tProcessing population ", pop_id, "\n")
+  cat("Processing population ", pop_id, "\n")
   
   # Process population directory filenames
   pop_files <- list.files(pop_dir, recursive = FALSE, full.names = T)
@@ -131,10 +220,11 @@ process_popdir <- function(pop_dir,
   Pop <- generations %>%
     # set_names() %>%
     map_dfr(function(g, pop_dir, n_genomes = 10, genome_size = 1e6){
-      g <- 1
+      # g <- 1
       # Reading ms file for current generation sample
-      cat("\t>Generation ", g, "\n")
-      dat <- read_ms( file.path(pop_dir, paste0("gen_", g, ".ms")) )
+      cat("  >Generation ", g, "\n")
+      # dat <- read_ms( file.path(pop_dir, paste0("gen_", g, ".ms")) )
+      dat <- read_slimout( file.path(pop_dir, paste0("gen_", g, ".slimout")) )
       
       # dat$info %>%
       #   filter(floor(ref_pos * genome_size) == 942533)
@@ -143,7 +233,8 @@ process_popdir <- function(pop_dir,
       
       # Calculate derived allele frequency from sample and merge with
       # info
-      dat$info <- dat$info %>%
+      gen_label <- paste0("gen_", g)
+      dat$info %>%
         left_join(dat$freq[1:(n_genomes + 1)] %>%
                     pivot_longer(-site_id, names_to = "genome",
                                  values_to = "genotype") %>%
@@ -151,41 +242,42 @@ process_popdir <- function(pop_dir,
                     summarise(maf = mean(genotype),
                               .groups = 'drop'),
                   by = "site_id") %>%
-        mutate(ref_pos = floor(genome_size * ref_pos))
+        mutate(gen = gen_label)
       # dat$info
       
-      # dat$info %>%
-      #   filter(ref_pos == 942533)
-      
-      
-      gen_label <- paste0("gen_", g)
-      
-      # Read info from same generation and homogenize
-      info <- HMVAR::read_midas_info(file.path(pop_dir,
-                                               paste0("gen_", g, "_snps_info.txt")));
-      # info
-      
-      # Produce output
-      info %>%
-        full_join(dat$info %>%
-                    select(ref_id, ref_pos, maf),
-                  by = c("ref_id", "ref_pos")) %>%
-        mutate(gen = gen_label,
-               s_coef = as.numeric(s_coef))
+      # # dat$info %>%
+      # #   filter(ref_pos == 942533)
+      # 
+      # # Read info from same generation and homogenize
+      # info <- HMVAR::read_midas_info(file.path(pop_dir,
+      #                                          paste0("gen_", g, "_snps_info.txt")));
+      # # info
+      # 
+      # # Produce output
+      # info %>%
+      #   full_join(dat$info %>%
+      #               select(ref_id, ref_pos, maf),
+      #             by = c("ref_id", "ref_pos")) %>%
+      #   mutate(gen = gen_label,
+      #          s_coef = as.numeric(s_coef))
     }, pop_dir = pop_dir,
     n_genomes = n_genomes,
     genome_size = genome_size)
   # Pop
   
   # Rearrange into table
-  cat("\tRearranging allele frequenciess..\n")
+  cat("  Rearranging allele frequenciess..\n")
   Pop <- Pop %>% 
-    pivot_wider(id_cols = c(site_id, ref_id, ref_pos, s_coef, m_type),
-                values_from = "maf", names_from = "gen")
+    select(-prevalence) %>%
+    pivot_wider(values_from = "maf", names_from = "gen",
+                values_fill = 0)
   # Pop
-  
-  if(filter)
-    Pop <- remove_undetected(Pop = Pop)
+  # Pop %>%
+  #   filter(s_coef != 0) %>%
+  #   print(n = 100)
+  # 
+  # if(filter)
+  #   Pop <- remove_undetected(Pop = Pop)
   
   # # Check repeated positions
   # Pop %>%
@@ -269,35 +361,52 @@ Changes <- list.dirs(args$sim_dir,
   set_names() %>%
   map(process_popdir,
       n_genomes = args$n_genomes,
-      genome_size = args$genome_size,
-      filter = FALSE) 
+      genome_size = args$genome_size) 
 
+Changes
 
-  map(function(Pop, Gen0, filter = FALSE){
-    Pop <- Changes[[1]]
-    Gen0 <- Info
-    filter <- TRUE
-    
-    # Merge with starting variation
-    
-    Pop %>%
-      full_join(Gen0 %>%
-                  select(ref_id, ref_pos, m_type, s_coef, gen_0),
-                by = c("ref_id", "ref_pos", "s_coef", "m_type")) %>%
-      select(site_id, ref_id, ref_pos, s_coef, m_type, gen_0, everything()) %>%
-      filter(s_coef != 0) %>% print(n = 30)
-    
-    # Remove undetected
-    if(filter)
-      Pop <- remove_undetected(Pop)
-    
-    Pop
-  }, Gen0 = Info, filter = TRUE)
+# Changes %>%
+#   map(function(Pop, Gen0, filter = FALSE){
+#     Pop <- Changes[[1]]
+#     Gen0 <- Info
+#     filter <- TRUE
+#     
+#     # Merge with starting variation
+#     
+#     Pop %>%
+#       full_join(Gen0 %>%
+#                   select(ref_id, ref_pos, m_type, s_coef, gen_0),
+#                 by = c("ref_id", "ref_pos", "s_coef", "m_type")) %>%
+#       select(site_id, ref_id, ref_pos, s_coef, m_type, gen_0, everything()) %>%
+#       filter(s_coef != 0) %>% print(n = 30)
+#     
+#     # Remove undetected
+#     if(filter)
+#       Pop <- remove_undetected(Pop)
+#     
+#     Pop
+#   }, Gen0 = Info, filter = TRUE)
+%>%
   imap_dfr(function(Pop, pop_dir, base_dir){
+    # Pop <- Changes[[1]]
+    # pop_dir <- names(Changes)[1]
+    # base_dir <- args$outdir
+    
     pop_id <- basename(pop_dir)
     outdir <- file.path(base_dir, pop_id)
     dir.create(outdir)
     
+    # Make sure de-novo mutations have unique ids
+    denovo_ii <- Pop$m_type != "m1"
+    Pop <- Pop %>%
+      mutate(new_id = replace(site_id,
+                              denovo_ii,
+                              paste0(pop_id,
+                                     ".",
+                                     site_id[denovo_ii]))) %>%
+      mutate(site_id = new_id) %>%
+      select(-new_id)
+      
     filename <- file.path(outdir, "snps_info.txt")
     write_tsv(Pop %>% select(-starts_with("gen_")),
               filename)
@@ -307,27 +416,22 @@ Changes <- list.dirs(args$sim_dir,
                              starts_with("gen_")),
               filename)
     
-    # # Calculate maf changes used for sites counts (for bern)
-    # generations <- colnames(Pop)
-    # generations <- generations[ str_detect(generations, "^gen_") ]
-    # generations <- str_remove(generations, "^gen_") %>% as.numeric()
-    # # generations 
-    # t_0 <- min(generations)
-    # t_n <- max(generations)
-    # samples <- paste0("gen_", c(t_0, t_n))
-    # 
-    # # Select start and end and calculate maf change
-    # Pop <- Pop %>%
-    #   select(site_id, all_of(samples))
-    # # Pop
-    # colnames(Pop) <- c("site_id", "t_0", "t_n")
-    # 
-    # 
-    # Pop %>%
-    #   mutate(t_0 = replace_na(t_0, 0),
-    #          t_n = replace_na(t_n, 0)) %>%
-    #   mutate(maf_change = t_n - t_0,
-    #          pop_id = pop_id)
+    # Calculate maf changes used for sites counts (for bern)
+    generations <- colnames(Pop)
+    generations <- generations[ str_detect(generations, "^gen_") ]
+    generations <- str_remove(generations, "^gen_") %>% as.numeric()
+
+    t_0 <- min(generations)
+    t_n <- max(generations)
+    samples <- paste0("gen_", c(t_0, t_n))
+
+    # Select start and end and calculate maf change
+    Pop <- Pop %>%
+      select(site_id, all_of(samples))
+    colnames(Pop) <- c("site_id", "t_0", "t_n")
+    Pop %>%
+      mutate(maf_change = t_n - t_0,
+             pop_id = pop_id)
   }, base_dir = args$outdir)
 
 filename <- file.path(args$outdir, "maf_changes.tsv")
@@ -351,93 +455,6 @@ Pop <- Pops[[1]]
 Pop
 
 
-
-#' Title
-#'
-#' @param file 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-read_slimout <- function(file){
-  # file <- "sim_x/pop_1/gen_1.slimout"
-  
-  slim <- readr::read_lines(file)
-  
-  mut_flag <- FALSE
-  geno_flag <- FALSE
-  info <- NULL
-  geno <- NULL
-  for(line in slim){
-    if(str_detect(line, "^#"))
-      next
-    
-    if(line == "Mutations:"){
-      mut_flag <- TRUE
-      geno_flag <- FALSE
-      cat(">Detected beginning of mutations...\n")
-      next
-    }
-    if(line == "Genomes:"){
-      mut_flag <- FALSE
-      geno_flag <- TRUE
-      cat(">Detected beginning of genomes...\n")
-      next
-    }
-    
-    
-    if(!mut_flag && !geno_flag){
-      print(line)
-      stop("ERROR: unexpected file region", call. = TRUE)
-    }
-    
-    # line <- slim[6]
-    line <- str_split(line, pattern = " ")[[1]]
-    # line
-    
-    if(mut_flag && !geno_flag){
-      info <- info %>%
-        bind_rows(as_tibble(matrix(line, nrow = 1)))
-      }else if(!mut_flag && geno_flag){
-      
-      geno <- geno %>%
-        bind_rows(tibble(genome_id = line[1],
-                         mut_id = line[-(1:2)]))
-      
-    }
-    
-  }
-  
-  colnames(info) <- c("mut_id", "site_id", "m_type",
-                      "ref_pos", "s_coef", "d_coef",
-                      "orig", "generation", "prevalence")
-  # info
-  
-  geno <- geno %>%
-    mutate(genome_id = str_remove(genome_id, "^p[*][:]")) %>%
-    mutate(genome_id = paste0("i", genome_id)) %>%
-    mutate(count = 1) %>%
-    pivot_wider(names_from = "genome_id",
-                values_from = "count",
-                values_fill = 0)
-  # geno
-  
-  mut2site <- set_names(info$site_id, nm = info$mut_id)
-  geno <- geno %>%
-    mutate(mut_id = mut2site[mut_id] %>% as.character()) %>%
-    rename(site_id = mut_id)
-  # geno
-  
-  info <- info %>%
-    transmute(site_id,
-              ref_if = "chr1",
-              ref_pos = as.numeric(ref_pos),
-              m_type, s_coef, generation, prevalence)
-  
-  
-  return(list(info = info, freq = geno))
-}
 
 
 
