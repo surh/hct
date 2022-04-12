@@ -361,32 +361,7 @@ Changes <- list.dirs(args$sim_dir,
   set_names() %>%
   map(process_popdir,
       n_genomes = args$n_genomes,
-      genome_size = args$genome_size) 
-
-Changes
-
-# Changes %>%
-#   map(function(Pop, Gen0, filter = FALSE){
-#     Pop <- Changes[[1]]
-#     Gen0 <- Info
-#     filter <- TRUE
-#     
-#     # Merge with starting variation
-#     
-#     Pop %>%
-#       full_join(Gen0 %>%
-#                   select(ref_id, ref_pos, m_type, s_coef, gen_0),
-#                 by = c("ref_id", "ref_pos", "s_coef", "m_type")) %>%
-#       select(site_id, ref_id, ref_pos, s_coef, m_type, gen_0, everything()) %>%
-#       filter(s_coef != 0) %>% print(n = 30)
-#     
-#     # Remove undetected
-#     if(filter)
-#       Pop <- remove_undetected(Pop)
-#     
-#     Pop
-#   }, Gen0 = Info, filter = TRUE)
-%>%
+      genome_size = args$genome_size) %>%
   imap_dfr(function(Pop, pop_dir, base_dir){
     # Pop <- Changes[[1]]
     # pop_dir <- names(Changes)[1]
@@ -433,28 +408,20 @@ Changes
       mutate(maf_change = t_n - t_0,
              pop_id = pop_id)
   }, base_dir = args$outdir)
-
+# Write maf changes file, useful for s_coef method
+Changes
 filename <- file.path(args$outdir, "maf_changes.tsv")
 write_tsv(Changes, filename)
-Changes
 
+# Calculate sites file for bern model
 Sites <- Changes %>%
   group_by(site_id) %>%
   summarise(n_decrease = sum(maf_change < 0),
             n_equal = sum(maf_change == 0),
             n_increase = sum(maf_change >0)) %>%
   mutate(n_patients = n_decrease + n_equal + n_increase)
-Sites %>%
-  arrange(desc(n_patients))
 filename <- file.path(args$outdir, "sites.tsv")
 write_tsv(Sites, filename)
-
-
-
-Pop <- Pops[[1]]
-Pop
-
-
 
 
 
