@@ -118,8 +118,11 @@ function (void)write_sample_pop(string$ outpath, integer$ n_samples, integer$ ge
 	haploidGenomesSample = sample(haploidGenomes, n_samples);
 	haploidGenomesSample.outputMS(filePath = outpath + "/gen_" + generation + ".ms");
 	
+	
+	haploidGenomesSample.output(filePath = outpath + "/gen_" + generation + ".slimout");
+	
 	// Output custom info file
-	// Write snp_info.txt
+	// Write snps_info.txt
 	filename = outpath + "/gen_" + generation + "_snps_info.txt";
 	writeFile(filename, "site_id\tref_id\tref_pos\ts_coef\tm_type");
 	for (mut in sim.mutations){
