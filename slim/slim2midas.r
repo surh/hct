@@ -144,8 +144,10 @@ read_slimout <- function(file){
     # line
     
     if(mut_flag && !geno_flag){
+      line <- matrix(line, nrow = 1)
+      colnames(line) <- paste0("V", 1:ncol(line))
       info <- info %>%
-        bind_rows(as_tibble(matrix(line, nrow = 1)))
+        bind_rows(as_tibble(line))
     }else if(!mut_flag && geno_flag){
       
       geno <- geno %>%
@@ -273,13 +275,13 @@ if(!dir.exists(args$outdir)){
   dir.create(args$outdir)
 }
 
-Changes <- list.dirs(args$sim_dir,
+Pops <- list.dirs(args$sim_dir,
           recursive = FALSE,
           full.names = TRUE) %>%
   set_names() %>%
   map(process_popdir,
       n_genomes = args$n_genomes) %>%
-  imap_dfr(function(Pop, pop_dir, base_dir){
+  imap(function(Pop, pop_dir, base_dir){
     # Pop <- Changes[[1]]
     # pop_dir <- names(Changes)[1]
     # base_dir <- args$outdir
@@ -308,15 +310,40 @@ Changes <- list.dirs(args$sim_dir,
                              starts_with("gen_")),
               filename)
     
+    
+    Pop
+  }, base_dir = args$outdir)
+
+# Writing overall snp info file
+Info <- Pops %>%
+  imap_dfr(function(Pop, pop_dir){
+    pop_id <- basename(pop_dir)
+
+    Pop %>%
+      select(-starts_with("gen_")) %>%
+      mutate(pop_src = "standing") %>%
+      mutate(pop_src = replace(pop_src, m_type != "m1", pop_id))
+  }) 
+Info <- Info [ !duplicated(Info), ] %>%
+  mutate(selected = s_coef != 0)
+filename <- file.path(args$outdir, "snps_info.txt")
+write_tsv(Info, filename)
+
+# Calculate changes
+Changes <- Pops %>%
+  imap_dfr(function(Pop, pop_dir){
+    
+    pop_id <- basename(pop_dir)
+    
     # Calculate maf changes used for sites counts (for bern)
     generations <- colnames(Pop)
     generations <- generations[ str_detect(generations, "^gen_") ]
     generations <- str_remove(generations, "^gen_") %>% as.numeric()
-
+    
     t_0 <- min(generations)
     t_n <- max(generations)
     samples <- paste0("gen_", c(t_0, t_n))
-
+    
     # Select start and end and calculate maf change
     Pop <- Pop %>%
       select(site_id, all_of(samples))
@@ -324,7 +351,8 @@ Changes <- list.dirs(args$sim_dir,
     Pop %>%
       mutate(maf_change = t_n - t_0,
              pop_id = pop_id)
-  }, base_dir = args$outdir)
+    
+  })
 # Write maf changes file, useful for s_coef method
 Changes
 filename <- file.path(args$outdir, "maf_changes.tsv")
@@ -337,6 +365,7 @@ Sites <- Changes %>%
             n_equal = sum(maf_change == 0),
             n_increase = sum(maf_change > 0)) %>%
   mutate(n_patients = n_decrease + n_equal + n_increase)
+Sites
 filename <- file.path(args$outdir, "sites.tsv")
 write_tsv(Sites, filename)
 
