@@ -193,19 +193,15 @@ read_slimout <- function(file){
 #'
 #' @param pop_dir 
 #' @param n_genomes 
-#' @param genome_size 
 #'
 #' @return
 #' @export
 #'
 #' @examples
 process_popdir <- function(pop_dir,
-                           n_genomes = 10,
-                           genome_size = 1e6){
+                           n_genomes = 10){
   # pop_dir <- file.path(args$sim_dir, "pop_10")
   # n_genomes <- 10
-  # genome_size <- 1e6
-  # filter <- FALSE
   
   pop_id <- basename(pop_dir)
   cat("Processing population ", pop_id, "\n")
@@ -219,17 +215,13 @@ process_popdir <- function(pop_dir,
   
   Pop <- generations %>%
     # set_names() %>%
-    map_dfr(function(g, pop_dir, n_genomes = 10, genome_size = 1e6){
+    map_dfr(function(g, pop_dir, n_genomes = 10){
       # g <- 1
       # Reading ms file for current generation sample
       cat("  >Generation ", g, "\n")
       # dat <- read_ms( file.path(pop_dir, paste0("gen_", g, ".ms")) )
       dat <- read_slimout( file.path(pop_dir, paste0("gen_", g, ".slimout")) )
       
-      # dat$info %>%
-      #   filter(floor(ref_pos * genome_size) == 942533)
-      # dat$freq %>%
-      #   filter(site_id %in% c("1221","1222"))
       
       # Calculate derived allele frequency from sample and merge with
       # info
@@ -245,24 +237,8 @@ process_popdir <- function(pop_dir,
         mutate(gen = gen_label)
       # dat$info
       
-      # # dat$info %>%
-      # #   filter(ref_pos == 942533)
-      # 
-      # # Read info from same generation and homogenize
-      # info <- HMVAR::read_midas_info(file.path(pop_dir,
-      #                                          paste0("gen_", g, "_snps_info.txt")));
-      # # info
-      # 
-      # # Produce output
-      # info %>%
-      #   full_join(dat$info %>%
-      #               select(ref_id, ref_pos, maf),
-      #             by = c("ref_id", "ref_pos")) %>%
-      #   mutate(gen = gen_label,
-      #          s_coef = as.numeric(s_coef))
     }, pop_dir = pop_dir,
-    n_genomes = n_genomes,
-    genome_size = genome_size)
+    n_genomes = n_genomes)
   # Pop
   
   # Rearrange into table
@@ -271,97 +247,38 @@ process_popdir <- function(pop_dir,
     select(-prevalence) %>%
     pivot_wider(values_from = "maf", names_from = "gen",
                 values_fill = 0)
-  # Pop
-  # Pop %>%
-  #   filter(s_coef != 0) %>%
-  #   print(n = 100)
-  # 
-  # if(filter)
-  #   Pop <- remove_undetected(Pop = Pop)
-  
-  # # Check repeated positions
-  # Pop %>%
-  #   filter(ref_pos %in% as.numeric(names(which(table(Pop$ref_pos) > 1))))
-  # 
-  # # Check those with selection
-  # Pop %>%
-  #   filter(s_coef != 0)
-  
   return(Pop)
 }
 
-remove_undetected <- function(Pop){
-  # Discard absent sites
-  cat("Discarding undetected...\n")
-  undetected_ii <- Pop %>%
-    select(starts_with("gen_")) %>%
-    is.na %>%
-    apply(1,all)
-  table(undetected_ii)
-  Pop %>%
-    filter(!undetected_ii)
-}
+# remove_undetected <- function(Pop){
+#   # Discard absent sites
+#   cat("Discarding undetected...\n")
+#   undetected_ii <- Pop %>%
+#     select(starts_with("gen_")) %>%
+#     is.na %>%
+#     apply(1,all)
+#   table(undetected_ii)
+#   Pop %>%
+#     filter(!undetected_ii)
+# }
 
 args <- list(start_dir = "standing_variation/",
              sim_dir = "sim_x/",
              n_genomes = 10,
-             genome_size = 1e6,
              outdir = "output/",
              seed = 2308123)
-
-
-#' dat <- read_ms("standing_variation/standing_variation.ms")
-#' # genomes <- sample(colnames(dat$freq)[-1], size = args$n_genomes)
-#' genomes <- colnames(dat$freq)[-1]
-#' 
-#' 
-#' #' Calculate Starting derived allele frequency for all sites
-#' Info <- dat$info %>%
-#'   left_join(dat$freq %>%
-#'               select(site_id, all_of(genomes)) %>%
-#'               pivot_longer(-site_id) %>%
-#'               group_by(site_id) %>%
-#'               summarise(maf = mean(value),
-#'                         .groups = 'drop'),
-#'             by = "site_id") %>%
-#'   mutate(ref_pos = floor(ref_pos * args$genome_size),
-#'          m_type = "m1") %>%
-#'   rename(gen_0 = maf)
-#' Info
-#' 
-#' cat("THIS IS TEMPORARY, FIX BEFORE REAL RUN")
-#' Sel_info <- HMVAR::read_midas_info("standing_variation/snps_info.txt")
-#' Sel_info <- Sel_info %>%
-#'   mutate(sel = as.numeric(sel))
-#' Info
-#' # # Adding sel coef
-#' # Info <- Info %>%
-#' #   full_join(Sel_info %>%
-#' #               select(ref_id, ref_pos, s_coef = sel),
-#' #             by = c("ref_id", "ref_pos")) %>%
-#' #   select(site_id, ref_id, ref_pos, s_coef, m_type, gen_0)
-#' 
-#' Info$s_coef <- as.numeric(Sel_info$sel)
-#' # Info
-#' 
-#' # list.dirs(args$sim_dir, recursive = FALSE, full.names = T)[1] %>%
-#' #   map(function(pop_dir){
-#' #
-#' #   })
 
 # Prepare output dir
 if(!dir.exists(args$outdir)){
   dir.create(args$outdir)
 }
 
-
 Changes <- list.dirs(args$sim_dir,
           recursive = FALSE,
-          full.names = TRUE)[1:2] %>%
+          full.names = TRUE) %>%
   set_names() %>%
   map(process_popdir,
-      n_genomes = args$n_genomes,
-      genome_size = args$genome_size) %>%
+      n_genomes = args$n_genomes) %>%
   imap_dfr(function(Pop, pop_dir, base_dir){
     # Pop <- Changes[[1]]
     # pop_dir <- names(Changes)[1]
@@ -418,7 +335,7 @@ Sites <- Changes %>%
   group_by(site_id) %>%
   summarise(n_decrease = sum(maf_change < 0),
             n_equal = sum(maf_change == 0),
-            n_increase = sum(maf_change >0)) %>%
+            n_increase = sum(maf_change > 0)) %>%
   mutate(n_patients = n_decrease + n_equal + n_increase)
 filename <- file.path(args$outdir, "sites.tsv")
 write_tsv(Sites, filename)
