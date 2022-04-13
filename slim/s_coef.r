@@ -20,27 +20,18 @@ library(argparser)
 
 process_arguments <- function(){
   p <- arg_parser(paste("Calculate selection coefficient (s) per site",
-                        "from Moran Process simulations"))
+                        "from SliM simulations"))
   
   # Positional arguments
-  p <- add_argument(p, "simdir",
-                    help = paste("Directory with simulation output"),
+  p <- add_argument(p, "maf_changes",
+                    help = paste("File with dereived allele changes"),
                     type = "character")
   
   # Optional arguments
-  p <- add_argument(p, "--N",
-                     help = paste("population size in Moran Process"),
-                     type = "numeric",
-                     default = 100)
-  p <- add_argument(p, "--T",
-                    help = paste("Number of Moran process steps"),
+  p <- add_argument(p, "--time",
+                    help = paste("Number of SliM generations"),
                     type = "numeric",
-                    default = 100)
-  p <- add_argument(p, "--x_0",
-                    help = paste("Number of individuals with genotype A",
-                                 "at the beginning of the simulation."),
-                    type = "numeric",
-                    default = 100)
+                    default = 50)
   p <- add_argument(p, "--output",
                     help = paste("File to write output"),
                     type = "character",
@@ -55,37 +46,18 @@ process_arguments <- function(){
 }
 
 args <- process_arguments()
-# args <- list(simdir = "/home/sur/micropopgen/exp/2022/today2/sims/sim_1/",
-#              # maf_changes = "output/maf_changes.tsv",
-#              N = 100,
-#              T = 100,
-#              x_0 = 99,
+# args <- list(maf_changes = "/home/sur/micropopgen/exp/2022/today2/sim_x/maf_changes.tsv",
+#              time = 50,
 #              output = "s_coef.tsv")
 library(tidyverse)
+library(HMVAR)
 
 # Read maf_changes
-Dat <- read_tsv(file.path(args$simdir, "maf_changes.tsv"),
-                          col_types = cols(site_id = col_character()))
+Dat <- read_tsv(args$maf_changes,
+                col_types = cols(site_id = col_character(),
+                                 pop_id = col_character())) %>%
+  rename(v0 = t_0, v1 = t_n)
 
 # Calculate selection coefficient
-cat("Calculating selection coefficient...\n")
-s_coef <- Dat %>%
-  mutate(v0 = args$x_0 / args$N) %>%
-  mutate(v1 = v0 + maf_change) %>%
-  mutate(s = (1 / args$T) * log( (v1 / (1 - v1)) * ((1 - v0) / v0) ))  %>%
-  select(site_id, s) %>%
-  filter(!is.infinite(s))
-
-# Process s coefs. If multiple individuals, do a t-test. Otherwise
-# keep without p-val or variance
-cat("Aggregating selection coefficients...\n")
-s_coef <- s_coef %>%
-  group_by(site_id) %>%
-  summarise(s.mean = mean(s),
-            s.sd = sd(s),
-            npts = length(s),
-            .groups = 'drop') %>%
-  mutate(t.s = s.mean / (s.sd / sqrt(npts))) %>%
-  mutate(pval = 2 * pt(abs(t.s), df = npts - 1, lower.tail = FALSE)) 
-
+s_coef <- s_coefficient(Dat = Dat, aggregate = TRUE, time = args$time)
 write_tsv(s_coef, args$output)
