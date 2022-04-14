@@ -338,7 +338,7 @@ if(!is.na(args$seed)){
 }
 Pops <- list.dirs(args$sim_dir,
           recursive = FALSE,
-          full.names = TRUE)[1] %>%
+          full.names = TRUE) %>%
   set_names() %>%
   map(process_popdir,
       n_genomes = args$n_genomes) %>%
