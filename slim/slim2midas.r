@@ -24,7 +24,7 @@ process_arguments <- function(){
                         "timepoint"))
   
   # Positional arguments
-  p <- add_argument(p, "simdir",
+  p <- add_argument(p, "sim_dir",
                     help = paste("Directory with slimulations. It must have",
                                  "one subdirectory per population."),
                     type = "character")
@@ -63,9 +63,9 @@ process_arguments <- function(){
 
 args <- process_arguments()
 # args <- list(sim_dir = "sim_x2/",
-#              n_genomes = 10,
+#              n_genomes = 0,
 #              outdir = "output/",
-#              seed = 2308123)
+#              seed = NA)
 print(args)
 
 
@@ -270,14 +270,14 @@ process_popdir <- function(pop_dir,
   
   Pop <- generations %>%
     # set_names() %>%
-    map_dfr(function(g, pop_dir, n_genomes = 10, seed = NA){
+    map_dfr(function(g, pop_dir, n_genomes = 10){
       # g <- 1
       # Reading ms file for current generation sample
       cat("  >Generation ", g, "\n")
       # dat <- read_ms( file.path(pop_dir, paste0("gen_", g, ".ms")) )
       dat <- read_slimout( file.path(pop_dir, paste0("gen_", g, ".slimout")) )
       
-      # Check if wee need sample
+      # Check if wee need to sample, and if so select geones
       if(n_genomes == 0 || n_genomes == (ncol(dat$freq) - 1)){
         genomes_ii <- 1:ncol(dat$freq)
       }else if(n_genomes < (ncol(dat$freq) - 1)){
@@ -327,14 +327,18 @@ process_popdir <- function(pop_dir,
 
 
 # Prepare output dir
+cat("Creating output directory...\n")
 if(!dir.exists(args$outdir)){
   dir.create(args$outdir)
 }
 
-set.seed(args$seed)
+if(!is.na(args$seed)){
+  cat("Setting seed...\n")
+  set.seed(args$seed)
+}
 Pops <- list.dirs(args$sim_dir,
           recursive = FALSE,
-          full.names = TRUE) %>%
+          full.names = TRUE)[1] %>%
   set_names() %>%
   map(process_popdir,
       n_genomes = args$n_genomes) %>%
