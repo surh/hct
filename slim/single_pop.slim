@@ -111,47 +111,46 @@ function (void)write_sample_pop(string$ outpath, integer$ n_samples, integer$ ge
 	// output only genomes with mutations
 	haploidGenomes = p1.individuals.genome1;
 	
-	if (size(haploidGenomes) < n_samples){
-		n_samples = size(haploidGenomes);
+	if (size(haploidGenomes) <= n_samples){
+		haploidGenomesSample = haploidGenomes;
+	} else{
+		haploidGenomesSample = sample(haploidGenomes, n_samples);
 	}
 	
-	haploidGenomesSample = sample(haploidGenomes, n_samples);
-	haploidGenomesSample.outputMS(filePath = outpath + "/gen_" + generation + ".ms");
-	
-	
+	//	haploidGenomesSample.outputMS(filePath = outpath + "/gen_" + generation + ".ms");
 	haploidGenomesSample.output(filePath = outpath + "/gen_" + generation + ".slimout");
 	
 	// Output custom info file
 	// Write snps_info.txt
-	filename = outpath + "/gen_" + generation + "_snps_info.txt";
-	writeFile(filename, "site_id\tref_id\tref_pos\ts_coef\tm_type");
-	for (mut in sim.mutations){
-		m_id = mut.id;
-		m_pos = mut.position;
-		m_scoef = mut.selectionCoeff;
-		m_type = paste(mut.mutationType);
-		
-		if(sum(m_type == c("MutationType<m1>", "MutationType<m2>", "MutationType<m3>")) == 1){
-			if(m_type == "MutationType<m1>"){
-				m_type = "m1";
-			}
-			
-			if(m_type == "MutationType<m2>"){
-				m_type = "m2";
-			}
-			
-			if(m_type == "MutationType<m3>"){
-				m_type = "m3";
-			}
-						
-		}else{
-			stop("Unknown mutation type");
-		}
-	
-		line = paste(c(m_id, "chr1", m_pos, m_scoef, m_type), sep = "\t");
-		// line = paste(line + "\n");
-		writeFile(filename, line, append = T);
-	}
+	//	filename = outpath + "/gen_" + generation + "_snps_info.txt";
+	//	writeFile(filename, "site_id\tref_id\tref_pos\ts_coef\tm_type");
+	//	for (mut in sim.mutations){
+	//		m_id = mut.id;
+	//		m_pos = mut.position;
+	//		m_scoef = mut.selectionCoeff;
+	//		m_type = paste(mut.mutationType);
+	//		
+	//		if(sum(m_type == c("MutationType<m1>", "MutationType<m2>", "MutationType<m3>")) == 1){
+	//			if(m_type == "MutationType<m1>"){
+	//				m_type = "m1";
+	//			}
+	//			
+	//			if(m_type == "MutationType<m2>"){
+	//				m_type = "m2";
+	//			}
+	//			
+	//			if(m_type == "MutationType<m3>"){
+	//				m_type = "m3";
+	//			}
+	//						
+	//		}else{
+	//			stop("Unknown mutation type");
+	//		}
+	//	
+	//		line = paste(c(m_id, "chr1", m_pos, m_scoef, m_type), sep = "\t");
+	//		// line = paste(line + "\n");
+	//		writeFile(filename, line, append = T);
+	//	}
 
 }
 
@@ -171,7 +170,7 @@ initialize()
 	defineConstant("sampleSize", 20); // Genomes to sample
 	defineConstant("scoef1", 0.01); // Selection advantage
 	defineConstant("prop_selection", 0.0); // Proportion of de novo mutation with fitness advantage
-
+	
 	defineConstant("standing_variation", "standing_variation/standing_variation.ms"); // ms file with standing variation
 	defineConstant("info_file", "standing_variation/snps_info.txt"); // tsv file with header & sites for selection in the 5-th column
 	defineConstant("print_period", 10); // How many generations between sampling
@@ -223,7 +222,7 @@ initialize()
 			line = strsplit(info[i], "\t");
 			pos = asInteger(line[2]);
 			sel = asFloat(line[4]);
-		
+			
 			// Right now I'm not using sel except as
 			// a flag, and not using pos
 			// NOTE: I am not using pos because there is
@@ -236,14 +235,14 @@ initialize()
 		}
 	}
 	cat("Found " + length(sel_ii) + " positions to change their selection coefficient\n");
-
+	
 	// Update selection coefficient of mutations under selection
 	cat("Updating selecction coefficients\n");
 	for(i in sel_ii){
 		cat(">" + sim.mutations.position[i] + "\t" + sim.mutations[i].id +"\n");
 		sim.mutations[i].setSelectionCoeff(1.0);
 	}
-		
+	
 	c2 = clock();
 	c3 = c2 - c1;
 	writeFile(runId + ".time", runIdShort+"\tWF\tburnin\t"+c3, append=F);
@@ -296,7 +295,7 @@ late()
 	
 	// Print periodically
 	if( (sim.generation == 1) | (sim.generation % print_period == 0) ){
-			write_sample_pop(outdir, sampleSize, sim.generation);
+		write_sample_pop(outdir, sampleSize, sim.generation);
 	}
 }
 
@@ -329,7 +328,7 @@ s1 10000 late()
 	
 	sim.setValue("time_end", clock());
 	c3 = sim.getValue("time_end") - sim.getValue("time_beg");
-	writeFile(runId + ".time", runIdShort+"\tWF\tfwd\t"+c3, append=T);	
+	writeFile(runId + ".time", runIdShort+"\tWF\tfwd\t"+c3, append=T);
 	
 	//	sim.outputFull("full_output.txt");
 	//	catn("generation " + sim.generation);
