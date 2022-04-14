@@ -16,6 +16,58 @@
 # You should have received a copy of the GNU General Public License
 # along with This program.  If not, see <https://www.gnu.org/licenses/>.
 
+library(argparser)
+
+process_arguments <- function(){
+  p <- arg_parser(paste("Scrit that takes slimulations of multiple pops",
+                        "and produces a single MIDAS-like output per",
+                        "timepoint"))
+  
+  # Positional arguments
+  p <- add_argument(p, "simdir",
+                    help = paste("Directory with slimulations. It must have",
+                                 "one subdirectory per population."),
+                    type = "character")
+  
+  # Optional arguments
+  p <- add_argument(p, "--n_genomes",
+                    help = paste("Number of genomes to sample for the allele",
+                                 "frequency estimates. Zero means include all",
+                                 "genomes."),
+                    type = "numeric",
+                    default = 0)
+  p <- add_argument(p, "--seed",
+                    help = paste("Seed for sampling genomes"),
+                    type = "numeric",
+                    default = NULL)
+  p <- add_argument(p, "--outdir",
+                    help = paste("Directory path to store outputs."),
+                    default = "output/",
+                    type = "character")
+  
+  
+  # Read arguments
+  cat("Processing arguments...\n")
+  args <- parse_args(p)
+  
+  # Process arguments
+  if(is.na(args$seed) && args$n_genomes != 0){
+    seed <- sample(1:1e6,size = 1)
+    args$seed <- seed
+    cat("No seed was provided. If neede the following seed will be used:",
+        args$seed, "\n")
+  }
+  
+  return(args)
+}
+
+args <- process_arguments()
+# args <- list(sim_dir = "sim_x2/",
+#              n_genomes = 10,
+#              outdir = "output/",
+#              seed = 2308123)
+print(args)
+
 
 library(tidyverse)
 
@@ -218,19 +270,27 @@ process_popdir <- function(pop_dir,
   
   Pop <- generations %>%
     # set_names() %>%
-    map_dfr(function(g, pop_dir, n_genomes = 10){
+    map_dfr(function(g, pop_dir, n_genomes = 10, seed = NA){
       # g <- 1
       # Reading ms file for current generation sample
       cat("  >Generation ", g, "\n")
       # dat <- read_ms( file.path(pop_dir, paste0("gen_", g, ".ms")) )
       dat <- read_slimout( file.path(pop_dir, paste0("gen_", g, ".slimout")) )
       
+      # Check if wee need sample
+      if(n_genomes == 0 || n_genomes == (ncol(dat$freq) - 1)){
+        genomes_ii <- 1:ncol(dat$freq)
+      }else if(n_genomes < (ncol(dat$freq) - 1)){
+        genomes_ii <- c(1, sample(2:ncol(dat$freq),
+                                  size = n_genomes,
+                                  replace = FALSE))
+      }
       
       # Calculate derived allele frequency from sample and merge with
       # info
       gen_label <- paste0("gen_", g)
       dat$info %>%
-        left_join(dat$freq[1:(n_genomes + 1)] %>%
+        left_join(dat$freq[genomes_ii] %>%
                     pivot_longer(-site_id, names_to = "genome",
                                  values_to = "genotype") %>%
                     group_by(site_id) %>%
@@ -265,16 +325,13 @@ process_popdir <- function(pop_dir,
 #     filter(!undetected_ii)
 # }
 
-args <- list(sim_dir = "sim_x/",
-             n_genomes = 10,
-             outdir = "output/",
-             seed = 2308123)
 
 # Prepare output dir
 if(!dir.exists(args$outdir)){
   dir.create(args$outdir)
 }
 
+set.seed(args$seed)
 Pops <- list.dirs(args$sim_dir,
           recursive = FALSE,
           full.names = TRUE) %>%

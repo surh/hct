@@ -161,20 +161,20 @@ initialize()
 	defineConstant("Ne", 1400); // The effective population size
 	defineConstant("Mu", 1e-7); // Mutation rate
 	defineConstant("Rho", 1e-7); // Recombination rate
-	defineConstant("genomeSize", 1e6); // Genome size in bp
+	defineConstant("genomeSize", 3e6); // Genome size in bp
 	defineConstant("gcBurnin", 0); // Not documented
 	defineConstant("tractlen", 1e5); // Average HGT tract length
 	defineConstant("runId", "testrun"); // Run ID
 	defineConstant("runIdShort", "trun"); // Short Run ID
 	defineConstant("N_generations", 50); // Short Run ID
-	defineConstant("sampleSize", 20); // Genomes to sample
+	defineConstant("sampleSize", 1400); // Genomes to sample
 	defineConstant("scoef1", 0.01); // Selection advantage
 	defineConstant("prop_selection", 0.0); // Proportion of de novo mutation with fitness advantage
 	
 	defineConstant("standing_variation", "standing_variation/standing_variation.ms"); // ms file with standing variation
 	defineConstant("info_file", "standing_variation/snps_info.txt"); // tsv file with header & sites for selection in the 5-th column
 	defineConstant("print_period", 10); // How many generations between sampling
-	defineConstant("outdir", "sim_x/pop_10"); // Directory for writint output
+	defineConstant("outdir", "sim_x2/pop_1"); // Directory for writint output
 	
 	// Following are defined by original authors   
 	defineConstant("Theta", 2*Ne*Mu); // Theta
