@@ -41,9 +41,26 @@ process_arguments <- function(){
                     help = paste("File with ground truth for SNPs."),
                     type = "character",
                     default = "")
-
-  stop("ADD MISSING ARGUMENTS")
-  
+  p <- add_argument(p, "--maf_changes",
+                    help = paste("File with MAF changes."),
+                    type = "character",
+                    default = "")
+  p <- add_argument(p, "--alpha_thres",
+                    type = "numeric",
+                    help = paste("Siginficant threshold to use in plot and",
+                                 "confusion matrices of (adjusted) p-value",
+                                 "based tests"),
+                    default = 0.05)
+  p <- add_argument(p, "--or_thres",
+                    help = paste("Odds ratio threshold for P(directional)",
+                                 "posteriror probabilities"),
+                    type = "numeric",
+                    default = 4)
+  p <- add_argument(p, "--maf_thres",
+                    help = paste("Allele frequency change threshold for naive",
+                                 "method based on average MAF changes"),
+                    type = "numeric",
+                    default = 0.5)
   p <- add_argument(p, "--outdir",
                     help = paste(""),
                     type = "character",
@@ -56,16 +73,16 @@ process_arguments <- function(){
   return(args)
 }
 
-# args <- process_arguments()
-args <- list(s_coef = "/home/sur/micropopgen/exp/2022/today/sel_tests/s_coef.tsv",
-             FIT = "/home/sur/micropopgen/exp/2022/today/sel_tests/FIT.tsv",
-             pdir = "/home/sur/micropopgen/exp/2022/today/sel_tests/p_directional.tsv.gz",
-             info = "/home/sur/micropopgen/exp/2022/today/sim_x/snps_info.txt",
-             maf_changes = "/home/sur/micropopgen/exp/2022/today/sim_x/maf_changes.tsv",
-             alpha_thres = 0.05,
-             or_thres = 4,
-             maf_thres = 0.5,
-             outdir = "comp_test/")
+args <- process_arguments()
+# args <- list(s_coef = "/home/sur/micropopgen/exp/2022/today/sel_tests/s_coef.tsv",
+#              FIT = "/home/sur/micropopgen/exp/2022/today/sel_tests/FIT.tsv",
+#              pdir = "/home/sur/micropopgen/exp/2022/today/sel_tests/p_directional.tsv.gz",
+#              info = "/home/sur/micropopgen/exp/2022/today/sim_x/snps_info.txt",
+#              maf_changes = "/home/sur/micropopgen/exp/2022/today/sim_x/maf_changes.tsv",
+#              alpha_thres = 0.05,
+#              or_thres = 4,
+#              maf_thres = 0.5,
+#              outdir = "comp_test/")
 library(tidyverse)
 
 #+ print args
