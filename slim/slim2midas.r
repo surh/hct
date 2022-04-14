@@ -210,9 +210,10 @@ process_popdir <- function(pop_dir,
   
   # Process population directory filenames
   pop_files <- list.files(pop_dir, recursive = FALSE, full.names = T)
-  ms_files <- pop_files[ basename(pop_files) %>% str_detect("[.]ms$") ]
-  generations <- basename(ms_files) %>% str_remove("^gen_") %>%
-    str_remove("[.]ms$") %>% as.numeric()
+  # ms_files <- pop_files[ basename(pop_files) %>% str_detect("[.]ms$") ]
+  slimout_files <- pop_files[ basename(pop_files) %>% str_detect("[.]slimout$") ]
+  generations <- basename(slimout_files) %>% str_remove("^gen_") %>%
+    str_remove("[.]slimout$") %>% as.numeric()
   
   
   Pop <- generations %>%
@@ -264,8 +265,7 @@ process_popdir <- function(pop_dir,
 #     filter(!undetected_ii)
 # }
 
-args <- list(start_dir = "standing_variation/",
-             sim_dir = "sim_x/",
+args <- list(sim_dir = "sim_x/",
              n_genomes = 10,
              outdir = "output/",
              seed = 2308123)
