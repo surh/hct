@@ -41,6 +41,9 @@ process_arguments <- function(){
                     help = paste("File with ground truth for SNPs."),
                     type = "character",
                     default = "")
+
+  stop("ADD MISSING ARGUMENTS")
+  
   p <- add_argument(p, "--outdir",
                     help = paste(""),
                     type = "character",
@@ -53,17 +56,20 @@ process_arguments <- function(){
   return(args)
 }
 
-args <- process_arguments()
-# args <- list(s_coef = "/home/sur/micropopgen/exp/2022/today2/comparison_results/s_coef/sim_1.tsv",
-#              FIT = "/home/sur/micropopgen/exp/2022/today2/comparison_results/FIT/sim_1.tsv",
-#              pdir = "/home/sur/micropopgen/exp/2022/today2/comparison_results/p_directional/sim_1.tsv.gz",
-#              info = "/home/sur/micropopgen/exp/2022/today2/sims/sim_1/snps_info.txt",
-#              outdir = "comp_test/")
+# args <- process_arguments()
+args <- list(s_coef = "/home/sur/micropopgen/exp/2022/today/sel_tests/s_coef.tsv",
+             FIT = "/home/sur/micropopgen/exp/2022/today/sel_tests/FIT.tsv",
+             pdir = "/home/sur/micropopgen/exp/2022/today/sel_tests/p_directional.tsv.gz",
+             info = "/home/sur/micropopgen/exp/2022/today/sim_x/snps_info.txt",
+             maf_changes = "/home/sur/micropopgen/exp/2022/today/sim_x/maf_changes.tsv",
+             alpha_thres = 0.05,
+             or_thres = 4,
+             maf_thres = 0.5,
+             outdir = "comp_test/")
 library(tidyverse)
 
 #+ print args
 print(args)
-
 
 #+ functions, echo=FALSE
 #' Title
@@ -78,9 +84,7 @@ print(args)
 roc <- function(d){
   d <- d %>%
     arrange(desc(score))
-  # d
-  
-  
+
   roc <- NULL
   tp <- 0
   fp <- 0
@@ -104,7 +108,6 @@ roc <- function(d){
   return(roc)
 }
 
-
 #' We read the datA
 #+ read data
 cat("Reading data...\n")
@@ -116,7 +119,12 @@ pdir <- read_tsv(args$pdir,
                  col_types = cols(site_id = col_character()))
 info <- read_tsv(args$info,
                  col_types = cols(site_id = col_character()))
-
+changes <- read_tsv(args$maf_changes,
+                    col_types = cols(site_id = col_character()))
+changes <- changes %>%
+  group_by(site_id) %>%
+  summarise(maf_change = mean(maf_change),
+            .groups = 'drop')
 
 #' We create a directory to store output
 #+ outdir
@@ -166,7 +174,6 @@ p1 <- FIT %>%
 filename <- file.path(args$pvaldir, "FIT_pvals.png")
 ggsave(filename, p1, width = 5, height = 4)
 
-
 #' ## Compare main statistics with ground truth
 #' 
 #' The Feder *et. al.* methods use p-values as their main statistic. We expect smaller
@@ -179,12 +186,24 @@ ggsave(filename, p1, width = 5, height = 4)
 
 #+ statistic plots, fig.cap = "Comparison of main statistics between different selection tests. For *p-value* based methods the red line is at nominal $\\alpha = 0.05$ significance & for P(directional) methods the line is at $OR = 1$"
 cat("Plotting main statistic of each test vs ground truth...\n")
+p1 <- changes %>%
+  left_join(info, by = "site_id") %>%
+  ggplot(aes(x = selected, y = maf_change)) +
+  geom_violin(draw_quantiles = c(0.25, 0.5, 0.75), adjust = 2) +
+  geom_point(size = 0.1, position = position_jitter(width = 0.2)) +
+  geom_hline(yintercept = args$maf_thres, col = "red") +
+  # scale_y_log10() +
+  ggtitle(label = "MAF change") +
+  AMOR::theme_blackbox()
+filename <- file.path(args$statplot, "maf_changes.png")
+ggsave(filename, p1, width = 5, height = 4)
+
 p1 <- s_coef %>%
   left_join(info, by = "site_id") %>%
   ggplot(aes(x = selected, y = pval)) +
   geom_violin(draw_quantiles = c(0.25, 0.5, 0.75), adjust = 2) +
   geom_point(size = 0.1, position = position_jitter(width = 0.2)) +
-  geom_hline(yintercept = 0.05, col = "red") +
+  geom_hline(yintercept = args$alpha_thres, col = "red") +
   scale_y_log10() +
   ggtitle(label = "Selection coefficient (s)") +
   AMOR::theme_blackbox()
@@ -197,7 +216,7 @@ p1 <- s_coef %>%
   ggplot(aes(x = selected, y = qval)) +
   geom_violin(draw_quantiles = c(0.25, 0.5, 0.75), adjust = 2) +
   geom_point(size = 0.1, position = position_jitter(width = 0.2)) +
-  geom_hline(yintercept = 0.05, col = "red") +
+  geom_hline(yintercept = args$alpha_thres, col = "red") +
   scale_y_log10() +
   ggtitle(label = "Selection coefficient (s)") +
   AMOR::theme_blackbox()
@@ -209,7 +228,7 @@ p1 <- FIT %>%
   ggplot(aes(x = selected, y = pval)) +
   geom_violin(draw_quantiles = c(0.25, 0.5, 0.75), adjust = 2) +
   geom_point(size = 0.1, position = position_jitter(width = 0.2)) +
-  geom_hline(yintercept = 0.05, col = "red") +
+  geom_hline(yintercept = args$alpha_thres, col = "red") +
   scale_y_log10() +
   ggtitle(label = "Frequency Increment Test (s)") +
   AMOR::theme_blackbox()
@@ -222,7 +241,7 @@ p1 <- FIT %>%
   ggplot(aes(x = selected, y = qval)) +
   geom_violin(draw_quantiles = c(0.25, 0.5, 0.75), adjust = 2) +
   geom_point(size = 0.1, position = position_jitter(width = 0.2)) +
-  geom_hline(yintercept = 0.05, col = "red") +
+  geom_hline(yintercept = args$alpha_thres, col = "red") +
   scale_y_log10() +
   ggtitle(label = "Frequency Increment Test (s)") +
   AMOR::theme_blackbox()
@@ -234,7 +253,7 @@ p1 <- pdir %>%
   ggplot(aes(x = selected, y = p_directional / (1 - p_directional))) +
   geom_violin(draw_quantiles = c(0.25, 0.5, 0.75), adjust = 2) +
   geom_point(size = 0.1, position = position_jitter(width = 0.2)) +
-  geom_hline(yintercept = 1, col = "red") +
+  geom_hline(yintercept = args$or_thres, col = "red") +
   scale_y_log10() +
   ggtitle(label = "P(directional)") +
   AMOR::theme_blackbox()
@@ -246,7 +265,7 @@ p1 <- pdir %>%
   ggplot(aes(x = selected, y = p_pos / (1 - p_pos))) +
   geom_violin(draw_quantiles = c(0.25, 0.5, 0.75), adjust = 2) +
   geom_point(size = 0.1, position = position_jitter(width = 0.2)) +
-  geom_hline(yintercept = 1, col = "red") +
+  geom_hline(yintercept = args$or_thres, col = "red") +
   scale_y_log10() +
   ggtitle(label = "P(directional,+)") +
   AMOR::theme_blackbox()
@@ -258,7 +277,7 @@ p1 <- pdir %>%
   ggplot(aes(x = selected, y = p_neg / (1 - p_neg))) +
   geom_violin(draw_quantiles = c(0.25, 0.5, 0.75), adjust = 2) +
   geom_point(size = 0.1, position = position_jitter(width = 0.2)) +
-  geom_hline(yintercept = 1, col = "red") +
+  geom_hline(yintercept = args$or_thres, col = "red") +
   scale_y_log10() +
   ggtitle(label = "P(directional,-)") +
   AMOR::theme_blackbox()
@@ -276,11 +295,11 @@ ggsave(filename, p1, width = 5, height = 4)
 Conf <- NULL
 cat("Getting confussion tables...\n")
 
-#
-cat("\ts_coef pval...\n")
-tab <- s_coef %>%
+cat("\t===MAF changes")
+tab <- changes %>%
   left_join(info, by = "site_id")
-tab <- caret::confusionMatrix(data = factor(tab$pval < 0.05),
+
+tab <- caret::confusionMatrix(data = factor(tab$maf_change < args$maf_thres),
                               reference = factor(tab$selected),
                               positive = "TRUE")
 p1 <- tab$table %>%
@@ -290,105 +309,152 @@ p1 <- tab$table %>%
   geom_text(aes(label = n)) +
   geom_vline(xintercept = 1.5) +
   geom_hline(yintercept = 1.5) +
-  ggtitle(label = "Selection coefficient (s) p-values") +
+  ggtitle(label = "MAF change") +
   theme_classic() +
   theme(legend.position = 'none',
         axis.title = element_text(color = "black", face = 'bold'),
         plot.title = element_text(hjust = 1.2))
-filename <- file.path(args$confdir, "s_coef_pval_confmat.png")
+filename <- file.path(args$confdir, "maf_change_confmat.png")
 ggsave(filename, p1, width = 3, height = 3)
 Conf <- Conf %>% 
   bind_rows(tab %>%
               broom::tidy() %>%
               select(-class) %>%
-              mutate(test = "s_coef_pval"))
+              mutate(test = "maf_change"))
 
-#
-cat("\ts_coef qval...\n")
+cat("\t===s_coef...\n")
 tab <- s_coef %>%
-  left_join(info, by = "site_id") %>%
-  mutate(qval = p.adjust(pval, method = 'fdr'))
-tab <- caret::confusionMatrix(data = factor(tab$qval < 0.05),
-                              reference = factor(tab$selected),
-                              positive = "TRUE")
-p1 <- tab$table %>%
-  as_tibble() %>%
-  ggplot(aes(x = Reference, y = Prediction)) +
-  geom_point(aes(size = n), shape = 19, col = 'steelblue') +
-  geom_text(aes(label = n)) +
-  geom_vline(xintercept = 1.5) +
-  geom_hline(yintercept = 1.5) +
-  ggtitle(label = "Selection coefficient (s) q-values") +
-  theme_classic() +
-  theme(legend.position = 'none',
-        axis.title = element_text(color = "black", face = 'bold'),
-        plot.title = element_text(hjust = 1.2))
-filename <- file.path(args$confdir, "s_coef_qval_confmat.png")
-ggsave(filename, p1, width = 3, height = 3)
-Conf <- Conf %>% 
-  bind_rows(tab %>%
-              broom::tidy() %>%
-              select(-class) %>%
-              mutate(test = "s_coef_qval"))
+  left_join(info, by = "site_id")
+if(length(unique(tab$selected)) == 2){
+  
+  cat("\ts_coef pval...\n")
+  tab <- caret::confusionMatrix(data = factor(tab$pval < args$alpha_thres),
+                                reference = factor(tab$selected),
+                                positive = "TRUE")
+  p1 <- tab$table %>%
+    as_tibble() %>%
+    ggplot(aes(x = Reference, y = Prediction)) +
+    geom_point(aes(size = n), shape = 19, col = 'steelblue') +
+    geom_text(aes(label = n)) +
+    geom_vline(xintercept = 1.5) +
+    geom_hline(yintercept = 1.5) +
+    ggtitle(label = "Selection coefficient (s) p-values") +
+    theme_classic() +
+    theme(legend.position = 'none',
+          axis.title = element_text(color = "black", face = 'bold'),
+          plot.title = element_text(hjust = 1.2))
+  filename <- file.path(args$confdir, "s_coef_pval_confmat.png")
+  ggsave(filename, p1, width = 3, height = 3)
+  Conf <- Conf %>% 
+    bind_rows(tab %>%
+                broom::tidy() %>%
+                select(-class) %>%
+                mutate(test = "s_coef_pval"))
+  
+  #
+  cat("\ts_coef qval...\n")
+  tab <- s_coef %>%
+    left_join(info, by = "site_id") %>%
+    mutate(qval = p.adjust(pval, method = 'fdr'))
+  tab <- caret::confusionMatrix(data = factor(tab$qval < args$alpha_thres),
+                                reference = factor(tab$selected),
+                                positive = "TRUE")
+  p1 <- tab$table %>%
+    as_tibble() %>%
+    ggplot(aes(x = Reference, y = Prediction)) +
+    geom_point(aes(size = n), shape = 19, col = 'steelblue') +
+    geom_text(aes(label = n)) +
+    geom_vline(xintercept = 1.5) +
+    geom_hline(yintercept = 1.5) +
+    ggtitle(label = "Selection coefficient (s) q-values") +
+    theme_classic() +
+    theme(legend.position = 'none',
+          axis.title = element_text(color = "black", face = 'bold'),
+          plot.title = element_text(hjust = 1.2))
+  filename <- file.path(args$confdir, "s_coef_qval_confmat.png")
+  ggsave(filename, p1, width = 3, height = 3)
+  Conf <- Conf %>% 
+    bind_rows(tab %>%
+                broom::tidy() %>%
+                select(-class) %>%
+                mutate(test = "s_coef_qval"))
+  
+  
+}else if(length(unique(tab$selected)) == 1){
+  cat("\tOnly one value in selected...skipping\n")
+}else{
+  stop("ERROR: Unexpected number of valuesin selected column...\n",
+       call. = TRUE)
+}
 
-#
-cat("\tFIT pval...\n")
+cat("\t===FIT...\n")
 tab <- FIT %>%
   left_join(info, by = "site_id")
-tab <- caret::confusionMatrix(data = factor(tab$pval < 0.05),
-                              reference = factor(tab$selected),
-                              positive = "TRUE")
-p1 <- tab$table %>%
-  as_tibble() %>%
-  ggplot(aes(x = Reference, y = Prediction)) +
-  geom_point(aes(size = n), shape = 19, col = 'steelblue') +
-  geom_text(aes(label = n)) +
-  geom_vline(xintercept = 1.5) +
-  geom_hline(yintercept = 1.5) +
-  ggtitle(label = "FIT p-values") +
-  theme_classic() +
-  theme(legend.position = 'none',
-        axis.title = element_text(color = "black", face = 'bold'))
-filename <- file.path(args$confdir, "FIT_pval_confmat.png")
-ggsave(filename, p1, width = 3, height = 3)
-Conf <- Conf %>% 
-  bind_rows(tab %>%
-              broom::tidy() %>%
-              select(-class) %>%
-              mutate(test = "FIT_pval"))
+if(length(unique(tab$selected)) == 2){
+  
+  cat("\tFIT pval...\n")
+  tab <- caret::confusionMatrix(data = factor(tab$pval < args$alpha_thres),
+                                reference = factor(tab$selected),
+                                positive = "TRUE")
+  p1 <- tab$table %>%
+    as_tibble() %>%
+    ggplot(aes(x = Reference, y = Prediction)) +
+    geom_point(aes(size = n), shape = 19, col = 'steelblue') +
+    geom_text(aes(label = n)) +
+    geom_vline(xintercept = 1.5) +
+    geom_hline(yintercept = 1.5) +
+    ggtitle(label = "FIT p-values") +
+    theme_classic() +
+    theme(legend.position = 'none',
+          axis.title = element_text(color = "black", face = 'bold'))
+  filename <- file.path(args$confdir, "FIT_pval_confmat.png")
+  ggsave(filename, p1, width = 3, height = 3)
+  Conf <- Conf %>% 
+    bind_rows(tab %>%
+                broom::tidy() %>%
+                select(-class) %>%
+                mutate(test = "FIT_pval"))
+  
+  #
+  cat("\tFIT qval...\n")
+  tab <- FIT %>%
+    left_join(info, by = "site_id") %>%
+    mutate(qval = p.adjust(pval, method = 'fdr')) 
+  tab <- caret::confusionMatrix(data = factor(tab$qval < args$alpha_thres),
+                                reference = factor(tab$selected),
+                                positive = "TRUE")
+  p1 <- tab$table %>%
+    as_tibble() %>%
+    ggplot(aes(x = Reference, y = Prediction)) +
+    geom_point(aes(size = n), shape = 19, col = 'steelblue') +
+    geom_text(aes(label = n)) +
+    geom_vline(xintercept = 1.5) +
+    geom_hline(yintercept = 1.5) +
+    ggtitle(label = "FIT q-values") +
+    theme_classic() +
+    theme(legend.position = 'none',
+          axis.title = element_text(color = "black", face = 'bold'))
+  filename <- file.path(args$confdir, "FIT_qval_confmat.png")
+  ggsave(filename, p1, width = 3, height = 3)
+  Conf <- Conf %>% 
+    bind_rows(tab %>%
+                broom::tidy() %>%
+                select(-class) %>%
+                mutate(test = "FIT_qval"))
+  
+}else if(length(unique(tab$selected)) == 1){
+  cat("\tOnly one value in selected...skipping\n")
+}else{
+  stop("ERROR: Unexpected number of valuesin selected column...\n",
+       call. = TRUE)
+}
 
 #
-cat("\tFIT qval...\n")
-tab <- FIT %>%
-  left_join(info, by = "site_id") %>%
-  mutate(qval = p.adjust(pval, method = 'fdr')) 
-tab <- caret::confusionMatrix(data = factor(tab$qval < 0.05),
-                              reference = factor(tab$selected),
-                              positive = "TRUE")
-p1 <- tab$table %>%
-  as_tibble() %>%
-  ggplot(aes(x = Reference, y = Prediction)) +
-  geom_point(aes(size = n), shape = 19, col = 'steelblue') +
-  geom_text(aes(label = n)) +
-  geom_vline(xintercept = 1.5) +
-  geom_hline(yintercept = 1.5) +
-  ggtitle(label = "FIT q-values") +
-  theme_classic() +
-  theme(legend.position = 'none',
-        axis.title = element_text(color = "black", face = 'bold'))
-filename <- file.path(args$confdir, "FIT_qval_confmat.png")
-ggsave(filename, p1, width = 3, height = 3)
-Conf <- Conf %>% 
-  bind_rows(tab %>%
-              broom::tidy() %>%
-              select(-class) %>%
-              mutate(test = "FIT_qval"))
-
-#
-cat("\tP(directional) qval...\n")
+cat("\tP(directional)...\n")
 tab <- pdir %>%
   left_join(info, by = "site_id") %>%
-  transmute(significant = p_directional > 0.5, selected)
+  transmute(significant = p_directional / (1-p_directional) > args$or_thres,
+            selected)
 tab <- caret::confusionMatrix(data = factor(tab$significant),
                               reference = factor(tab$selected),
                               positive = "TRUE")
@@ -415,7 +481,7 @@ Conf <- Conf %>%
 cat("\tP(directional,+)...\n")
 tab <- pdir %>%
   left_join(info, by = "site_id") %>%
-  transmute(significant = p_pos > 0.5, selected)
+  transmute(significant = p_pos / (1 - p_pos) > args$or_thres, selected)
 tab <- caret::confusionMatrix(data = factor(tab$significant),
                               reference = factor(tab$selected),
                               positive = "TRUE")
@@ -442,7 +508,7 @@ Conf <- Conf %>%
 cat("\tP(directional,-)...\n")
 tab <- pdir %>%
   left_join(info, by = "site_id") %>%
-  transmute(significant = p_neg > 0.5, selected)
+  transmute(significant = p_neg / (1-p_neg) > args$or_thres, selected)
 tab <- caret::confusionMatrix(data = factor(tab$significant),
                               reference = factor(tab$selected),
                               positive = "TRUE")
@@ -510,7 +576,7 @@ ROC <- bind_rows(s_coef %>%
             score = -log10(pval)) %>%
   roc() %>%
   mutate(test = "s_coef"),
-
+  
   s_coef %>%
   left_join(info, by = "site_id") %>%
   transmute(truth = selected,
@@ -524,6 +590,13 @@ ROC <- bind_rows(s_coef %>%
               score = -log10(pval)) %>%
     roc() %>%
     mutate(test = "FIT"),
+  
+  changes %>%
+    left_join(info, by = "site_id") %>%
+    transmute(truth = selected,
+              score = maf_change) %>%
+    roc() %>%
+    mutate(test = "maf_change"),
 
   pdir %>%
     left_join(info, by = "site_id") %>%
@@ -547,9 +620,12 @@ ROC <- bind_rows(s_coef %>%
     mutate(test = "P(directional,-)"))
 
 p1 <- ROC %>%
+  # filter(test %in% c("P(directional)", "maf_change")) %>%
   ggplot(aes(x = fpr, y = tpr, group = test))+
   geom_line(aes(col = test)) +
+  scale_color_brewer(palette = "Paired") +
   AMOR::theme_blackbox()
+p1
 filename <- file.path(args$rocdir, "roc_curves.png")
 ggsave(filename, p1, width = 6, height = 4)
 
@@ -577,3 +653,44 @@ write_tsv(AUC, filename)
 
 #+ ROC AUC table, results='asis'
 knitr::kable(AUC, caption = "AUC of ROC curves")
+
+
+
+#' # Manhattan plots
+#' This simulations include positional changes so it makes sense to plot
+#' in a manhattan plot as opposed to just overall distributions
+selected_pos <- info %>% filter(selected) %>%
+  select(ref_pos) %>% unlist %>% as.numeric
+
+p1 <- info %>%
+  arrange(selected) %>%
+  left_join(s_coef %>%
+              transmute(site_id, s = -log10(pval)),
+            by = "site_id") %>%
+  left_join(FIT %>%
+              transmute(site_id, FIT = -log10(pval)),
+            by = "site_id") %>%
+  left_join(pdir %>%
+              transmute(site_id, p_dir = p_directional / (1 - p_directional)) %>%
+              rename(p_directional = p_dir),
+            by = "site_id") %>%
+  left_join(changes %>%
+              # transmute(site_id, maf_change = sign(maf_change) * sqrt(abs(maf_change))),
+              transmute(site_id, maf_change),
+            by = "site_id") %>%
+  pivot_longer(cols = -c(site_id,ref_id, ref_pos, m_type,
+                         s_coef, generation, pop_src,
+                         selected), names_to = "test",
+               values_to = "stat") %>%
+  filter(!is.na(stat)) %>%
+  mutate(test = replace(test, test == "s", "s_coef")) %>%
+  mutate(test = factor(test, levels = c("maf_change", "s_coef", "FIT", "p_directional")))  %>%
+  ggplot(aes(x = ref_pos, y = stat)) +
+  facet_wrap(~ test, ncol = 1, scales = "free_y") +
+  geom_vline(xintercept = selected_pos, col = "grey") +
+  geom_point(aes(col = selected)) +
+  xlim(c(1, 1e6)) +
+  theme_classic()
+p1
+filename <- file.path(args$outdir, "manhattan.png")
+ggsave(filename, p1, width = 15, height = 7, dpi = 150)
