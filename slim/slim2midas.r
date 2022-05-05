@@ -68,7 +68,6 @@ args <- process_arguments()
 #              seed = NA)
 print(args)
 
-
 library(tidyverse)
 
 #' Read genotype data in ms format
@@ -285,12 +284,12 @@ process_popdir <- function(pop_dir,
                                   size = n_genomes,
                                   replace = FALSE))
       }
-      
+
       # Calculate derived allele frequency from sample and merge with
       # info
       gen_label <- paste0("gen_", g)
       dat$info %>%
-        left_join(dat$freq[genomes_ii] %>%
+        left_join(dat$freq[1:(n_genomes + 1)] %>%
                     pivot_longer(-site_id, names_to = "genome",
                                  values_to = "genotype") %>%
                     group_by(site_id) %>%
@@ -325,6 +324,10 @@ process_popdir <- function(pop_dir,
 #     filter(!undetected_ii)
 # }
 
+args <- list(sim_dir = "sim_x/",
+             n_genomes = 10,
+             outdir = "output/",
+             seed = 2308123)
 
 # Prepare output dir
 cat("Creating output directory...\n")
@@ -336,6 +339,7 @@ if(!is.na(args$seed)){
   cat("Setting seed...\n")
   set.seed(args$seed)
 }
+
 Pops <- list.dirs(args$sim_dir,
           recursive = FALSE,
           full.names = TRUE)[1] %>%
