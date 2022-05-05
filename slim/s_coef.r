@@ -49,7 +49,6 @@ args <- process_arguments()
 # args <- list(maf_changes = "/home/sur/micropopgen/exp/2022/today2/sim_x/maf_changes.tsv",
 #              time = 50,
 #              output = "s_coef.tsv")
-print(args)
 library(tidyverse)
 library(HMVAR)
 
