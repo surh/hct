@@ -42,9 +42,7 @@ Channel
       row.seed_x2,
       row.seed_x3,
       row.seed_sim)}
-    .into{SIMS_STD; SIMS_SLIM}
-
-
+    .into{SIMS1; SIMS2}
 
 process standing_variation {
   tag "$sim_id"
@@ -68,7 +66,7 @@ process standing_variation {
     seed_x1,
     seed_x2,
     seed_x3,
-    seed_sim from SIMS_STD
+    seed_sim from SIMS1
 
   output:
   tuple sim_id, file("${sim_id}.ms") into STD_VAR
@@ -91,8 +89,48 @@ process standing_variation {
     -define x3=$seed_x3 \
     $workflow.projectDir/generate_standing_variation.slim
   """
+}
+
+process process_standing {
+  label 'r'
+  publishDir "$params.outdir/processed_standing_variation", mode: 'rellink'
+
+  input:
+  tuple sim_id,
+    file("standing_variation/standing_variation.ms"),
+    run_id_short,
+    Ne,
+    Mu,
+    Rho,
+    genome_size,
+    gcBurnin,
+    tractlen,
+    n_generations,
+    scoef,
+    prop_selection,
+    n_pops,
+    sample_size,
+    seed_x1,
+    seed_x2,
+    seed_x3,
+    seed_sim from STD_VAR.join(SIMS2)
+
+  output:
+  tuple sim_id, file("standing_variation/") into STDVAR2SLIM
+
+  """
+  Rscript $workflow.projectDir/processes_standing_variation.r \
+    standing_variation/standing_variation.ms \
+    $genome_size \
+    --prop_selected $prop_selection \
+    --min_maf 0.05 \
+    --outdir standing_variation
+
+  """
 
 }
+
+
 
 // Example nextflow.config
 /*
