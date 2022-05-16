@@ -236,13 +236,15 @@ initialize()
 		}
 	}
 	cat("Found " + length(sel_ii) + " positions to change their selection coefficient\n");
-	
-	// Update selection coefficient of mutations under selection
-	cat("Updating selecction coefficients\n");
-	for(i in sel_ii){
-		cat(">" + sim.mutations.position[i] + "\t" + sim.mutations[i].id +"\n");
-		sim.mutations[i].setSelectionCoeff(1.0);
+	if(length(sel_ii) > 0){
+		// Update selection coefficient of mutations under selection
+		cat("Updating selecction coefficients\n");
+		for(i in sel_ii){
+			cat(">" + sim.mutations.position[i] + "\t" + sim.mutations[i].id +"\n");
+			sim.mutations[i].setSelectionCoeff(1.0);
+		}
 	}
+	
 	
 	c2 = clock();
 	c3 = c2 - c1;
