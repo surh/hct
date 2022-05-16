@@ -129,7 +129,7 @@ process process_standing {
 
   output:
   tuple sim_id, file("output/snps_info.txt"),
-    file("output/snps_freq.tsv"),
+    file("output/snps_freq.txt"),
     file("standing_variation.ms"),
     run_id_short, Ne, Mu, Rho, genome_size,
     gcBurnin, tractlen, n_generations, scoef,
@@ -156,7 +156,7 @@ process sim_pops {
   input:
   tuple sim_id,
     file("output/snps_info.txt"),
-    file("output/snps_freq.tsv"),
+    file("output/snps_freq.txt"),
     file("output/standing_variation.ms"),
     run_id_short, Ne, Mu, Rho, genome_size,
     gcBurnin, tractlen, n_generations, scoef,
