@@ -19,7 +19,6 @@
 params.sims_params = ""
 params.outdir = "output"
 
-
 sims_params = file(params.sims_params)
 
 Channel
@@ -118,7 +117,10 @@ process process_standing {
     seed_sim from STD_VAR.join(SIMS2)
 
   output:
-  tuple sim_id, file("standing_variation/") into STDVAR2SLIM
+  tuple sim_id, file("standing_variation/"),
+    run_id_short, Ne, Mu, Rho, genome_size,
+    gcBurnin, tractlen, n_generations, scoef,
+    prop_selection, n_pops, sample_size, seed_sim to STDVAR2SLIM
 
   """
   Rscript $workflow.projectDir/process_standing_variation.r \
@@ -129,7 +131,6 @@ process process_standing {
     --outdir standing_variation
 
   """
-
 }
 
 
