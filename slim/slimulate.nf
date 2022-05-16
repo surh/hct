@@ -41,7 +41,7 @@ Channel
       row.seed_x2,
       row.seed_x3,
       row.seed_sim)}
-    .into{SIMS1; SIMS2}
+    .into{SIMS1; SIMS2; SIMS3}
 
 process standing_variation {
   tag "$sim_id"
@@ -68,7 +68,21 @@ process standing_variation {
     seed_sim from SIMS1
 
   output:
-  tuple sim_id, file("${sim_id}.ms") into STD_VAR
+  tuple sim_id,
+    file("${sim_id}.ms"),
+    run_id_short,
+    Ne,
+    Mu,
+    Rho,
+    genome_size,
+    gcBurnin,
+    tractlen,
+    n_generations,
+    scoef,
+    prop_selection,
+    n_pops,
+    sample_size,
+    seed_sim into STANDING_VAR
 
   """
   slim \
@@ -93,12 +107,12 @@ process standing_variation {
 process process_standing {
   tag "$sim_id"
   label 'r'
-  publishDir "$params.outdir/standing_variation", mode: 'rellink',
-    saveAs: {"$sim_id"}
+  // publishDir "$params.outdir/standing_variation", mode: 'rellink',
+  //   saveAs: {"$sim_id"}
 
   input:
   tuple sim_id,
-    file("standing_variation/standing_variation.ms"),
+    file("standing_variation.ms"),
     run_id_short,
     Ne,
     Mu,
@@ -111,43 +125,45 @@ process process_standing {
     prop_selection,
     n_pops,
     sample_size,
-    seed_x1,
-    seed_x2,
-    seed_x3,
-    seed_sim from STD_VAR.join(SIMS2)
+    seed_sim from STANDING_VAR
 
   output:
-  tuple sim_id, file("standing_variation/"),
+  tuple sim_id, file("output/snps_info.txt"),
+    file("output/snps_freq.tsv"),
+    file("standing_variation.ms"),
     run_id_short, Ne, Mu, Rho, genome_size,
     gcBurnin, tractlen, n_generations, scoef,
-    n_pops, sample_size, seed_sim into STDVAR2SLIM
+    n_pops, sample_size, seed_sim into FORSLIM
 
   """
   Rscript $workflow.projectDir/process_standing_variation.r \
-    standing_variation/standing_variation.ms \
+    standing_variation.ms \
     $genome_size \
     --prop_selected $prop_selection \
     --min_maf 0.05 \
-    --outdir standing_variation
+    --outdir output
 
   """
 }
-
-
 
 process sim_pops {
   tag "$sim_id"
   label 'slim'
   publishDir "$params.outdir/sims", mode: 'rellink'
+    pattern: 'output', saveAs: {"$sim_id"}
+
 
   input:
-  tuple sim_id, file("$sim_id"),
+  tuple sim_id,
+    file("output/snps_info.txt"),
+    file("output/snps_freq.tsv"),
+    file("output/standing_variation.ms"),
     run_id_short, Ne, Mu, Rho, genome_size,
     gcBurnin, tractlen, n_generations, scoef,
-    n_pops, sample_size, seed_sim from STDVAR2SLIM
+    n_pops, sample_size, seed_sim from FORSLIM
 
   output:
-  tuple sim_id, file("$sim_id") into RES
+  tuple sim_id, file("output") into SIMPOPS
 
   """
   $workflow.projectDir/sim_pops.py \
@@ -169,7 +185,7 @@ process sim_pops {
     --prop_selection 0.0 \
     --sim_seed $seed_sim \
     --print_period 10 \
-    --outdir $sim_id
+    --outdir output
   """
 }
 
