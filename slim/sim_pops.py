@@ -137,24 +137,26 @@ if __name__ == '__main__':
         cmd = ['slim',
                "-t",  # print SLiM's total execution time (in user clock time)
                "-m",  # print SLiM's peak memory usage
-               "-d", "runId='{}'" .format(args.sim_id),
-               "-d", "runIdShort='{}'" .format(args.run_id_short),
-               "-d", "info_file='{}'" .format(args.info_file),
-               "-d", "standing_variation='{}'".format(args.standing_variation),
+               "-define", """"runId='{}'" """.format(args.sim_id),
+               "-define", """"runIdShort='{}'" """.format(args.run_id_short),
+               "-define", """"info_file='{}'" """.format(args.info_file),
 
-               "-d", "Ne={}".format(args.Ne),
-               "-d", "Mu={}".format(args.Mu),
-               "-d", "Rho={}".format(args.Rho),
-               "-d", "genomeSize={}".format(args.genome_size),
-               "-d", "gcBurnin={}".format(args.gcBurnin),
-               "-d", "tractlen={}".format(args.tractlen),
-               "-d", "N_generations={}".format(args.n_generations),
-               "-d", "sampleSize={}".format(args.sample_size),
+               "-define", """"standing_variation='{}'" """
+               .format(args.standing_variation),
 
-               "-d", "scoef1={}".format(args.scoef),
-               "-d", "prop_selection={}" .format(args.prop_selection),
-               "-d", "seed={}" .format(seed),
-               "-d", "print_period={}" .format(args.print_period),
+               "-define", "Ne={}".format(args.Ne),
+               "-define", "Mu={}".format(args.Mu),
+               "-define", "Rho={}".format(args.Rho),
+               "-define", "genomeSize={}".format(args.genome_size),
+               "-define", "gcBurnin={}".format(args.gcBurnin),
+               "-define", "tractlen={}".format(args.tractlen),
+               "-define", "N_generations={}".format(args.n_generations),
+               "-define", "sampleSize={}".format(args.sample_size),
+               "-define", "scoef1={}".format(args.scoef),
+               "-define", "prop_selection={}".format(args.prop_selection),
+               "-define", "seed={}".format(seed),
+               "-define", "print_period={}".format(args.print_period),
+
                args.slim_script]
         cmd = " ".join(cmd)
         print(cmd)
