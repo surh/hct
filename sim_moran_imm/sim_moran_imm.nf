@@ -35,9 +35,6 @@ SIMS = Channel
     row.T,
     row.seed)}
 
-
-
-
 process sim_moran_imm {
   tag "$sim_id"
   publishDir "$params.outdir/", mode: 'rellink',
@@ -65,8 +62,6 @@ process sim_moran_imm {
     --seed $seed \
     --outdir output
   """
-
-
 }
 
 
