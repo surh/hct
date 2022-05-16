@@ -40,7 +40,8 @@ Channel
       row.sample_size,
       row.seed_x1,
       row.seed_x2,
-      row.seed_x3)}
+      row.seed_x3,
+      row.seed_sim)}
     .into{SIMS_STD; SIMS_SLIM}
 
 
@@ -66,7 +67,8 @@ process standing_variation {
     sample_size,
     seed_x1,
     seed_x2,
-    seed_x3 from SIMS_STD
+    seed_x3,
+    seed_sim from SIMS_STD
 
   output:
   tuple sim_id, file("${sim_id}.ms") into STD_VAR

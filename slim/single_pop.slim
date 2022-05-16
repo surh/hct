@@ -157,32 +157,33 @@ function (void)write_sample_pop(string$ outpath, integer$ n_samples, integer$ ge
 
 initialize()
 {
-	//  The parameters below can be passed from external script
-	defineConstant("Ne", 1400); // The effective population size
-	defineConstant("Mu", 1e-7); // Mutation rate
-	defineConstant("Rho", 1e-7); // Recombination rate
-	defineConstant("genomeSize", 1e6); // Genome size in bp
-	defineConstant("gcBurnin", 0); // Not documented
-	defineConstant("tractlen", 1e5); // Average HGT tract length
-	defineConstant("runId", "testrun"); // Run ID
-	defineConstant("runIdShort", "trun"); // Short Run ID
-	defineConstant("N_generations", 50); // Short Run ID
-	defineConstant("sampleSize", 20); // Genomes to sample
-	defineConstant("scoef1", 0.01); // Selection advantage
-	defineConstant("prop_selection", 0.0); // Proportion of de novo mutation with fitness advantage
+	//	//  The parameters below can be passed from external script
+	//	defineConstant("Ne", 1400); // The effective population size
+	//	defineConstant("Mu", 1e-7); // Mutation rate
+	//	defineConstant("Rho", 1e-7); // Recombination rate
+	//	defineConstant("genomeSize", 1e6); // Genome size in bp
+	//	defineConstant("gcBurnin", 0); // Not documented
+	//	defineConstant("tractlen", 1e5); // Average HGT tract length
+	//	defineConstant("runId", "testrun"); // Run ID
+	//	defineConstant("runIdShort", "trun"); // Short Run ID
+	//	defineConstant("N_generations", 50); // Short Run ID
+	//	defineConstant("sampleSize", 20); // Genomes to sample
+	//	defineConstant("scoef1", 0.01); // Selection advantage
+	//	defineConstant("prop_selection", 0.0); // Proportion of de novo mutation with fitness advantage
+	//	//	defineConstant("x1", rdunif(1, 1, 10000000)); // random seed for ms otherwise there is a risk that it reuses seed from previous run.
+	//	//	defineConstant("x2", rdunif(1, 1, 10000000)); // random seed for ms
+	//	//	defineConstant("x3", rdunif(1, 1, 10000000)); // random seed for ms
+	//	defineConstant("seed", rdunif(1, 1, 10000000)); // Seed for simulation
+	//	defineConstant("info_file", "standing_variation/snps_info.txt"); // tsv file with header & sites for selection in the 5-th column
+	//	defineConstant("outdir", "sim_x/pop_10"); // Directory for writint output
+	//	defineConstant("standing_variation", "standing_variation/standing_variation.ms"); // ms file with standing variation
+	//	defineConstant("print_period", 10); // How many generations between sampling
 	
-	defineConstant("standing_variation", "standing_variation/standing_variation.ms"); // ms file with standing variation
-	defineConstant("info_file", "standing_variation/snps_info.txt"); // tsv file with header & sites for selection in the 5-th column
-	defineConstant("print_period", 10); // How many generations between sampling
-	defineConstant("outdir", "sim_x/pop_10"); // Directory for writint output
-	
-	// Following are defined by original authors   
+	setSeed(seed);
+	// Following are defined by original authors  
 	defineConstant("Theta", 2*Ne*Mu); // Theta
 	defineConstant("GCrate", Rho * genomeSize); // HGT probability
 	defineConstant("msRho", 2* Ne * gcBurnin * genomeSize); // HGT probability
-	defineConstant("x1", rdunif(1, 1, 10000000)); // random seed for ms otherwise there is a risk that it reuses seed from previous run.
-	defineConstant("x2", rdunif(1, 1, 10000000)); // random seed for ms
-	defineConstant("x3", rdunif(1, 1, 10000000)); // random seed for ms
 	initializeMutationRate(Mu);
 	initializeMutationType("m1", 1.0, "f", 0.0); // Standing mutations
 	initializeMutationType("m2", 1.0, "f", 0.0); // de novo neutral mutations
