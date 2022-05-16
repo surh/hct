@@ -170,5 +170,10 @@ if __name__ == '__main__':
         os.system(cmd)
 
     with open(args.outdir + "pop_seeds.txt", 'w') as oh:
-        oh.write(Seeds)
+        pop_i = 0
+        for seed in Seeds:
+            pop_i = pop_i + 1
+            line = ["pop_" + str(pop_i), str(seed)]
+            line = "\t".join(line)
+            oh.write(line + "\n")
     oh.close()
