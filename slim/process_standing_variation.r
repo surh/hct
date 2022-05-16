@@ -16,18 +16,56 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+library(argparser)
+
+process_arguments <- function(){
+  p <- arg_parser(paste("Process standing variation & select sites for selection"))
+  
+  # Positional arguments
+  p <- add_argument(p, "ms_file",
+                    help = paste("File produced by MS with standing variation"),
+                    type = "character")
+  p <- add_argument(p, "genome_size",
+                    help = "Genome size",
+                    type = "numeric")
+  
+  # Optional arguments
+  p <- add_argument(p, "--prop_selected",
+                     help = paste("Proportion of segregating sites to be used",
+                                  "to simulate selection"),
+                     type = "numeric",
+                     default = 0.01)
+  p <- add_argument(p, "--min_maf",
+                    help = paste("Minimul minor allele frequency for a site",
+                                 "to be under selection"),
+                    type = "numeric",
+                    default = 0.05)
+  p <- add_argument(p, "--outdir",
+                    help = paste("Directory path to store outputs."),
+                    default = "output/",
+                    type = "character")
+                    
+  # Read arguments
+  cat("Processing arguments...\n")
+  args <- parse_args(p)
+  
+  # Process arguments
+  if(args$min_maf < 0 || args$min_maf > 1){
+    stop("ERROR: --min_maf must be in the interval [0,1]", call. = TRUE)
+  }
+  
+  return(args)
+}
+
+params <- process_arguments()
+# params <- list(ms_file = "standing_variation/standing_variation.ms",
+#                genome_size = 1e6,
+#                prop_selected = 0.01,
+#                min_maf = 0.05,
+#                outdir = "standing_variation/")
+print(params)
+
 library(tidyverse)
-
-
-
-
-params <- list(ms_file = "standing_variation/standing_variation.ms",
-               genome_size = 1e6,
-               prop_selected = 0.01,
-               min_maf = 0.05,
-               outdir = "standing_variation/")
-
-
 ms <- read_lines(params$ms_file)
 
 # Get first two lines
