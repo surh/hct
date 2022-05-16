@@ -120,7 +120,7 @@ process process_standing {
   tuple sim_id, file("standing_variation/"),
     run_id_short, Ne, Mu, Rho, genome_size,
     gcBurnin, tractlen, n_generations, scoef,
-    n_pops, sample_size, seed_sim to STDVAR2SLIM
+    n_pops, sample_size, seed_sim into STDVAR2SLIM
 
   """
   Rscript $workflow.projectDir/process_standing_variation.r \
