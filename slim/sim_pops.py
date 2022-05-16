@@ -138,6 +138,7 @@ if __name__ == '__main__':
 
         # outdir for specific pop
         outdir = os.path.join(args.outdir, "pop_" + pop_i)
+        os.mkdir(outdir)
 
         cmd = ['slim',
                "-t",  # print SLiM's total execution time (in user clock time)
