@@ -73,14 +73,16 @@ process standing_variation {
 
   """
   slim \
+    -t \
+    -m \
     -define Ne=$Ne \
     -define Mu=$Mu \
-    -define Rho=$Rho" \
+    -define Rho=$Rho \
     -define genomeSize=$genome_size \
     -define gcBurnin=$gcBurnin \
     -define tractlen=$tractlen \
-    -define runId=$sim_id \
-    -define runIdShort=$run_id_short \
+    -define "runId='$sim_id'" \
+    -define "runIdShort='$run_id_short'" \
     -define N_generations=$n_generations \
     -define x1=$seed_x1 \
     -define x2=$seed_x2 \
