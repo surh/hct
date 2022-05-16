@@ -149,7 +149,7 @@ process process_standing {
 process sim_pops {
   tag "$sim_id"
   label 'slim'
-  publishDir "$params.outdir/sims", mode: 'rellink'
+  publishDir "$params.outdir/sims", mode: 'rellink',
     pattern: 'output', saveAs: {"$sim_id"}
 
 
