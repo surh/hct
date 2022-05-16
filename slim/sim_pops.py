@@ -137,7 +137,7 @@ if __name__ == '__main__':
         Seeds.append(seed)
 
         # outdir for specific pop
-        outdir = os.path.join(args.outdir, "pop_" + pop_i)
+        outdir = os.path.join(args.outdir, "pop_" + str(pop_i))
         os.mkdir(outdir)
 
         cmd = ['slim',
