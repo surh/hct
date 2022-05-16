@@ -1,5 +1,24 @@
 #!/usr/bin/env Rscript
+
+# Copyright (C) 2022 Sur Herrera Paredes
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
 library(tidyverse)
+
+
 
 
 params <- list(ms_file = "standing_variation/standing_variation.ms",
@@ -21,16 +40,16 @@ Geno <- NULL
 i <- 3
 sample_i <- 0
 while(i <= length(ms)){
-  
+
 
   if( str_detect(ms[[i]], "^//") ){
     sample_i <- sample_i + 1
-    
+
     if(sample_i > 1){
       stop("ERROR: script only prepared for ms files with 1 sample",
            call. = TRUE)
     }
-  
+
   }else if( str_detect(ms[[i]], "^segsites:") ){
     n_sites <- str_remove(ms[[i]], "^segsites:")
     n_sites <- as.numeric(n_sites)
@@ -38,30 +57,30 @@ while(i <= length(ms)){
     positions <- str_remove(ms[[i]], "^positions:")
     positions <- str_split(trimws(positions, which = "both"), " ")[[1]]
     positions <- floor(as.numeric(positions) * params$genome_size)
-    
+
     if(length(positions) != n_sites){
       stop("ERROR: number of positions doesn't match number of sites",
            call. = TRUE)
     }
-    
+
     Res[[sample_i]] <- tibble(site_id = paste0("std.", positions),
                               ref_id = "chr1",
                               ref_pos = positions)
     Geno[[sample_i]] <- tibble(site_id = Res[[sample_i]]$site_id)
-    
+
   }else if(trimws(ms[[i]]) == ""){
     cat("Skipping line", i, "\n")
   } else{
     genotype <- as.numeric(str_split(ms[[i]], "")[[1]])
-    
+
     if(length(genotype) != n_sites){
       stop("ERROR: number of genotyped positions doesn't match number of sites",
            call. = TRUE)
     }
-    
+
     Geno[[sample_i]][ paste0("g", ncol(Geno[[sample_i]])) ] <- genotype
   }
-  
+
   i <- i + 1
 }
 
@@ -81,7 +100,7 @@ Geno <- Geno[[1]]
 # Geno[[1]] %>%
 #   select(-site_id) %>%
 #   summarise_each(mean)
-# 
+#
 # system.time(Geno[[1]] %>%
 #               pivot_longer(-site_id, names_to = "genome", values_to = "genotype") %>%
 #               group_by(site_id) %>%
