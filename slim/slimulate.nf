@@ -167,7 +167,7 @@ process sim_pops {
     --sample_size $sample_size \
     --scoef $scoef \
     --prop_selection 0.0 \
-    --sim_seed $sim_seed \
+    --sim_seed $seed_sim \
     --print_period 10 \
     --outdir $sim_id
   """
