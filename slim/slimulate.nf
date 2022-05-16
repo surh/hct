@@ -120,7 +120,7 @@ process process_standing {
   tuple sim_id, file("standing_variation/"),
     run_id_short, Ne, Mu, Rho, genome_size,
     gcBurnin, tractlen, n_generations, scoef,
-    prop_selection, n_pops, sample_size, seed_sim to STDVAR2SLIM
+    n_pops, sample_size, seed_sim to STDVAR2SLIM
 
   """
   Rscript $workflow.projectDir/process_standing_variation.r \
@@ -138,15 +138,39 @@ process process_standing {
 process sim_pops {
   tag "$sim_id"
   label 'slim'
+  publishDir "$params.outdir/sims", mode: 'rellink'
 
   input:
-  tuple sim_id, file("standing_variation/"),
+  tuple sim_id, file("$sim_id"),
     run_id_short, Ne, Mu, Rho, genome_size,
     gcBurnin, tractlen, n_generations, scoef,
-    prop_selection, n_pops, sample_size, seed_sim from STDVAR2SLIM
+    n_pops, sample_size, seed_sim from STDVAR2SLIM
 
+  output:
+  tuple sim_id, file("$sim_id") into RES
 
-
+  """
+  $workflow.projectDir/sim_pops.py \
+    --info_file $sim_id/snps_info.txt \
+    --standing_variation $sim_id/standing_variation.ms \
+    --sim_id $sim_id \
+    --slim_script $workflow.projectDir/single_pop.slim \
+    --n_pops $n_pops \
+    --Ne $Ne \
+    --Mu $Mu \
+    --Rho $Rho \
+    --genome_size $genome_size \
+    --gcBurnin $gcBurnin \
+    --tractlen $tractlen \
+    --run_id_short $run_id_short \
+    --n_generations $n_generations \
+    --sample_size $sample_size \
+    --scoef $scoef \
+    --prop_selection 0.0 \
+    --sim_seed $sim_seed \
+    --print_period 10 \
+    --outdir $sim_id
+  """
 }
 
 
