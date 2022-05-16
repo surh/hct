@@ -167,8 +167,8 @@ process sim_pops {
 
   """
   $workflow.projectDir/sim_pops.py \
-    --info_file $sim_id/snps_info.txt \
-    --standing_variation $sim_id/standing_variation.ms \
+    --info_file output/snps_info.txt \
+    --standing_variation output/standing_variation.ms \
     --sim_id $sim_id \
     --slim_script $workflow.projectDir/single_pop.slim \
     --n_pops $n_pops \

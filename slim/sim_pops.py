@@ -169,7 +169,7 @@ if __name__ == '__main__':
         print("Running\n>" + cmd)
         os.system(cmd)
 
-    with open(args.outdir + "pop_seeds.txt", 'w') as oh:
+    with open(args.outdir + "/" + "pop_seeds.txt", 'w') as oh:
         pop_i = 0
         for seed in Seeds:
             pop_i = pop_i + 1
