@@ -93,7 +93,7 @@ process standing_variation {
 process process_standing {
   tag "$sim_id"
   label 'r'
-  publishDir "$params.outdir/standing_variation", mode: 'rellink'
+  publishDir "$params.outdir/standing_variation", mode: 'rellink',
     saveAs: {"$sim_id"}
 
   input:
