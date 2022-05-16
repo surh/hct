@@ -17,6 +17,7 @@
 
 import argparse
 import random
+import os
 
 
 def process_arguments():
@@ -131,14 +132,19 @@ if __name__ == '__main__':
     Seeds = []
     for pop_i in range(1, args.n_pops + 1):
 
+        # Seed for specific pop simulation
         seed = random.randrange(1, 10000000)
         Seeds.append(seed)
+
+        # outdir for specific pop
+        outdir = os.path.join(args.outdir, "pop_" + pop_i)
 
         cmd = ['slim',
                "-t",  # print SLiM's total execution time (in user clock time)
                "-m",  # print SLiM's peak memory usage
                "-define", """"runId='{}'" """.format(args.sim_id),
                "-define", """"runIdShort='{}'" """.format(args.run_id_short),
+               "-define", """"outdir='{}'" """.format(outdir),
                "-define", """"info_file='{}'" """.format(args.info_file),
 
                "-define", """"standing_variation='{}'" """
@@ -159,5 +165,9 @@ if __name__ == '__main__':
 
                args.slim_script]
         cmd = " ".join(cmd)
-        print(cmd)
-    print(Seeds)
+        print("Running\n>" + cmd)
+        os.system(cmd)
+
+    with open(args.outdir + "pop_seeds.txt", 'w') as oh:
+        oh.write(Seeds)
+    oh.close()
