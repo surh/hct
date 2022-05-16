@@ -47,7 +47,7 @@ Channel
 process standing_variation {
   tag "$sim_id"
   label 'slim'
-  publishDir "$params.outdir/standing_variation", mode: 'rellink'
+  // publishDir "$params.outdir/standing_variation", mode: 'rellink'
 
   input:
   tuple sim_id,
@@ -92,8 +92,10 @@ process standing_variation {
 }
 
 process process_standing {
+  tag "$sim_id"
   label 'r'
-  publishDir "$params.outdir/processed_standing_variation", mode: 'rellink'
+  publishDir "$params.outdir/standing_variation", mode: 'rellink'
+    saveAs: {"$sim_id"}
 
   input:
   tuple sim_id,
@@ -119,7 +121,7 @@ process process_standing {
   tuple sim_id, file("standing_variation/") into STDVAR2SLIM
 
   """
-  Rscript $workflow.projectDir/processes_standing_variation.r \
+  Rscript $workflow.projectDir/process_standing_variation.r \
     standing_variation/standing_variation.ms \
     $genome_size \
     --prop_selected $prop_selection \
