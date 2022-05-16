@@ -68,7 +68,7 @@ def process_arguments():
                         help="Genome size in bp",
                         type=int,
                         default=3e6)
-    parser.add_argument("--gcBurning",
+    parser.add_argument("--gcBurnin",
                         help="gcBurnin",
                         type=float,
                         default=0)
