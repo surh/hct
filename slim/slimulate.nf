@@ -24,7 +24,7 @@ sims_params = file(params.sims_params)
 
 Channel
     .fromPath(sims_params)
-    .splitCsv(header:true)
+    .splitCsv(header:true, sep: "\t")
     .map{ row -> tuple(row.sim_id,
       row.run_id_short,
       row.Ne,
@@ -41,19 +41,20 @@ Channel
       row.seed_x1,
       row.seed_x2,
       row.seed_x3)}
-    .into{SIMS_STD, SIMS_SLIM}
+    .into{SIMS_STD; SIMS_SLIM}
+
 
 
 process standing_variation {
-  tag: "$sim_id"
-  label: 'slim'
-  publishDir: "$params.outdir/standing_variation", mode: 'rellink'
+  tag "$sim_id"
+  label 'slim'
+  publishDir "$params.outdir/standing_variation", mode: 'rellink'
 
   input:
   tuple sim_id,
     run_id_short,
     Ne,
-    Mu
+    Mu,
     Rho,
     genome_size,
     gcBurnin,
@@ -64,26 +65,26 @@ process standing_variation {
     n_pops,
     sample_size,
     seed_x1,
-    seed_x2 from SIMS_STD
-
+    seed_x2,
+    seed_x3 from SIMS_STD
 
   output:
   tuple sim_id, file("$run_id\.ms") into STD_VAR
 
   """
   slim \
-    -define "Ne=$Ne" \
-    -define "Mu=$Mu" \
-    -define "Rho=$Rho" \
-    -define "genomeSize=$genome_size" \
-    -define "gcBurnin=$gcBurning" \
-    -define "tractlen=$traclen" \
-    -define "runId=$sim_id" \
-    -define "runIdShort=$run_id_short" \
-    -define "N_generations=$n_generations" \
-    -define "x1=$seed_x1" \
-    -define "x2=$seed_x2" \
-    -define "x3=$seed_x3" \
+    -define Ne=$Ne \
+    -define Mu=$Mu \
+    -define Rho=$Rho" \
+    -define genomeSize=$genome_size \
+    -define gcBurnin=$gcBurnin \
+    -define tractlen=$tractlen \
+    -define runId=$sim_id \
+    -define runIdShort=$run_id_short \
+    -define N_generations=$n_generations \
+    -define x1=$seed_x1 \
+    -define x2=$seed_x2 \
+    -define x3=$seed_x3 \
     $workflow.projectDir/generate_standing_variation.slim
   """
 
