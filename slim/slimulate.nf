@@ -69,7 +69,7 @@ process standing_variation {
     seed_x3 from SIMS_STD
 
   output:
-  tuple sim_id, file("$run_id\.ms") into STD_VAR
+  tuple sim_id, file("${run_id}.ms") into STD_VAR
 
   """
   slim \
