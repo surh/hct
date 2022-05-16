@@ -135,6 +135,21 @@ process process_standing {
 
 
 
+process sim_pops {
+  tag "$sim_id"
+  label 'slim'
+
+  input:
+  tuple sim_id, file("standing_variation/"),
+    run_id_short, Ne, Mu, Rho, genome_size,
+    gcBurnin, tractlen, n_generations, scoef,
+    prop_selection, n_pops, sample_size, seed_sim from STDVAR2SLIM
+
+
+
+}
+
+
 // Example nextflow.config
 /*
 process{
