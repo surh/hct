@@ -2,17 +2,17 @@
 
 # (C) Copyright 2022 Sur Herrera Paredes
 # This file is part of This program.
-# 
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with This program.  If not, see <https://www.gnu.org/licenses/>.
 
@@ -22,13 +22,13 @@ process_arguments <- function(){
   p <- arg_parser(paste("Scrit that takes slimulations of multiple pops",
                         "and produces a single MIDAS-like output per",
                         "timepoint"))
-  
+
   # Positional arguments
   p <- add_argument(p, "sim_dir",
                     help = paste("Directory with slimulations. It must have",
                                  "one subdirectory per population."),
                     type = "character")
-  
+
   # Optional arguments
   p <- add_argument(p, "--n_genomes",
                     help = paste("Number of genomes to sample for the allele",
@@ -44,12 +44,12 @@ process_arguments <- function(){
                     help = paste("Directory path to store outputs."),
                     default = "output/",
                     type = "character")
-  
-  
+
+
   # Read arguments
   cat("Processing arguments...\n")
   args <- parse_args(p)
-  
+
   # Process arguments
   if(is.na(args$seed) && args$n_genomes != 0){
     seed <- sample(1:1e6,size = 1)
@@ -57,7 +57,7 @@ process_arguments <- function(){
     cat("No seed was provided. If neede the following seed will be used:",
         args$seed, "\n")
   }
-  
+
   return(args)
 }
 
@@ -66,27 +66,31 @@ args <- process_arguments()
 #              n_genomes = 0,
 #              outdir = "output/",
 #              seed = NA)
+# args <- list(sim_dir = "sim_x/",
+#              n_genomes = 10,
+#              outdir = "output/",
+#              seed = 2308123)
 print(args)
 
 library(tidyverse)
 
 #' Read genotype data in ms format
 #'
-#' @param file 
+#' @param file
 #'
 #' @return
 #' @export
 #'
 #' @examples
 read_ms <- function(file){
-  
+
   ms <- read_lines(file)
-  
+
   # Get first two lines
   # Not actually mandatory in SLiM output
   # ms_cmd <- ms[[1]]
   # ms_seeds <- ms[[2]]
-  
+
   Res <- NULL
   Geno <- NULL
   i <- 1
@@ -95,17 +99,17 @@ read_ms <- function(file){
     # cat(i, "\n")
     if( str_detect(ms[[i]], "^//") ){
       sample_i <- sample_i + 1
-      
+
       if(sample_i > 1){
         stop("ERROR: script only prepared for ms files with 1 sample",
              call. = TRUE)
       }
-      
+
       # Finding sample beginning
-      i <- i + 1 
+      i <- i + 1
       next
     }
-    
+
     if(sample_i > 0){
       # Only if we are withing the samples region of the file
       if( str_detect(ms[[i]], "^segsites:") ){
@@ -115,44 +119,44 @@ read_ms <- function(file){
         positions <- str_remove(ms[[i]], "^positions:")
         positions <- str_split(trimws(positions, which = "both"), " ")[[1]]
         positions <- as.numeric(positions)
-        
+
         if(length(positions) != n_sites){
           stop("ERROR: number of positions doesn't match number of sites",
                call. = TRUE)
         }
-        
+
         Res[[sample_i]] <- tibble(site_id = as.character(1:n_sites),
                                   ref_id = "chr1",
                                   ref_pos = positions)
         Geno[[sample_i]] <- tibble(site_id = Res[[sample_i]]$site_id)
-        
+
       }else if(trimws(ms[[i]]) == ""){
         cat("Skipping line", i, "\n")
       } else{
         genotype <- as.numeric(str_split(ms[[i]], "")[[1]])
-        
+
         if(length(genotype) != n_sites){
           stop("ERROR: number of genotyped positions doesn't match number of sites",
                call. = TRUE)
         }
-        
+
         Geno[[sample_i]][ paste0("g", ncol(Geno[[sample_i]])) ] <- genotype
       }
     }else{
       cat("Skipping line", i, "\n")
     }
-    
-    
+
+
     i <- i + 1
   }
-  
+
   return(list(info = Res[[1]], freq = Geno[[1]]))
 }
 
 
 #' Title
 #'
-#' @param file 
+#' @param file
 #'
 #' @return
 #' @export
@@ -160,9 +164,9 @@ read_ms <- function(file){
 #' @examples
 read_slimout <- function(file){
   # file <- "sim_x/pop_1/gen_1.slimout"
-  
+
   slim <- readr::read_lines(file)
-  
+
   mut_flag <- FALSE
   geno_flag <- FALSE
   info <- NULL
@@ -170,7 +174,7 @@ read_slimout <- function(file){
   for(line in slim){
     if(str_detect(line, "^#"))
       next
-    
+
     if(line == "Mutations:"){
       mut_flag <- TRUE
       geno_flag <- FALSE
@@ -183,37 +187,37 @@ read_slimout <- function(file){
       cat("\t>Detected beginning of genomes...\n")
       next
     }
-    
-    
+
+
     if(!mut_flag && !geno_flag){
       print(line)
       stop("ERROR: unexpected file region", call. = TRUE)
     }
-    
+
     # line <- slim[6]
     line <- str_split(line, pattern = " ")[[1]]
     # line
-    
+
     if(mut_flag && !geno_flag){
       line <- matrix(line, nrow = 1)
       colnames(line) <- paste0("V", 1:ncol(line))
       info <- info %>%
         bind_rows(as_tibble(line))
     }else if(!mut_flag && geno_flag){
-      
+
       geno <- geno %>%
         bind_rows(tibble(genome_id = line[1],
                          mut_id = line[-(1:2)]))
-      
+
     }
-    
+
   }
-  
+
   colnames(info) <- c("mut_id", "site_id", "m_type",
                       "ref_pos", "s_coef", "d_coef",
                       "orig", "generation", "prevalence")
   # info
-  
+
   geno <- geno %>%
     mutate(genome_id = str_remove(genome_id, "^p[*][:]")) %>%
     mutate(genome_id = paste0("i", genome_id)) %>%
@@ -222,13 +226,13 @@ read_slimout <- function(file){
                 values_from = "count",
                 values_fill = 0)
   # geno
-  
+
   mut2site <- set_names(info$site_id, nm = info$mut_id)
   geno <- geno %>%
     mutate(mut_id = mut2site[mut_id] %>% as.character()) %>%
     rename(site_id = mut_id)
   # geno
-  
+
   info <- info %>%
     transmute(site_id,
               ref_id = "chr1",
@@ -237,15 +241,15 @@ read_slimout <- function(file){
               s_coef = as.numeric(s_coef),
               generation = as.numeric(generation),
               prevalence = as.numeric(generation))
-  
-  
+
+
   return(list(info = info, freq = geno))
 }
 
 #' Process simulation of one population
 #'
-#' @param pop_dir 
-#' @param n_genomes 
+#' @param pop_dir
+#' @param n_genomes
 #'
 #' @return
 #' @export
@@ -255,18 +259,18 @@ process_popdir <- function(pop_dir,
                            n_genomes = 10){
   # pop_dir <- file.path(args$sim_dir, "pop_10")
   # n_genomes <- 10
-  
+
   pop_id <- basename(pop_dir)
   cat("Processing population ", pop_id, "\n")
-  
+
   # Process population directory filenames
   pop_files <- list.files(pop_dir, recursive = FALSE, full.names = T)
   # ms_files <- pop_files[ basename(pop_files) %>% str_detect("[.]ms$") ]
   slimout_files <- pop_files[ basename(pop_files) %>% str_detect("[.]slimout$") ]
   generations <- basename(slimout_files) %>% str_remove("^gen_") %>%
     str_remove("[.]slimout$") %>% as.numeric()
-  
-  
+
+
   Pop <- generations %>%
     # set_names() %>%
     map_dfr(function(g, pop_dir, n_genomes = 10){
@@ -275,7 +279,7 @@ process_popdir <- function(pop_dir,
       cat("  >Generation ", g, "\n")
       # dat <- read_ms( file.path(pop_dir, paste0("gen_", g, ".ms")) )
       dat <- read_slimout( file.path(pop_dir, paste0("gen_", g, ".slimout")) )
-      
+
       # Check if wee need to sample, and if so select geones
       if(n_genomes == 0 || n_genomes == (ncol(dat$freq) - 1)){
         genomes_ii <- 1:ncol(dat$freq)
@@ -298,14 +302,14 @@ process_popdir <- function(pop_dir,
                   by = "site_id") %>%
         mutate(gen = gen_label)
       # dat$info
-      
+
     }, pop_dir = pop_dir,
     n_genomes = n_genomes)
   # Pop
-  
+
   # Rearrange into table
   cat("  Rearranging allele frequenciess..\n")
-  Pop <- Pop %>% 
+  Pop <- Pop %>%
     select(-prevalence) %>%
     pivot_wider(values_from = "maf", names_from = "gen",
                 values_fill = 0)
@@ -323,11 +327,6 @@ process_popdir <- function(pop_dir,
 #   Pop %>%
 #     filter(!undetected_ii)
 # }
-
-args <- list(sim_dir = "sim_x/",
-             n_genomes = 10,
-             outdir = "output/",
-             seed = 2308123)
 
 # Prepare output dir
 cat("Creating output directory...\n")
@@ -350,11 +349,11 @@ Pops <- list.dirs(args$sim_dir,
     # Pop <- Changes[[1]]
     # pop_dir <- names(Changes)[1]
     # base_dir <- args$outdir
-    
+
     pop_id <- basename(pop_dir)
     outdir <- file.path(base_dir, pop_id)
     dir.create(outdir)
-    
+
     # Make sure de-novo mutations have unique ids
     denovo_ii <- Pop$m_type != "m1"
     Pop <- Pop %>%
@@ -365,17 +364,17 @@ Pops <- list.dirs(args$sim_dir,
                                      site_id[denovo_ii]))) %>%
       mutate(site_id = new_id) %>%
       select(-new_id)
-      
+
     filename <- file.path(outdir, "snps_info.txt")
     write_tsv(Pop %>% select(-starts_with("gen_")),
               filename)
-    
+
     filename <- file.path(outdir, "snps_freq.txt")
     write_tsv(Pop %>% select(site_id,
                              starts_with("gen_")),
               filename)
-    
-    
+
+
     Pop
   }, base_dir = args$outdir)
 
@@ -388,7 +387,7 @@ Info <- Pops %>%
       select(-starts_with("gen_")) %>%
       mutate(pop_src = "standing") %>%
       mutate(pop_src = replace(pop_src, m_type != "m1", pop_id))
-  }) 
+  })
 Info <- Info [ !duplicated(Info), ] %>%
   mutate(selected = s_coef != 0)
 filename <- file.path(args$outdir, "snps_info.txt")
@@ -397,18 +396,18 @@ write_tsv(Info, filename)
 # Calculate changes
 Changes <- Pops %>%
   imap_dfr(function(Pop, pop_dir){
-    
+
     pop_id <- basename(pop_dir)
-    
+
     # Calculate maf changes used for sites counts (for bern)
     generations <- colnames(Pop)
     generations <- generations[ str_detect(generations, "^gen_") ]
     generations <- str_remove(generations, "^gen_") %>% as.numeric()
-    
+
     t_0 <- min(generations)
     t_n <- max(generations)
     samples <- paste0("gen_", c(t_0, t_n))
-    
+
     # Select start and end and calculate maf change
     Pop <- Pop %>%
       select(site_id, all_of(samples))
@@ -416,7 +415,7 @@ Changes <- Pops %>%
     Pop %>%
       mutate(maf_change = t_n - t_0,
              pop_id = pop_id)
-    
+
   })
 # Write maf changes file, useful for s_coef method
 Changes
@@ -433,6 +432,3 @@ Sites <- Changes %>%
 Sites
 filename <- file.path(args$outdir, "sites.tsv")
 write_tsv(Sites, filename)
-
-
-
