@@ -58,8 +58,10 @@ process compare{
     saveAs:{"$sim_id"}
 
   input:
-  tuple val(sim_id), file(maf), file(info), file(s_coef), file(fit),
-    file(pdir) from SIMS.join(SCOEFS).join(FITS).join(PDIRS)
+  tuple val(sim_id), file("maf_changes.tsv.gz"),
+    file("snps_info.txt.gz"),
+    file("s_coef.tsv"), file("FIT.tsv"),
+    file("p_directional.tsv.gz") from SIMS.join(SCOEFS).join(FITS).join(PDIRS)
 
   output:
   file "output/"
