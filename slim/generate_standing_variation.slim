@@ -1,32 +1,24 @@
 initialize()
 {
 	//  The parameters below can be passed from external script
-	defineConstant("Ne", 1400); // The effective population size
-	defineConstant("Mu", 1e-7); // Mutation rate
-	defineConstant("Rho", 1e-7); // Recombination rate
-	defineConstant("genomeSize", 1e6); // Genome size in bp
-	defineConstant("gcBurnin", 0); // Not documented
-	defineConstant("tractlen", 1e5); // Average HGT tract length
-	defineConstant("runId", "standing_variation"); // Run ID
-	defineConstant("runIdShort", "sv"); // Short Run ID
-	defineConstant("N_generations", 200); // Short Run ID
-	// defineConstant("sampleSize", 20); // Genomes to sample
-	// defineConstant("scoef1", 1.0); // Selection advantage
-	// defineConstant("prop_selection", 0.01); // Proportion of de novo mutation with fitness advantage
+	//	defineConstant("Ne", 1400); // The effective population size
+	//	defineConstant("Mu", 1e-7); // Mutation rate
+	//	defineConstant("Rho", 1e-7); // Recombination rate
+	//	defineConstant("genomeSize", 1e6); // Genome size in bp
+	//	defineConstant("gcBurnin", 0); // Not documented
+	//	defineConstant("tractlen", 1e5); // Average HGT tract length
+	//	defineConstant("runId", "standing_variation"); // Run ID
+	//	defineConstant("runIdShort", "sv"); // Short Run ID
+	//	defineConstant("N_generations", 200); // Short Run ID
+	//	defineConstant("x1", rdunif(1, 1, 10000000)); // random seed for ms otherwise there is a risk that it reuses seed from previous run.
+	//	defineConstant("x2", rdunif(1, 1, 10000000)); // random seed for ms
+	//	defineConstant("x3", rdunif(1, 1, 10000000)); // random seed for ms
 	
-	
-	
-	// Following are defined by original authors   
+	// Following are defined by original authors
 	defineConstant("Theta", 2*Ne*Mu); // Theta
-	// defineConstant("GCrate", Rho * genomeSize); // HGT probability
 	defineConstant("msRho", 2* Ne * gcBurnin * genomeSize); // HGT probability
-	defineConstant("x1", rdunif(1, 1, 10000000)); // random seed for ms otherwise there is a risk that it reuses seed from previous run.
-	defineConstant("x2", rdunif(1, 1, 10000000)); // random seed for ms
-	defineConstant("x3", rdunif(1, 1, 10000000)); // random seed for ms
 	initializeMutationRate(Mu);
 	initializeMutationType("m1", 1.0, "f", 0.0); // not used but required to initialize simulation
-	// initializeMutationType("m2", 1.0, "f", scoef1);
-	// initializeGenomicElementType("g1", c(m1, m2), c(1.0 - prop_selection, prop_selection));
 	initializeGenomicElementType("g1", m1, 1);
 	initializeGenomicElement(g1, 0, genomeSize - 1);
 	initializeRecombinationRate(0); // In SLiM recombination is between sister chromatids
@@ -34,7 +26,7 @@ initialize()
 
 // At the first generation:
 // - create a subpopulation (or many)
-// - add diversity to it by loading files obtain after a burnin run with ms
+// - Running ms to generate burnin diversity (mutation/drift balance)
 1 late()
 {
 	sim.setValue("GC", 0); // logging purpose

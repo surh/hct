@@ -92,7 +92,7 @@ function (void)readMS(string$ path)
 	sim.addSubpop("p1000", 1);
 	g = p1000.individuals.genome1;
 	L = sim.chromosome.lastPosition;
-	intPositions = asInteger(round(positions * L));
+	intPositions = asInteger(floor(positions * L));
 	muts = g.addNewMutation(m1, 0.0, intPositions);
 	
 	// add the appropriate mutations to each first genome (haploid)
@@ -111,76 +111,79 @@ function (void)write_sample_pop(string$ outpath, integer$ n_samples, integer$ ge
 	// output only genomes with mutations
 	haploidGenomes = p1.individuals.genome1;
 	
-	if (size(haploidGenomes) < n_samples){
-		n_samples = size(haploidGenomes);
+	if (size(haploidGenomes) <= n_samples){
+		haploidGenomesSample = haploidGenomes;
+	} else{
+		haploidGenomesSample = sample(haploidGenomes, n_samples);
 	}
 	
-	haploidGenomesSample = sample(haploidGenomes, n_samples);
-	haploidGenomesSample.outputMS(filePath = outpath + "/gen_" + generation + ".ms");
+	//	haploidGenomesSample.outputMS(filePath = outpath + "/gen_" + generation + ".ms");
+	haploidGenomesSample.output(filePath = outpath + "/gen_" + generation + ".slimout");
 	
 	// Output custom info file
-	// Write snp_info.txt
-	filename = outpath + "/gen_" + generation + "_snp_info.txt";
-	writeFile(filename, "snp_id\tref_id\tref_pos\ts_coef\tm_type");
-	for (mut in sim.mutations){
-		m_id = mut.id;
-		m_pos = mut.position;
-		m_scoef = mut.selectionCoeff;
-		m_type = paste(mut.mutationType);
-		
-		if(sum(m_type == c("MutationType<m1>", "MutationType<m2>", "MutationType<m3>")) == 1){
-			if(m_type == "MutationType<m1>"){
-				m_type = "m1";
-			}
-			
-			if(m_type == "MutationType<m2>"){
-				m_type = "m2";
-			}
-			
-			if(m_type == "MutationType<m3>"){
-				m_type = "m3";
-			}
-						
-		}else{
-			stop("Unknown mutation type");
-		}
-	
-		line = paste(c(m_id, "chr1", m_pos, m_scoef, m_type), sep = "\t");
-		// line = paste(line + "\n");
-		writeFile(filename, line, append = T);
-	}
+	// Write snps_info.txt
+	//	filename = outpath + "/gen_" + generation + "_snps_info.txt";
+	//	writeFile(filename, "site_id\tref_id\tref_pos\ts_coef\tm_type");
+	//	for (mut in sim.mutations){
+	//		m_id = mut.id;
+	//		m_pos = mut.position;
+	//		m_scoef = mut.selectionCoeff;
+	//		m_type = paste(mut.mutationType);
+	//		
+	//		if(sum(m_type == c("MutationType<m1>", "MutationType<m2>", "MutationType<m3>")) == 1){
+	//			if(m_type == "MutationType<m1>"){
+	//				m_type = "m1";
+	//			}
+	//			
+	//			if(m_type == "MutationType<m2>"){
+	//				m_type = "m2";
+	//			}
+	//			
+	//			if(m_type == "MutationType<m3>"){
+	//				m_type = "m3";
+	//			}
+	//						
+	//		}else{
+	//			stop("Unknown mutation type");
+	//		}
+	//	
+	//		line = paste(c(m_id, "chr1", m_pos, m_scoef, m_type), sep = "\t");
+	//		// line = paste(line + "\n");
+	//		writeFile(filename, line, append = T);
+	//	}
 
 }
 
 
 initialize()
 {
-	//  The parameters below can be passed from external script
-	defineConstant("Ne", 1400); // The effective population size
-	defineConstant("Mu", 1e-7); // Mutation rate
-	defineConstant("Rho", 1e-7); // Recombination rate
-	defineConstant("genomeSize", 1e6); // Genome size in bp
-	defineConstant("gcBurnin", 0); // Not documented
-	defineConstant("tractlen", 1e5); // Average HGT tract length
-	defineConstant("runId", "testrun"); // Run ID
-	defineConstant("runIdShort", "trun"); // Short Run ID
-	defineConstant("N_generations", 50); // Short Run ID
-	defineConstant("sampleSize", 20); // Genomes to sample
-	defineConstant("scoef1", 0.01); // Selection advantage
-	defineConstant("prop_selection", 0.0); // Proportion of de novo mutation with fitness advantage
-
-	defineConstant("standing_variation", "standing_variation.ms"); // ms file with standing variation
-	defineConstant("info_file", "starting_pop/snps_info.txt"); // tsv file with header & sites for selection in the 5-th column
-	defineConstant("print_period", 10); // How many generations between sampling
-	defineConstant("outdir", "sim_x/"); // Directory for writint output
+	//	//  The parameters below can be passed from external script
+	//	defineConstant("Ne", 1400); // The effective population size
+	//	defineConstant("Mu", 1e-7); // Mutation rate
+	//	defineConstant("Rho", 1e-7); // Recombination rate
+	//	defineConstant("genomeSize", 1e6); // Genome size in bp
+	//	defineConstant("gcBurnin", 0); // Not documented
+	//	defineConstant("tractlen", 1e5); // Average HGT tract length
+	//	defineConstant("runId", "testrun"); // Run ID
+	//	defineConstant("runIdShort", "trun"); // Short Run ID
+	//	defineConstant("N_generations", 50); // Short Run ID
+	//	defineConstant("sampleSize", 20); // Genomes to sample
+	//	defineConstant("scoef1", 0.01); // Selection advantage
+	//	defineConstant("prop_selection", 0.0); // Proportion of de novo mutation with fitness advantage
+	//	//	defineConstant("x1", rdunif(1, 1, 10000000)); // random seed for ms otherwise there is a risk that it reuses seed from previous run.
+	//	//	defineConstant("x2", rdunif(1, 1, 10000000)); // random seed for ms
+	//	//	defineConstant("x3", rdunif(1, 1, 10000000)); // random seed for ms
+	//	defineConstant("seed", rdunif(1, 1, 10000000)); // Seed for simulation
+	//	defineConstant("info_file", "standing_variation/snps_info.txt"); // tsv file with header & sites for selection in the 5-th column
+	//	defineConstant("outdir", "sim_x/pop_10"); // Directory for writint output
+	//	defineConstant("standing_variation", "standing_variation/standing_variation.ms"); // ms file with standing variation
+	//	defineConstant("print_period", 10); // How many generations between sampling
 	
-	// Following are defined by original authors   
+	setSeed(seed);
+	// Following are defined by original authors  
 	defineConstant("Theta", 2*Ne*Mu); // Theta
 	defineConstant("GCrate", Rho * genomeSize); // HGT probability
 	defineConstant("msRho", 2* Ne * gcBurnin * genomeSize); // HGT probability
-	defineConstant("x1", rdunif(1, 1, 10000000)); // random seed for ms otherwise there is a risk that it reuses seed from previous run.
-	defineConstant("x2", rdunif(1, 1, 10000000)); // random seed for ms
-	defineConstant("x3", rdunif(1, 1, 10000000)); // random seed for ms
 	initializeMutationRate(Mu);
 	initializeMutationType("m1", 1.0, "f", 0.0); // Standing mutations
 	initializeMutationType("m2", 1.0, "f", 0.0); // de novo neutral mutations
@@ -201,12 +204,6 @@ initialize()
 	p1.setCloningRate(1.0); // Essential for bacteria.
 	c1 = clock();
 	
-	// This has been done already, so we don't need to launch ms here, just read the output
-	//	// sublaunch ms to generate initial state
-	//	ms_args = c(asInteger(Ne), 1, "-t", Theta * genomeSize, "-r", 0, genomeSize, "-p", 7, "-c", msRho, tractlen, "-seeds", x1, x2, x3, "> " + runId + ".ms");
-	//	catn(ms_args);
-	//	system("ms", args=ms_args);
-	
 	// read the ms output file
 	// Here I probably need to add option to make some of those mutations selected
 	readMS(standing_variation);
@@ -226,7 +223,7 @@ initialize()
 			line = strsplit(info[i], "\t");
 			pos = asInteger(line[2]);
 			sel = asFloat(line[4]);
-		
+			
 			// Right now I'm not using sel except as
 			// a flag, and not using pos
 			// NOTE: I am not using pos because there is
@@ -239,14 +236,16 @@ initialize()
 		}
 	}
 	cat("Found " + length(sel_ii) + " positions to change their selection coefficient\n");
-
-	// Update selection coefficient of mutations under selection
-	cat("Updating selecction coefficients\n");
-	for(i in sel_ii){
-		cat(">" + sim.mutations.position[i] + "\t" + sim.mutations[i].id +"\n");
-		sim.mutations[i].setSelectionCoeff(1.0);
+	if(length(sel_ii) > 0){
+		// Update selection coefficient of mutations under selection
+		cat("Updating selecction coefficients\n");
+		for(i in sel_ii){
+			cat(">" + sim.mutations.position[i] + "\t" + sim.mutations[i].id +"\n");
+			sim.mutations[i].setSelectionCoeff(1.0);
+		}
 	}
-
+	
+	
 	c2 = clock();
 	c3 = c2 - c1;
 	writeFile(runId + ".time", runIdShort+"\tWF\tburnin\t"+c3, append=F);
@@ -298,8 +297,8 @@ late()
 	}
 	
 	// Print periodically
-	if( (sim.generation > 0) & (sim.generation % print_period == 0) ){
-			write_sample_pop(outdir, sampleSize, sim.generation);
+	if( (sim.generation == 1) | (sim.generation % print_period == 0) ){
+		write_sample_pop(outdir, sampleSize, sim.generation);
 	}
 }
 
@@ -314,7 +313,7 @@ early()
 }
 
 // At the end of the simulation, sample
-// 50 genomes and output it in ms format.
+// sampleSize genomes and output it in ms format.
 // The generation number here just needs to be way bigger than anything I plan to use
 s1 10000 late()
 {
@@ -332,7 +331,7 @@ s1 10000 late()
 	
 	sim.setValue("time_end", clock());
 	c3 = sim.getValue("time_end") - sim.getValue("time_beg");
-	writeFile(runId + ".time", runIdShort+"\tWF\tfwd\t"+c3, append=T);	
+	writeFile(runId + ".time", runIdShort+"\tWF\tfwd\t"+c3, append=T);
 	
 	//	sim.outputFull("full_output.txt");
 	//	catn("generation " + sim.generation);
