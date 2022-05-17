@@ -69,11 +69,11 @@ process compare{
 
   """
   Rscript $workflow.projectDir/render_compare_tests_sim_moran_imm.r \
-    --s_coef $s_coef \
-    --FIT $fit \
-    --pdir $pdir\
-    --maf $maf \
-    --info $info \
+    --s_coef s_coef.tsv \
+    --FIT FIT.tsv \
+    --pdir p_directional.tsv.gz \
+    --maf maf_changes.tsv.gz \
+    --info snps_info.txt.gz \
     --outdir output
   """
 }
