@@ -35,15 +35,15 @@ SIMS = Channel.fromPath("$sims_dir/*", type: 'dir', maxDepth: 1)
     file("$simdir/snps_info.txt.gz"))}
 
 SCOEFS = Channel.fromPath("$scoef_dir/*", type: 'file')
-  .map{resfile -> tuple(resfile.name.replaceAll(/\.tsv/. ''),
+  .map{resfile -> tuple(resfile.name.replaceAll(/\.tsv$/, ''),
     file(resfile))}
 
 FITS = Channel.fromPath("$FIT_dir/*", type: 'file')
-  .map{resfile -> tuple(resfile.name.replaceAll(/\.tsv$/. ''),
+  .map{resfile -> tuple(resfile.name.replaceAll(/\.tsv$/, ''),
     file(resfile))}
 
 PDIRS = Channel.fromPath("$pdir_dir/*", type: 'file')
-  .map{resfile -> tuple(resfile.name.replaceAll(/\.tsv.gz$/. ''),
+  .map{resfile -> tuple(resfile.name.replaceAll(/\.tsv.gz$/, ''),
     file(resfile))}
 
 
