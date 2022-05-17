@@ -41,7 +41,7 @@ Channel
       row.seed_x2,
       row.seed_x3,
       row.seed_sim)}
-    .into{SIMS}
+    .set{SIMS}
 
 process standing_variation {
   tag "$sim_id"
