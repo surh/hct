@@ -37,6 +37,11 @@ process_arguments <- function(){
                     help = paste("File with P(directional) estimates."),
                     type = "character",
                     default = "")
+  p <- add_argument(p, "--maf",
+                    help = paste("File with allele frequency change,",
+                                 "per site per pop."),
+                    type = "character",
+                    default = "")
   p <- add_argument(p, "--info",
                     help = paste("File with ground truth for SNPs."),
                     type = "character",
@@ -57,12 +62,18 @@ process_arguments <- function(){
 }
 
 # args <- process_arguments()
-args <- list(s_coef = "/home/sur/micropopgen/exp/2022/today4/sim_results/sim_1/s_coef.tsv",
-             FIT = "/home/sur/micropopgen/exp/2022/today4/sim_results/sim_1/FIT.tsv",
-             pdir = "/home/sur/micropopgen/exp/2022/today4/sim_results/sim_1/p_directional.tsv.gz",
-             maf = "/home/sur/micropopgen/exp/2022/today4/sim_results/sim_1/maf_changes.tsv.gz",
-             info = "/home/sur/micropopgen/exp/2022/today4/sim_results/sim_1/snps_info.txt.gz",
-             outdir = "comp_sim_1/")
+# args <- list(s_coef = "/home/sur/micropopgen/exp/2022/today4/sim_results/sim_1/s_coef.tsv",
+#              FIT = "/home/sur/micropopgen/exp/2022/today4/sim_results/sim_1/FIT.tsv",
+#              pdir = "/home/sur/micropopgen/exp/2022/today4/sim_results/sim_1/p_directional.tsv.gz",
+#              maf = "/home/sur/micropopgen/exp/2022/today4/sim_results/sim_1/maf_changes.tsv.gz",
+#              info = "/home/sur/micropopgen/exp/2022/today4/sim_results/sim_1/snps_info.txt.gz",
+#              outdir = "comp_sim_1/")
+# args <- list(s_coef = "/home/sur/micropopgen/exp/2022/today4/sim_results/sim_2/s_coef.tsv",
+#              FIT = "/home/sur/micropopgen/exp/2022/today4/sim_results/sim_2/FIT.tsv",
+#              pdir = "/home/sur/micropopgen/exp/2022/today4/sim_results/sim_2/p_directional.tsv.gz",
+#              maf = "/home/sur/micropopgen/exp/2022/today4/sim_results/sim_2/maf_changes.tsv.gz",
+#              info = "/home/sur/micropopgen/exp/2022/today4/sim_results/sim_2/snps_info.txt.gz",
+#              outdir = "comp_sim_2/")
 library(tidyverse)
 
 #+ print args
