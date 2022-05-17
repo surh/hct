@@ -1,0 +1,12 @@
+name: bactslim
+channels:
+  - defaults
+dependencies:
+  - pandas
+  - ms=2014_03_04
+  - msprime
+  - pyslim
+  - python=3.7
+  - numpy
+  - scikit-allel
+prefix: /opt/modules/pkgs/conda/4/envs/bactslim
