@@ -41,7 +41,7 @@ Channel
       row.seed_x2,
       row.seed_x3,
       row.seed_sim)}
-    .into{SIMS1; SIMS2; SIMS3}
+    .into{SIMS}
 
 process standing_variation {
   tag "$sim_id"
@@ -65,7 +65,7 @@ process standing_variation {
     seed_x1,
     seed_x2,
     seed_x3,
-    seed_sim from SIMS1
+    seed_sim from SIMS
 
   output:
   tuple sim_id,
@@ -163,8 +163,9 @@ process sim_pops {
     n_pops, sample_size, seed_sim from FORSLIM
 
   output:
-  tuple sim_id, file("output") into SIMPOPS
+  tuple sim_id, file("output"), sample_size into SIMPOPS
 
+  // We sample all genomes from SLiM. Next process can subset if desired
   """
   $workflow.projectDir/sim_pops.py \
     --info_file output/snps_info.txt \
@@ -173,6 +174,7 @@ process sim_pops {
     --slim_script $workflow.projectDir/single_pop.slim \
     --n_pops $n_pops \
     --Ne $Ne \
+    --sample_size $Ne \
     --Mu $Mu \
     --Rho $Rho \
     --genome_size $genome_size \
@@ -180,7 +182,6 @@ process sim_pops {
     --tractlen $tractlen \
     --run_id_short $run_id_short \
     --n_generations $n_generations \
-    --sample_size $sample_size \
     --scoef $scoef \
     --prop_selection 0.0 \
     --sim_seed $seed_sim \
@@ -188,6 +189,27 @@ process sim_pops {
     --outdir output
   """
 }
+
+process slim2midas {
+  tag "$sim_id"
+  label 'r'
+  publishDir "$params.outdir/sims_for_midas", mode: 'rellink',
+    saveAs: {"$sim_id"}
+
+  input:
+  tuple sim_id, file("simdir"), sample_size from SIMPOPS
+
+  output:
+  tuple sim_id, file("output") into PROCESSED_SIMS
+
+  """
+  Rscript $workflow.projectDir/slim2midas.r \
+    simdir \
+    --n_genomes $sample_size \
+    --outdir output
+  """
+}
+
 
 
 // Example nextflow.config
