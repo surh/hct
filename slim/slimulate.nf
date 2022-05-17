@@ -49,39 +49,18 @@ process standing_variation {
   // publishDir "$params.outdir/standing_variation", mode: 'rellink'
 
   input:
-  tuple sim_id,
-    run_id_short,
-    Ne,
-    Mu,
-    Rho,
-    genome_size,
-    gcBurnin,
-    tractlen,
-    n_generations,
-    scoef,
-    prop_selection,
-    n_pops,
-    sample_size,
-    seed_x1,
-    seed_x2,
-    seed_x3,
-    seed_sim from SIMPARS
+  tuple sim_id, run_id_short, Ne, Mu,
+    Rho, genome_size, gcBurnin, tractlen,
+    n_generations, scoef, prop_selection,
+    n_pops, sample_size, seed_x1, seed_x2,
+    seed_x3, seed_sim from SIMPARS
 
   output:
   tuple sim_id,
     file("${sim_id}.ms"),
-    run_id_short,
-    Ne,
-    Mu,
-    Rho,
-    genome_size,
-    gcBurnin,
-    tractlen,
-    n_generations,
-    scoef,
-    prop_selection,
-    n_pops,
-    sample_size,
+    run_id_short, Ne, Mu, Rho, genome_size,
+    gcBurnin, tractlen, n_generations, scoef,
+    prop_selection, n_pops, sample_size,
     seed_sim into STANDING_VAR
 
   """
@@ -113,18 +92,9 @@ process process_standing {
   input:
   tuple sim_id,
     file("standing_variation.ms"),
-    run_id_short,
-    Ne,
-    Mu,
-    Rho,
-    genome_size,
-    gcBurnin,
-    tractlen,
-    n_generations,
-    scoef,
-    prop_selection,
-    n_pops,
-    sample_size,
+    run_id_short, Ne, Mu, Rho, genome_size,
+    gcBurnin, tractlen, n_generations, scoef,
+    prop_selection, n_pops, sample_size,
     seed_sim from STANDING_VAR
 
   output:
