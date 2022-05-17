@@ -45,6 +45,9 @@ process_arguments <- function(){
                     help = paste(""),
                     type = "character",
                     default = "output")
+  
+  
+  ## ADD MAF
                      
   # Read arguments
   cat("Processing arguments...\n")
@@ -53,17 +56,17 @@ process_arguments <- function(){
   return(args)
 }
 
-args <- process_arguments()
-# args <- list(s_coef = "/home/sur/micropopgen/exp/2022/today2/comparison_results/s_coef/sim_1.tsv",
-#              FIT = "/home/sur/micropopgen/exp/2022/today2/comparison_results/FIT/sim_1.tsv",
-#              pdir = "/home/sur/micropopgen/exp/2022/today2/comparison_results/p_directional/sim_1.tsv.gz",
-#              info = "/home/sur/micropopgen/exp/2022/today2/sims/sim_1/snps_info.txt",
-#              outdir = "comp_test/")
+# args <- process_arguments()
+args <- list(s_coef = "/home/sur/micropopgen/exp/2022/today4/sim_results/sim_1/s_coef.tsv",
+             FIT = "/home/sur/micropopgen/exp/2022/today4/sim_results/sim_1/FIT.tsv",
+             pdir = "/home/sur/micropopgen/exp/2022/today4/sim_results/sim_1/p_directional.tsv.gz",
+             maf = "/home/sur/micropopgen/exp/2022/today4/sim_results/sim_1/maf_changes.tsv.gz",
+             info = "/home/sur/micropopgen/exp/2022/today4/sim_results/sim_1/snps_info.txt.gz",
+             outdir = "comp_test/")
 library(tidyverse)
 
 #+ print args
 print(args)
-
 
 #+ functions, echo=FALSE
 #' Title
@@ -104,7 +107,6 @@ roc <- function(d){
   return(roc)
 }
 
-
 #' We read the datA
 #+ read data
 cat("Reading data...\n")
@@ -114,9 +116,23 @@ FIT <- read_tsv(args$FIT,
                 col_types = cols(site_id = col_character()))
 pdir <- read_tsv(args$pdir,
                  col_types = cols(site_id = col_character()))
+maf <- read_tsv(args$maf,
+                col_types = cols(site_id = col_character()))
 info <- read_tsv(args$info,
                  col_types = cols(site_id = col_character()))
 
+
+#' maf in this case is per site per pop. We need to aggregate per site
+#' to compare with other methods
+#+ process maf
+maf <- maf %>%
+  group_by(site_id) %>%
+  summarise(freq_change = mean(maf_change),
+            freq_sd = sd(maf_change),
+            n_pops = length(maf_change),
+            .groups = "drop") %>%
+  mutate(t.value = freq_change / freq_sd) %>%
+  mutate(pval = 2*(1 - pt(abs(t.value), df = n_pops - 1)))
 
 #' We create a directory to store output
 #+ outdir
@@ -134,7 +150,10 @@ if(!dir.exists(args$outdir)){
   dir.create(args$confdir)
   
   args$rocdir <- file.path(args$outdir, "roc")
-  dir.create(args$roc)
+  dir.create(args$rocdir)
+  
+  args$ppvdir <- file.path(args$outdir, "ppv")
+  dir.create(args$ppv)
   
 }else{
   stop("ERROR: output directory already exists", call. = TRUE)
@@ -150,6 +169,14 @@ if(!dir.exists(args$outdir)){
 #' tests are not performing as well as expected.
 
 #+ pvalue distributions
+p1 <- maf %>%
+  ggplot(aes(x = pval)) +
+  geom_histogram(bins = 20) +
+  ggtitle(label = "Allele frequency change") +
+  AMOR::theme_blackbox()
+filename <- file.path(args$pvaldir, "maf_pvals.png")
+ggsave(filename, p1, width = 5, height = 4)
+
 p1 <- s_coef %>%
   ggplot(aes(x = pval)) +
   geom_histogram(bins = 20) +
@@ -179,6 +206,34 @@ ggsave(filename, p1, width = 5, height = 4)
 
 #+ statistic plots, fig.cap = "Comparison of main statistics between different selection tests. For *p-value* based methods the red line is at nominal $\\alpha = 0.05$ significance & for P(directional) methods the line is at $OR = 1$"
 cat("Plotting main statistic of each test vs ground truth...\n")
+p1 <- maf %>%
+  left_join(info, by = "site_id") %>%
+  ggplot(aes(x = selected, y = pval)) +
+  geom_violin(draw_quantiles = c(0.25, 0.5, 0.75), adjust = 2) +
+  geom_point(size = 0.1, position = position_jitter(width = 0.2)) +
+  scale_y_log10() +
+  geom_hline(yintercept = 0.05, col = "red") +
+  ggtitle(label = "Allele frequency change") +
+  AMOR::theme_blackbox()
+p1
+filename <- file.path(args$statplot, "maf_change_pvals.png")
+ggsave(filename, p1, width = 5, height = 4)
+
+p1 <- maf %>%
+  left_join(info, by = "site_id") %>%
+  mutate(pval = replace(pval, pval == 0, min(pval[ pval > 0 ]))) %>%
+  mutate(qval = p.adjust(pval, method = 'fdr')) %>%
+  ggplot(aes(x = selected, y = qval)) +
+  geom_violin(draw_quantiles = c(0.25, 0.5, 0.75), adjust = 2) +
+  geom_point(size = 0.1, position = position_jitter(width = 0.2)) +
+  scale_y_log10() +
+  geom_hline(yintercept = 0.05, col = "red") +
+  ggtitle(label = "Allele frequency change") +
+  AMOR::theme_blackbox()
+p1
+filename <- file.path(args$statplot, "maf_change_qvals.png")
+ggsave(filename, p1, width = 5, height = 4)
+
 p1 <- s_coef %>%
   left_join(info, by = "site_id") %>%
   ggplot(aes(x = selected, y = pval)) +
@@ -188,6 +243,7 @@ p1 <- s_coef %>%
   scale_y_log10() +
   ggtitle(label = "Selection coefficient (s)") +
   AMOR::theme_blackbox()
+p1
 filename <- file.path(args$statplot, "s_coef_pvals.png")
 ggsave(filename, p1, width = 5, height = 4)
 
@@ -201,6 +257,7 @@ p1 <- s_coef %>%
   scale_y_log10() +
   ggtitle(label = "Selection coefficient (s)") +
   AMOR::theme_blackbox()
+p1
 filename <- file.path(args$statplot, "s_coef_qvals.png")
 ggsave(filename, p1, width = 5, height = 4)
 
@@ -213,6 +270,7 @@ p1 <- FIT %>%
   scale_y_log10() +
   ggtitle(label = "Frequency Increment Test (s)") +
   AMOR::theme_blackbox()
+p1
 filename <- file.path(args$statplot, "FIT_pvals.png")
 ggsave(filename, p1, width = 5, height = 4)
 
@@ -226,6 +284,7 @@ p1 <- FIT %>%
   scale_y_log10() +
   ggtitle(label = "Frequency Increment Test (s)") +
   AMOR::theme_blackbox()
+p1
 filename <- file.path(args$statplot, "FIT_qvals.png")
 ggsave(filename, p1, width = 5, height = 4)
 
@@ -238,6 +297,7 @@ p1 <- pdir %>%
   scale_y_log10() +
   ggtitle(label = "P(directional)") +
   AMOR::theme_blackbox()
+p1
 filename <- file.path(args$statplot, "pdir_or.png")
 ggsave(filename, p1, width = 5, height = 4)
 
@@ -250,6 +310,7 @@ p1 <- pdir %>%
   scale_y_log10() +
   ggtitle(label = "P(directional,+)") +
   AMOR::theme_blackbox()
+p1
 filename <- file.path(args$statplot, "ppos_or.png")
 ggsave(filename, p1, width = 5, height = 4)
 
@@ -262,6 +323,7 @@ p1 <- pdir %>%
   scale_y_log10() +
   ggtitle(label = "P(directional,-)") +
   AMOR::theme_blackbox()
+p1
 filename <- file.path(args$statplot, "pneg_or.png")
 ggsave(filename, p1, width = 5, height = 4)
 
@@ -275,6 +337,61 @@ ggsave(filename, p1, width = 5, height = 4)
 #+ confusion tables
 Conf <- NULL
 cat("Getting confussion tables...\n")
+
+#
+cat("\tallele frequency change pval...\n")
+tab <- maf %>%
+  left_join(info, by = "site_id")
+tab <- caret::confusionMatrix(data = factor(tab$pval < 0.05),
+                              reference = factor(tab$selected),
+                              positive = "TRUE")
+p1 <- tab$table %>%
+  as_tibble() %>%
+  ggplot(aes(x = Reference, y = Prediction)) +
+  geom_point(aes(size = n), shape = 19, col = 'steelblue') +
+  geom_text(aes(label = n)) +
+  geom_vline(xintercept = 1.5) +
+  geom_hline(yintercept = 1.5) +
+  ggtitle(label = "Selection coefficient (s) p-values") +
+  theme_classic() +
+  theme(legend.position = 'none',
+        axis.title = element_text(color = "black", face = 'bold'),
+        plot.title = element_text(hjust = 1.2))
+filename <- file.path(args$confdir, "maf_pval_confmat.png")
+ggsave(filename, p1, width = 3, height = 3)
+Conf <- Conf %>% 
+  bind_rows(tab %>%
+              broom::tidy() %>%
+              select(-class) %>%
+              mutate(test = "maf_pval"))
+
+#
+cat("\tallele frequency change qval...\n")
+tab <- maf %>%
+  left_join(info, by = "site_id") %>%
+  mutate(qval = p.adjust(pval, method = 'fdr'))
+tab <- caret::confusionMatrix(data = factor(tab$qval < 0.05),
+                              reference = factor(tab$selected),
+                              positive = "TRUE")
+p1 <- tab$table %>%
+  as_tibble() %>%
+  ggplot(aes(x = Reference, y = Prediction)) +
+  geom_point(aes(size = n), shape = 19, col = 'steelblue') +
+  geom_text(aes(label = n)) +
+  geom_vline(xintercept = 1.5) +
+  geom_hline(yintercept = 1.5) +
+  ggtitle(label = "Selection coefficient (s) q-values") +
+  theme_classic() +
+  theme(legend.position = 'none',
+        axis.title = element_text(color = "black", face = 'bold'),
+        plot.title = element_text(hjust = 1.2))
+filename <- file.path(args$confdir, "maf_qval_confmat.png")
+ggsave(filename, p1, width = 3, height = 3)
+Conf <- Conf %>% 
+  bind_rows(tab %>%
+              broom::tidy() %>%
+              select(-class) %>%
+              mutate(test = "maf_qval"))
 
 #
 cat("\ts_coef pval...\n")
@@ -385,7 +502,7 @@ Conf <- Conf %>%
               mutate(test = "FIT_qval"))
 
 #
-cat("\tP(directional) qval...\n")
+cat("\tP(directional)...\n")
 tab <- pdir %>%
   left_join(info, by = "site_id") %>%
   transmute(significant = p_directional > 0.5, selected)
@@ -465,7 +582,6 @@ Conf <- Conf %>%
               select(-class) %>%
               mutate(test = "pneg"))
 
-
 cat("Writing confussion table params...\n")
 filename <- file.path(args$confdir, "confusion_table_params.tsv")
 write_tsv(Conf, filename)
@@ -504,57 +620,89 @@ ggsave(filename, p1, width = 5, height = 4)
 #' simulated.
 
 #+ roc curves
-ROC <- bind_rows(s_coef %>%
-  left_join(info, by = "site_id") %>%
-  transmute(truth = selected,
-            score = -log10(pval)) %>%
-  roc() %>%
-  mutate(test = "s_coef"),
+ROC <- bind_rows(maf %>%
+                   left_join(info, by = "site_id") %>%
+                   transmute(truth = selected,
+                             score = -log10(pval)) %>%
+                   roc() %>%
+                   mutate(test = "maf"),
+                 
+                 
+                 maf %>%
+                   left_join(info, by = "site_id") %>%
+                   transmute(truth = selected,
+                             score = -log10(p.adjust(pval, method = 'fdr'))) %>%
+                   roc() %>%
+                   mutate(test = "maf_FDR"),
+                 
+                 s_coef %>%
+                   left_join(info, by = "site_id") %>%
+                   transmute(truth = selected,
+                             score = -log10(pval)) %>%
+                   roc() %>%
+                   mutate(test = "s_coef"),
+                 
+                 s_coef %>%
+                   left_join(info, by = "site_id") %>%
+                   transmute(truth = selected,
+                             score = -log10(p.adjust(pval, method = 'fdr'))) %>%
+                   roc() %>%
+                   mutate(test = "s_coef_FDR"),
+                 
+                 FIT %>%
+                   left_join(info, by = "site_id") %>%
+                   transmute(truth = selected,
+                             score = -log10(pval)) %>%
+                   roc() %>%
+                   mutate(test = "FIT"),
+                 
+                 FIT %>%
+                   left_join(info, by = "site_id") %>%
+                   transmute(truth = selected,
+                             score = -log10(p.adjust(pval, method = 'fdr'))) %>%
+                   roc() %>%
+                   mutate(test = "FIT_FDR"),
+                 
+                 pdir %>%
+                   left_join(info, by = "site_id") %>%
+                   transmute(truth = selected,
+                             score = p_directional / (1-p_directional)) %>%
+                   roc() %>%
+                   mutate(test = "P(directional)"),
+                 
+                 pdir %>%
+                   left_join(info, by = "site_id") %>%
+                   transmute(truth = selected,
+                             score = p_pos / (1-p_pos)) %>%
+                   roc() %>%
+                   mutate(test = "P(directional,+)"),
+                 
+                 pdir %>%
+                   left_join(info, by = "site_id") %>%
+                   transmute(truth = selected,
+                             score = p_neg / (1-p_neg)) %>%
+                   roc() %>%
+                   mutate(test = "P(directional,-)"))
 
-  s_coef %>%
-  left_join(info, by = "site_id") %>%
-  transmute(truth = selected,
-            score = -log10(p.adjust(pval, method = 'fdr'))) %>%
-  roc() %>%
-  mutate(test = "s_coef_FDR"),
+#' Write all ROCs
+filename <- file.path(args$rocdir, "roc_curves.tsv")
+write_tsv(ROC, filename)
 
-  FIT %>%
-    left_join(info, by = "site_id") %>%
-    transmute(truth = selected,
-              score = -log10(pval)) %>%
-    roc() %>%
-    mutate(test = "FIT"),
 
-  pdir %>%
-    left_join(info, by = "site_id") %>%
-    transmute(truth = selected,
-              score = p_directional / (1-p_directional)) %>%
-    roc() %>%
-    mutate(test = "P(directional)"),
-
-  pdir %>%
-    left_join(info, by = "site_id") %>%
-    transmute(truth = selected,
-              score = p_pos / (1-p_pos)) %>%
-    roc() %>%
-    mutate(test = "P(directional,+)"),
-
-  pdir %>%
-    left_join(info, by = "site_id") %>%
-    transmute(truth = selected,
-              score = p_neg / (1-p_neg)) %>%
-    roc() %>%
-    mutate(test = "P(directional,-)"))
-
+#' Plot all ROCs
 p1 <- ROC %>%
   ggplot(aes(x = fpr, y = tpr, group = test))+
   geom_line(aes(col = test)) +
   AMOR::theme_blackbox()
+p1
 filename <- file.path(args$rocdir, "roc_curves.png")
 ggsave(filename, p1, width = 6, height = 4)
 
-filename <- file.path(args$rocdir, "roc_curves.tsv")
-write_tsv(ROC, filename)
+#' We plot a subset of ROCs that are likely to be included in final paper
+selected_tests <- c("maf_FRD", "s_coef_FDR", "FIT_FDR", "P(directional)")
+ROC %>%
+  filter(test %in% selected_tests)
+
 
 
 #' When lines of different ROC curves intersect it can be hard to make a decision
