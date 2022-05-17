@@ -41,7 +41,7 @@ Channel
       row.seed_x2,
       row.seed_x3,
       row.seed_sim)}
-    .set{SIMS}
+    .set{SIMPARS}
 
 process standing_variation {
   tag "$sim_id"
@@ -65,7 +65,7 @@ process standing_variation {
     seed_x1,
     seed_x2,
     seed_x3,
-    seed_sim from SIMS
+    seed_sim from SIMPARS
 
   output:
   tuple sim_id,
