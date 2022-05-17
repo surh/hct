@@ -2,17 +2,17 @@
 
 # (C) Copyright 2022 Sur Herrera Paredes
 # This file is part of This software.
-# 
+#
 # This software is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This software is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with This software.  If not, see <https://www.gnu.org/licenses/>.
 
@@ -23,7 +23,7 @@ process_arguments <- function(){
   p <- arg_parser(paste("Script to compare P(directional) detection of",
                         "selection with methods from Feder et al.",
                         "Script ready for knitr::spin()."))
-  
+
   # Optional arguments
   p <- add_argument(p, "--s_coef",
                      help = paste("File with selection coefficient estimates."),
@@ -50,18 +50,18 @@ process_arguments <- function(){
                     help = paste(""),
                     type = "character",
                     default = "output")
-  
-  
+
+
   ## ADD MAF
-                     
+
   # Read arguments
   cat("Processing arguments...\n")
   args <- parse_args(p)
-  
+
   return(args)
 }
 
-# args <- process_arguments()
+args <- process_arguments()
 # args <- list(s_coef = "/home/sur/micropopgen/exp/2022/today4/sim_results/sim_1/s_coef.tsv",
 #              FIT = "/home/sur/micropopgen/exp/2022/today4/sim_results/sim_1/FIT.tsv",
 #              pdir = "/home/sur/micropopgen/exp/2022/today4/sim_results/sim_1/p_directional.tsv.gz",
@@ -93,12 +93,12 @@ roc <- function(d){
   d <- d %>%
     arrange(desc(score))
   # d
-  
-  
+
+
   roc <- NULL
   tp <- 0
   fp <- 0
-  
+
   n_tp <- sum(d$truth)
   n_tf <- nrow(d) - n_tp
   for(i in 1:nrow(d)){
@@ -107,14 +107,14 @@ roc <- function(d){
     }else{
       fp <- fp + (1 / n_tf )
     }
-    
+
     roc <- roc %>%
       bind_rows(tibble(rank = i,
                        tpr = tp,
                        fpr = fp))
-    
+
   }
-  
+
   return(roc)
 }
 
@@ -150,31 +150,31 @@ maf <- maf %>%
 cat("Prepare output dir...\n")
 if(!dir.exists(args$outdir)){
   dir.create(args$outdir)
-  
+
   args$pvaldir <- file.path(args$outdir, "pvals")
   dir.create(args$pvaldir)
-  
+
   args$statplot <- file.path(args$outdir, "statplot")
   dir.create(args$statplot)
-  
+
   args$confdir <- file.path(args$outdir, "confmat")
   dir.create(args$confdir)
-  
+
   args$rocdir <- file.path(args$outdir, "roc")
   dir.create(args$rocdir)
-  
+
   args$ppvdir <- file.path(args$outdir, "ppv")
   dir.create(args$ppv)
-  
+
 }else{
   stop("ERROR: output directory already exists", call. = TRUE)
 }
 
 #' # Method comparison
 #' ## Comparison of *p-value* distributions
-#' 
+#'
 #' This is just a visual comparison and only for the methods in Feder et. al.
-#' 
+#'
 #' The p-value distributions should be uniform-like with a spike at low p-values
 #' (left hand side of the plot). Deviations from this indicate that the
 #' tests are not performing as well as expected.
@@ -206,10 +206,10 @@ ggsave(filename, p1, width = 5, height = 4)
 
 
 #' ## Compare main statistics with ground truth
-#' 
+#'
 #' The Feder *et. al.* methods use p-values as their main statistic. We expect smaller
 #' p-values for sites truly under selection in the simulation.
-#' 
+#'
 #' The P(directional) and its partitions (P(directional,+), P(directional, -))
 #' produce odds ratios of the posterior probability that a site is under directional
 #' selection, and so sites under true selection in the simulation must have higher
@@ -339,7 +339,7 @@ filename <- file.path(args$statplot, "pneg_or.png")
 ggsave(filename, p1, width = 5, height = 4)
 
 #' ## Confusion matrices
-#' 
+#'
 #' Next we print the confusion matrices of each method. For these
 #' matrices we use nominal $\alpha=0.5$ or $OR = 1$ as threshold values.
 #' A limitation of confusion matrices is that they only show us the performance
@@ -370,7 +370,7 @@ p1 <- tab$table %>%
         plot.title = element_text(hjust = 1.2))
 filename <- file.path(args$confdir, "maf_pval_confmat.png")
 ggsave(filename, p1, width = 3, height = 3)
-Conf <- Conf %>% 
+Conf <- Conf %>%
   bind_rows(tab %>%
               broom::tidy() %>%
               select(-class) %>%
@@ -398,7 +398,7 @@ p1 <- tab$table %>%
         plot.title = element_text(hjust = 1.2))
 filename <- file.path(args$confdir, "maf_qval_confmat.png")
 ggsave(filename, p1, width = 3, height = 3)
-Conf <- Conf %>% 
+Conf <- Conf %>%
   bind_rows(tab %>%
               broom::tidy() %>%
               select(-class) %>%
@@ -425,7 +425,7 @@ p1 <- tab$table %>%
         plot.title = element_text(hjust = 1.2))
 filename <- file.path(args$confdir, "s_coef_pval_confmat.png")
 ggsave(filename, p1, width = 3, height = 3)
-Conf <- Conf %>% 
+Conf <- Conf %>%
   bind_rows(tab %>%
               broom::tidy() %>%
               select(-class) %>%
@@ -453,7 +453,7 @@ p1 <- tab$table %>%
         plot.title = element_text(hjust = 1.2))
 filename <- file.path(args$confdir, "s_coef_qval_confmat.png")
 ggsave(filename, p1, width = 3, height = 3)
-Conf <- Conf %>% 
+Conf <- Conf %>%
   bind_rows(tab %>%
               broom::tidy() %>%
               select(-class) %>%
@@ -479,7 +479,7 @@ p1 <- tab$table %>%
         axis.title = element_text(color = "black", face = 'bold'))
 filename <- file.path(args$confdir, "FIT_pval_confmat.png")
 ggsave(filename, p1, width = 3, height = 3)
-Conf <- Conf %>% 
+Conf <- Conf %>%
   bind_rows(tab %>%
               broom::tidy() %>%
               select(-class) %>%
@@ -489,7 +489,7 @@ Conf <- Conf %>%
 cat("\tFIT qval...\n")
 tab <- FIT %>%
   left_join(info, by = "site_id") %>%
-  mutate(qval = p.adjust(pval, method = 'fdr')) 
+  mutate(qval = p.adjust(pval, method = 'fdr'))
 tab <- caret::confusionMatrix(data = factor(tab$qval < 0.05),
                               reference = factor(tab$selected),
                               positive = "TRUE")
@@ -506,7 +506,7 @@ p1 <- tab$table %>%
         axis.title = element_text(color = "black", face = 'bold'))
 filename <- file.path(args$confdir, "FIT_qval_confmat.png")
 ggsave(filename, p1, width = 3, height = 3)
-Conf <- Conf %>% 
+Conf <- Conf %>%
   bind_rows(tab %>%
               broom::tidy() %>%
               select(-class) %>%
@@ -533,7 +533,7 @@ p1 <- tab$table %>%
         axis.title = element_text(color = "black", face = 'bold'))
 filename <- file.path(args$confdir, "pdir_confmat.png")
 ggsave(filename, p1, width = 3, height = 3)
-Conf <- Conf %>% 
+Conf <- Conf %>%
   bind_rows(tab %>%
               broom::tidy() %>%
               select(-class) %>%
@@ -560,7 +560,7 @@ p1 <- tab$table %>%
         axis.title = element_text(color = "black", face = 'bold'))
 filename <- file.path(args$confdir, "ppos_confmat.png")
 ggsave(filename, p1, width = 3, height = 3)
-Conf <- Conf %>% 
+Conf <- Conf %>%
   bind_rows(tab %>%
               broom::tidy() %>%
               select(-class) %>%
@@ -587,7 +587,7 @@ p1 <- tab$table %>%
         axis.title = element_text(color = "black", face = 'bold'))
 filename <- file.path(args$confdir, "pneg_confmat.png")
 ggsave(filename, p1, width = 3, height = 3)
-Conf <- Conf %>% 
+Conf <- Conf %>%
   bind_rows(tab %>%
               broom::tidy() %>%
               select(-class) %>%
@@ -620,10 +620,10 @@ filename <- file.path(args$confdir, "balanced_accuracy.png")
 ggsave(filename, p1, width = 5, height = 4)
 
 #' ## ROC curves
-#' 
+#'
 #' ROC curves allow us to compare the performance of classifier methods
 #' at all thresholds.
-#' 
+#'
 #' An important caveat is that the number of tests is not identical
 #' across methods since the selection coefficient & FIT tests discard some
 #' observations and sites that don't fit their inclusion criteria, while
@@ -637,57 +637,57 @@ ROC <- bind_rows(maf %>%
                              score = -log10(pval)) %>%
                    roc() %>%
                    mutate(test = "maf"),
-                 
-                 
+
+
                  maf %>%
                    left_join(info, by = "site_id") %>%
                    transmute(truth = selected,
                              score = -log10(p.adjust(pval, method = 'fdr'))) %>%
                    roc() %>%
                    mutate(test = "maf_FDR"),
-                 
+
                  s_coef %>%
                    left_join(info, by = "site_id") %>%
                    transmute(truth = selected,
                              score = -log10(pval)) %>%
                    roc() %>%
                    mutate(test = "s_coef"),
-                 
+
                  s_coef %>%
                    left_join(info, by = "site_id") %>%
                    transmute(truth = selected,
                              score = -log10(p.adjust(pval, method = 'fdr'))) %>%
                    roc() %>%
                    mutate(test = "s_coef_FDR"),
-                 
+
                  FIT %>%
                    left_join(info, by = "site_id") %>%
                    transmute(truth = selected,
                              score = -log10(pval)) %>%
                    roc() %>%
                    mutate(test = "FIT"),
-                 
+
                  FIT %>%
                    left_join(info, by = "site_id") %>%
                    transmute(truth = selected,
                              score = -log10(p.adjust(pval, method = 'fdr'))) %>%
                    roc() %>%
                    mutate(test = "FIT_FDR"),
-                 
+
                  pdir %>%
                    left_join(info, by = "site_id") %>%
                    transmute(truth = selected,
                              score = p_directional / (1-p_directional)) %>%
                    roc() %>%
                    mutate(test = "P(directional)"),
-                 
+
                  pdir %>%
                    left_join(info, by = "site_id") %>%
                    transmute(truth = selected,
                              score = p_pos / (1-p_pos)) %>%
                    roc() %>%
                    mutate(test = "P(directional,+)"),
-                 
+
                  pdir %>%
                    left_join(info, by = "site_id") %>%
                    transmute(truth = selected,
@@ -755,14 +755,14 @@ calculate_ppvs <- function(tab, thres_list, invlog = TRUE){
   }else{
     score_list <- thres_list
   }
-  
+
   score_list %>%
     map_dfr(function(t, tab){
       n_sites <- nrow(tab)
       pos_pred <- sum(tab$score > t)
       true_pos <- sum(tab$score > t & tab$selected)
       ppv <- true_pos / pos_pred
-      
+
       tibble(n_sites = n_sites,
              n_pos = pos_pred,
              n_true_pos = true_pos,
@@ -784,7 +784,7 @@ PPV <- bind_rows(# Allele frequency changes
                              score = -log10(pval)),
                  thres_list = pval_thres) %>%
     mutate(test = "maf"),
-  
+
   calculate_ppvs(tab = maf %>%
                    left_join(info, by = "site_id") %>%
                    filter(!is.na(pval)) %>%
@@ -793,7 +793,7 @@ PPV <- bind_rows(# Allele frequency changes
                              score = -log10(p.adjust(pval, method = 'fdr'))),
                  thres_list = pval_thres) %>%
     mutate(test = "maf_FDR"),
-  
+
   # s_coef
   calculate_ppvs(tab = s_coef %>%
                    left_join(info, by = "site_id") %>%
@@ -803,7 +803,7 @@ PPV <- bind_rows(# Allele frequency changes
                              score = -log10(pval)),
                  thres_list = pval_thres) %>%
     mutate(test = "s_coef"),
-  
+
   calculate_ppvs(tab = s_coef %>%
                    left_join(info, by = "site_id") %>%
                    filter(!is.na(pval)) %>%
@@ -812,7 +812,7 @@ PPV <- bind_rows(# Allele frequency changes
                              score = -log10(p.adjust(pval, method = 'fdr'))),
                  thres_list = pval_thres) %>%
     mutate(test = "s_coef_FDR"),
-  
+
   # FIT
   calculate_ppvs(tab = FIT %>%
                    left_join(info, by = "site_id") %>%
@@ -822,7 +822,7 @@ PPV <- bind_rows(# Allele frequency changes
                              score = -log10(pval)),
                  thres_list = pval_thres) %>%
     mutate(test = "FIT"),
-  
+
   calculate_ppvs(tab = FIT %>%
                    left_join(info, by = "site_id") %>%
                    filter(!is.na(pval)) %>%
@@ -831,7 +831,7 @@ PPV <- bind_rows(# Allele frequency changes
                              score = -log10(p.adjust(pval, method = 'fdr'))),
                  thres_list = pval_thres) %>%
     mutate(test = "FIT_FDR"),
-  
+
   # pdir
   calculate_ppvs(tab = pdir %>%
                    left_join(info, by = "site_id") %>%
@@ -842,7 +842,7 @@ PPV <- bind_rows(# Allele frequency changes
                  thres_list = or_thres,
                  invlog = FALSE) %>%
     mutate(test = "P(directional)"),
-  
+
   calculate_ppvs(tab = pdir %>%
                    left_join(info, by = "site_id") %>%
                    filter(!is.na(p_neg)) %>%
@@ -852,7 +852,7 @@ PPV <- bind_rows(# Allele frequency changes
                  thres_list = or_thres,
                  invlog = FALSE) %>%
     mutate(test = "P(directional,-)"),
-  
+
   calculate_ppvs(tab = pdir %>%
                    left_join(info, by = "site_id") %>%
                    filter(!is.na(p_pos)) %>%
@@ -989,25 +989,3 @@ p1 <- info %>%
   theme_classic()
 filename <- file.path(args$outdir, "manhattan_like.png")
 ggsave(filename, p1, width = 15, height = 7, dpi = 150)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
