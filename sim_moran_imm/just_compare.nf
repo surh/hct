@@ -20,6 +20,7 @@ params.sims_dir = ''
 params.scoef_dir = ''
 params.FIT_dir = ''
 params.pdir_dir = ''
+params.outdir = 'output'
 
 // process params
 sims_dir = file(params.sims_dir)
