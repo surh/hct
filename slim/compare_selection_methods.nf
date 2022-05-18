@@ -67,7 +67,7 @@ INFOS = SIMDIRS_TEMP1
   .map{sim_id, simdir -> tuple(sim_id, file("$simdir/snps_info.txt"))}
 SIMDIRS_TEMP2
   .map{sim_id, simdir -> tuple(sim_id, file("$simdir/maf_changes.tsv"))}
-  .into(MAFS_SCOEF; MAFS2)
+  .into{MAFS_SCOEF; MAFS2}
 SITES = SIMDIRS_TEMP3
   .map{sim_id, simdir -> tuple(sim_id, file("$simdir/sites.tsv"))}
 
@@ -122,7 +122,6 @@ process FIT{
     --output FIT.tsv
   """
 }
-
 
 process bern_mix{
   cpus params.chains
