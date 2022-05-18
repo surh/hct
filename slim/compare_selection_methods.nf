@@ -138,7 +138,7 @@ process bern_mix{
     pattern: "CHECK_RHAT", saveAs: {"$sim_id"}
 
   input:
-  tuple val(sim_id), file(sites) seed from SITES
+  tuple val(sim_id), file(sites) from SITES
   val q_thres from params.q_thres
   val min_patients from params.min_patients
   val iter from params.iter
