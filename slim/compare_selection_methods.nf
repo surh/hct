@@ -59,7 +59,7 @@ Channel
 // Get list of simulation directories
 Channel.fromPath("$params.simdirs/*", type:'dir', maxDepth: 1)
   .map{simdir -> tuple(simdir.name, file(simdir))}
-  .into{SIMDIRS_TEMP1; SIMDIRS_TEMP2; SIMDIRS_FIT}
+  .into{SIMDIRS_TEMP1; SIMDIRS_TEMP2; SIMDIRS_TEMP3; SIMDIRS_FIT}
 
 
 // Getting additional files needed for comparisons
@@ -68,7 +68,8 @@ INFOS = SIMDIRS_TEMP1
 SIMDIRS_TEMP2
   .map{sim_id, simdir -> tuple(sim_id, file("$simdir/maf_changes.tsv"))}
   .into(MAFS_SCOEF; MAFS2)
-
+SITES = SIMDIRS_TEMP3
+  .map{sim_id, simdir -> tuple(sim_id, file("$simdir/sites.tsv"))}
 
 //
 // // Splitting for each selection method
@@ -123,12 +124,49 @@ process FIT{
 }
 
 
+process bern_mix{
+  cpus params.chains
+  tag "$sim_id"
+  label 'r'
+  label 'bern'
+  publishDir "$params.outdir/stan_models", mode: 'rellink',
+    pattern: "output/m1.stan.rdat", saveAs: {"${sim_id}.stan.rdat"}
+  publishDir "$params.outdir/p_directional", mode: 'rellink',
+    pattern: "output/p_directional.tsv.gz", saveAs: {"${sim_id}.tsv.gz"}
+  publishDir "$params.outdir/model_summaries", mode: 'rellink',
+    pattern: "output/model_summaries.tsv.gz", saveAs: {"${sim_id}.tsv.gz"}
+  publishDir "$params.outdir/CHECK_RHAT", mode: 'rellink',
+    pattern: "CHECK_RHAT", saveAs: {"$sim_id"}
 
+  input:
+  tuple val(sim_id), file(sites) seed from SITES
+  val q_thres from params.q_thres
+  val min_patients from params.min_patients
+  val iter from params.iter
+  val warmup from params.warmup
+  val chains from params.chains
+  val vp from params.vp
+  val vq from params.vq
 
+  output:
+  file "output/m1.stan.rdat" optional true
+  tuple sim_id, "output/p_directional.tsv.gz" optional true into PDIRS
+  file  "output/model_summaries.tsv.gz" optional true
+  file "CHECK_RHAT" optional true
 
-
-
-
+  """
+  Rscript $workflow.projectDir/../bern_mix.r \
+    $sites \
+    --q_thres $q_thres \
+    --min_patients $min_patients \
+    --outdir output \
+    --iter $iter \
+    --warmup $warmup \
+    --chains $chains \
+    --vp $vp \
+    --vq $vq
+  """
+}
 
 // Example nextflow.config
 /*
