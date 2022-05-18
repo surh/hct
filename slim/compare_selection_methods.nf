@@ -44,5 +44,27 @@ SIMPARS = Channel
     row.genome_size,
     row.gcBurning,
     row.tractlen,
-    row.n_generations
+    row.n_generations,
+    row.scoef,
+    row.prop_selection,
+    row.n_pops,
+    row.sample_size,
+    row.seed_x1,
+    row.seed_x2,
+    row.seed_x3,
+    row.seed_sim
     )}
+
+// Get list of simulation directories
+Channel.fromPath("$params.simdirs/*", type:'dir', maxDepth: 1)
+  .map{simdir -> tuple(simdir.name, file(simdir))}
+  .into{SIMDIRS; SIMDIRS_TEMP1; SIMDIRS_TEMP2}
+
+// Splitting for each selection method
+SIMDIRS.join(SIMPARS).into{SIMS1; SIMS2; SIMS3}
+
+// Getting additional files needed for comparisons
+INFOS = SIMDIRS_TEMP1
+  .map{sim_id, simdir -> tuple(sim_id, file("$simdir/snps_info.txt"))}
+MAFS = SIMDIRS_TEMP2
+  .map{sim_id, simdir -> tuple(sim_id, file("$simdir/maf_changes.tsv"))}
