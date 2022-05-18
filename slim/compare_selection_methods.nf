@@ -59,7 +59,7 @@ Channel
 // Get list of simulation directories
 Channel.fromPath("$params.simdirs/*", type:'dir', maxDepth: 1)
   .map{simdir -> tuple(simdir.name, file(simdir))}
-  .into{SIMDIRS_TEMP1; SIMDIRS_TEMP2}
+  .into{SIMDIRS_TEMP1; SIMDIRS_TEMP2; SIMDIRS_FIT}
 
 
 // Getting additional files needed for comparisons
@@ -99,6 +99,34 @@ process s_coef{
     --output s_coef.tsv
   """
 }
+
+process FIT{
+  label 'r'
+  label 'long'
+  tag "$sim_id"
+  publishDir "$params.outdir/FIT/", mode: 'rellink',
+    saveAs: {"${sim_id}.tsv"}
+
+  input:
+  tuple sim_id, file(simdir) from SIMDIRS_FIT
+  val n_timepoints from params.fit_n_timepoints
+
+  output:
+  tuple sim_id, file("FIT.tsv") into FITS
+
+  """
+  Rscript $workflow.projectDir/FIT.r \
+    $simdir \
+    --n_timepoints $n_timepoints \
+    --output FIT.tsv
+  """
+}
+
+
+
+
+
+
 
 
 
