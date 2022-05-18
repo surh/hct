@@ -33,7 +33,7 @@ params.vp = 5
 params.vq = 5
 
 // Load simulation parameters
-SIMPARS = Channel
+Channel
   .fromPath(params.sims_params)
   .splitCsv(header:true, sep:"\t")
   .map{ row -> tuple(row.sim_id,
@@ -54,17 +54,78 @@ SIMPARS = Channel
     row.seed_x3,
     row.seed_sim
     )}
+  .into{SIMPARS_SCOEF; SIMPARS}
 
 // Get list of simulation directories
 Channel.fromPath("$params.simdirs/*", type:'dir', maxDepth: 1)
   .map{simdir -> tuple(simdir.name, file(simdir))}
-  .into{SIMDIRS; SIMDIRS_TEMP1; SIMDIRS_TEMP2}
+  .into{SIMDIRS_TEMP1; SIMDIRS_TEMP2}
 
-// Splitting for each selection method
-SIMDIRS.join(SIMPARS).into{SIMS1; SIMS2; SIMS3}
 
 // Getting additional files needed for comparisons
 INFOS = SIMDIRS_TEMP1
   .map{sim_id, simdir -> tuple(sim_id, file("$simdir/snps_info.txt"))}
-MAFS = SIMDIRS_TEMP2
+SIMDIRS_TEMP2
   .map{sim_id, simdir -> tuple(sim_id, file("$simdir/maf_changes.tsv"))}
+  .into(MAFS_SCOEF; MAFS2)
+
+
+//
+// // Splitting for each selection method
+// SIMDIRS.join(SIMPARS).into{SIMS1; SIMS2; SIMS3}
+
+
+process s_coef{
+  label 'r'
+  tag "$sim_id"
+  publishDir "$params.outdir/s_coef/", mode: 'rellink',
+    saveAs: {"${sim_id}.tsv"}
+
+  input:
+  tuple sim_id, file(maf_changes),
+    run_id_short, Ne, Mu, Rho, genome_size,
+    gcBurnin, tractlen, n_generations, scoef,
+    prop_selection, n_pops, sample_size, seed_x1,
+    seed_x2, seed_x3,
+    seed_sim from MAFS_SCOEF.join(SIMPARS_SCOEF)
+
+  output:
+  tuple sim_id, file("s_coef.tsv") into SCOEFS
+
+  """
+  Rscript $workflow.projectDir/s_coef.r \
+    $maf_changes \
+    --time $n_generations \
+    --output s_coef.tsv
+  """
+}
+
+
+
+// Example nextflow.config
+/*
+process{
+  queue = 'hbfraser,hns'
+  maxForks = 100
+  errorStrategy = 'finish'
+  stageInMode = 'rellink'
+  time = '4h'
+  memory = '2G'
+  withLabel: 'r'{
+    module = 'R/4.1.0'
+    // module = "R/4.0.2:v8/8.4.371.22" // Make sure you have ~/.R/Makevars with CXX14
+  }
+  withLabel: 'long'{
+    time = '48h'
+  }
+  withLabel: 'bern'{
+    time = '48h'
+    memory = '8G'
+  }
+}
+executor{
+  name = 'slurm'
+  queueSize = 500
+  submitRateLitmit = '1 sec'
+}
+*/
