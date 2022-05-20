@@ -71,11 +71,6 @@ SIMDIRS_TEMP2
 SITES = SIMDIRS_TEMP3
   .map{sim_id, simdir -> tuple(sim_id, file("$simdir/sites.tsv"))}
 
-//
-// // Splitting for each selection method
-// SIMDIRS.join(SIMPARS).into{SIMS1; SIMS2; SIMS3}
-
-
 process s_coef{
   label 'r'
   tag "$sim_id"
@@ -154,8 +149,12 @@ process bern_mix{
   file "CHECK_RHAT" optional true
 
   """
+  # Firts we clean sites that have very few patients
+  awk '(\$5 == "n_patients" || \$5 >= 5)' $sites > clean_sites.tsv
+
+  # Now we run the bern model in the cleaned sites
   Rscript $workflow.projectDir/../bern_mix.r \
-    $sites \
+    clean_sites.tsv \
     --q_thres $q_thres \
     --min_patients $min_patients \
     --outdir output \
