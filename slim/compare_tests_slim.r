@@ -240,6 +240,42 @@ if(n_selected > 0){
   ggsave(filename, p1, width = 6, height = 4)
 }
 
+#' ## Compare number of pops kept
+# pdir %>%
+#   select(site_id, p_dir.n_pops = n_patients) %>%
+#   inner_join(s_coef %>%
+#                select(site_id, s_coef.n_pops = n_pops),
+#              by = "site_id") %>%
+#   ftable(p_dir.n_pops ~ s_coef.n_pops, data = .) %>%
+#   as_tibble() %>%
+#   mutate(across(ends_with("n_pops"),
+#                 function(x){ as.numeric(as.character(x))})) %>%
+#   ggplot(aes(x = p_dir.n_pops, y = s_coef.n_pops)) +
+#   geom_point(aes(size = Freq)) +
+#   geom_abline(intercept = 0, slope = 1) +
+#   AMOR::theme_blackbox()
+p1 <- pdir %>%
+  select(site_id, p_dir.n_pops = n_patients) %>%
+  inner_join(s_coef %>%
+               select(site_id, s_coef.n_pops = n_pops),
+             by = "site_id") %>%
+  ggplot(aes(x = p_dir.n_pops - s_coef.n_pops)) +
+  geom_histogram(bins = 10) +
+  AMOR::theme_blackbox()
+filename <- file.path(args$sumdir, "npops_pdir_vs_scoef.png")
+ggsave(filename, p1, width = 6, height = 4)
+
+p1 <- pdir %>%
+  select(site_id, p_dir.n_pops = n_patients) %>%
+  inner_join(FIT %>%
+               select(site_id, FIT.n_pops = n_pops),
+             by = "site_id") %>%
+  ggplot(aes(x = p_dir.n_pops - FIT.n_pops)) +
+  geom_histogram(bins = 10) +
+  AMOR::theme_blackbox()
+filename <- file.path(args$sumdir, "npops_pdir_vs_FIT.png")
+ggsave(filename, p1, width = 6, height = 4)
+
 #' ## Comparison of *p-value* distributions
 #' 
 #' This is just a visual comparison and only for the methods in Feder et. al.
@@ -699,26 +735,6 @@ if(n_selected > 0){
   cat("This is a neutral simulation, no classifier performance is evaluated\n")
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #' ## ROC curves
 #' 
 #' ROC curves allow us to compare the performance of classifier methods
@@ -730,96 +746,122 @@ if(n_selected > 0){
 #' the P(directional) statistics always include all sites and populations
 #' simulated.
 #' 
-#' Only makes sense
+#' Only used for cases where there is selected sites
 
-#+ roc curves
-ROC <- bind_rows(s_coef %>%
-  left_join(info, by = "site_id") %>%
-  transmute(truth = selected,
-            score = -log10(pval)) %>%
-  roc() %>%
-  mutate(test = "s_coef"),
+
+if(n_selected > 0){
   
-  s_coef %>%
-  left_join(info, by = "site_id") %>%
-  transmute(truth = selected,
-            score = -log10(p.adjust(pval, method = 'fdr'))) %>%
-  roc() %>%
-  mutate(test = "s_coef_FDR"),
-
-  FIT %>%
-    left_join(info, by = "site_id") %>%
-    transmute(truth = selected,
-              score = -log10(pval)) %>%
-    roc() %>%
-    mutate(test = "FIT"),
+  #+ roc curves
+  ROC <- bind_rows(maf %>%
+                     left_join(info, by = "site_id") %>%
+                     transmute(truth = selected,
+                               score = -log10(pval)) %>%
+                     roc() %>%
+                     mutate(test = "maf"),
+                   
+                   maf %>%
+                     left_join(info, by = "site_id") %>%
+                     transmute(truth = selected,
+                               score = -log10(p.adjust(pval, 'fdr'))) %>%
+                     roc() %>%
+                     mutate(test = "maf_FDR"),
+                   
+                   
+                   s_coef %>%
+                     left_join(info, by = "site_id") %>%
+                     transmute(truth = selected,
+                               score = -log10(pval)) %>%
+                     roc() %>%
+                     mutate(test = "s_coef"),
+                   
+                   s_coef %>%
+                     left_join(info, by = "site_id") %>%
+                     transmute(truth = selected,
+                               score = -log10(p.adjust(pval, method = 'fdr'))) %>%
+                     roc() %>%
+                     mutate(test = "s_coef_FDR"),
+                   
+                   FIT %>%
+                     left_join(info, by = "site_id") %>%
+                     transmute(truth = selected,
+                               score = -log10(pval)) %>%
+                     roc() %>%
+                     mutate(test = "FIT"),
+                   
+                   pdir %>%
+                     left_join(info, by = "site_id") %>%
+                     transmute(truth = selected,
+                               score = p_directional / (1-p_directional)) %>%
+                     roc() %>%
+                     mutate(test = "P(directional)"),
+                   
+                   pdir %>%
+                     left_join(info, by = "site_id") %>%
+                     transmute(truth = selected,
+                               score = p_pos / (1-p_pos)) %>%
+                     roc() %>%
+                     mutate(test = "P(directional,+)"),
+                   
+                   pdir %>%
+                     left_join(info, by = "site_id") %>%
+                     transmute(truth = selected,
+                               score = p_neg / (1-p_neg)) %>%
+                     roc() %>%
+                     mutate(test = "P(directional,-)"))
   
-  changes %>%
-    left_join(info, by = "site_id") %>%
-    transmute(truth = selected,
-              score = maf_change) %>%
-    roc() %>%
-    mutate(test = "maf_change"),
+  filename <- file.path(args$rocdir, "roc_curves.tsv")
+  write_tsv(ROC, filename)
+  
+  p1 <- ROC %>%
+    ggplot(aes(x = fpr, y = tpr, group = test))+
+    geom_line(aes(col = test)) +
+    coord_fixed() +
+    scale_color_brewer(palette = "Paired") +
+    AMOR::theme_blackbox()
+  filename <- file.path(args$rocdir, "roc_curves.png")
+  ggsave(filename, p1, width = 6, height = 4)
 
-  pdir %>%
-    left_join(info, by = "site_id") %>%
-    transmute(truth = selected,
-              score = p_directional / (1-p_directional)) %>%
-    roc() %>%
-    mutate(test = "P(directional)"),
+  #' We plot a subset of ROCs that are likely to be included in final paper
+  p1 <- ROC %>%
+    filter(test %in% selected_tests) %>%
+    mutate(test = factor(test, levels = selected_tests)) %>%
+    ggplot(aes(x = fpr, y = tpr, group = test)) +
+    geom_line(aes(col = test)) +
+    scale_color_manual(values = test_colors) +
+    coord_fixed() +
+    AMOR::theme_blackbox()
+  filename <- file.path(args$rocdir, "roc_curves_selected.png")
+  ggsave(filename, p1, width = 6, height = 4)
+  filename <- file.path(args$rocdir, "roc_curves_selected.svg")
+  ggsave(filename, p1, width = 6, height = 4)
+  
+  #' When lines of different ROC curves intersect it can be hard to make a decision
+  #' regarding a method. A standard way to summarise the information of ROC
+  #' curves is by calculating the Area Under the Curve (AUC). EWe use the trapezoid
+  #' rule.
+  
+  #+ r ROC AUC
+  AUC <- ROC %>%
+    split(.$test) %>%
+    map_dfr(function(d){
+      tibble(AUC = integrate(f = approxfun(x = d$fpr, y = d$tpr,
+                                           ties = min, yleft = 0, yright = 1),
+                             lower = 0, upper = 1,
+                             abs.tol = 0.01,
+                             subdivisions = 1000)$value)
+    }, .id = "test")
+  filename <- file.path(args$rocdir, "roc_auc.tsv")
+  write_tsv(AUC, filename)
+  
+  print(AUC)
+  
+}else{
+  cat("This is a neutral simulation, no classifier performance is evaluated\n")
+}
 
-  pdir %>%
-    left_join(info, by = "site_id") %>%
-    transmute(truth = selected,
-              score = p_pos / (1-p_pos)) %>%
-    roc() %>%
-    mutate(test = "P(directional,+)"),
+#' ## ADD PPV
 
-  pdir %>%
-    left_join(info, by = "site_id") %>%
-    transmute(truth = selected,
-              score = p_neg / (1-p_neg)) %>%
-    roc() %>%
-    mutate(test = "P(directional,-)"))
-
-p1 <- ROC %>%
-  # filter(test %in% c("P(directional)", "maf_change")) %>%
-  ggplot(aes(x = fpr, y = tpr, group = test))+
-  geom_line(aes(col = test)) +
-  scale_color_brewer(palette = "Paired") +
-  AMOR::theme_blackbox()
-p1
-filename <- file.path(args$rocdir, "roc_curves.png")
-ggsave(filename, p1, width = 6, height = 4)
-
-filename <- file.path(args$rocdir, "roc_curves.tsv")
-write_tsv(ROC, filename)
-
-
-#' When lines of different ROC curves intersect it can be hard to make a decision
-#' regarding a method. A standard way to summarise the information of ROC
-#' curves is by calculating the Area Under the Curve (AUC). EWe use the trapezoid
-#' rule.
-
-#+ r ROC AUC
-AUC <- ROC %>%
-  split(.$test) %>%
-  map_dfr(function(d){
-    tibble(AUC = integrate(f = approxfun(x = d$fpr, y = d$tpr,
-                                         ties = min, yleft = 0, yright = 1),
-              lower = 0, upper = 1,
-              abs.tol = 0.01,
-              subdivisions = 1000)$value)
-  }, .id = "test")
-filename <- file.path(args$rocdir, "roc_auc.tsv")
-write_tsv(AUC, filename)
-
-#+ ROC AUC table, results='asis'
-knitr::kable(AUC, caption = "AUC of ROC curves")
-
-
-
-#' # Manhattan plots
+#' ## Manhattan plots
 #' This simulations include positional changes so it makes sense to plot
 #' in a manhattan plot as opposed to just overall distributions
 selected_pos <- info %>% filter(selected) %>%
@@ -837,23 +879,24 @@ p1 <- info %>%
               transmute(site_id, p_dir = p_directional / (1 - p_directional)) %>%
               rename(p_directional = p_dir),
             by = "site_id") %>%
-  left_join(changes %>%
+  left_join(maf %>%
               # transmute(site_id, maf_change = sign(maf_change) * sqrt(abs(maf_change))),
-              transmute(site_id, maf_change),
+              transmute(site_id, maf = -log10(pval)),
             by = "site_id") %>%
-  pivot_longer(cols = -c(site_id,ref_id, ref_pos, m_type,
+  pivot_longer(cols = -c(site_id, ref_id, ref_pos, m_type,
                          s_coef, generation, pop_src,
                          selected), names_to = "test",
                values_to = "stat") %>%
   filter(!is.na(stat)) %>%
   mutate(test = replace(test, test == "s", "s_coef")) %>%
-  mutate(test = factor(test, levels = c("maf_change", "s_coef", "FIT", "p_directional")))  %>%
+  mutate(test = replace(test, test == "maf_change", "maf")) %>%
+  mutate(test = replace(test, test == "p_directional", "P(directional)")) %>%
+  mutate(test = factor(test, levels = c("maf", "s_coef", "FIT", "P(directional)")))  %>%
   ggplot(aes(x = ref_pos, y = stat)) +
   facet_wrap(~ test, ncol = 1, scales = "free_y") +
   geom_vline(xintercept = selected_pos, col = "grey") +
   geom_point(aes(col = selected)) +
-  xlim(c(1, 1e6)) +
+  xlim(c(1, 3e6)) +
   theme_classic()
-p1
 filename <- file.path(args$outdir, "manhattan.png")
 ggsave(filename, p1, width = 15, height = 7, dpi = 150)
