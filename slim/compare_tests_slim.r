@@ -74,15 +74,24 @@ process_arguments <- function(){
 }
 
 # args <- process_arguments()
-args <- list(s_coef = "selection_results/s_coef/slim_1.tsv",
-             FIT = "selection_results/FIT/slim_1.tsv",
-             pdir = "selection_results/p_directional//slim_1.tsv.gz",
-             info = "2022-05-17.sims_for_midas/slim_1/snps_info.txt",
-             maf_changes = "2022-05-17.sims_for_midas/slim_1/maf_changes.tsv",
+# args <- list(s_coef = "selection_results/s_coef/slim_1.tsv",
+#              FIT = "selection_results/FIT/slim_1.tsv",
+#              pdir = "selection_results/p_directional//slim_1.tsv.gz",
+#              info = "2022-05-17.sims_for_midas/slim_1/snps_info.txt",
+#              maf_changes = "2022-05-17.sims_for_midas/slim_1/maf_changes.tsv",
+#              alpha_thres = 0.05,
+#              or_thres = 4,
+#              maf_thres = 0.5,
+#              outdir = "compare_allsites/slim_1/")
+args <- list(s_coef = "selection_results/s_coef/slim_10.tsv",
+             FIT = "selection_results/FIT/slim_10.tsv",
+             pdir = "selection_results/p_directional//slim_10.tsv.gz",
+             info = "2022-05-17.sims_for_midas/slim_10/snps_info.txt",
+             maf_changes = "2022-05-17.sims_for_midas/slim_10/maf_changes.tsv",
              alpha_thres = 0.05,
              or_thres = 4,
              maf_thres = 0.5,
-             outdir = "compare_allsites/")
+             outdir = "compare_allsites/slim_10/")
 library(tidyverse)
 
 #+ print args
