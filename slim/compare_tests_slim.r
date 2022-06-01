@@ -83,15 +83,34 @@ process_arguments <- function(){
 #              or_thres = 4,
 #              maf_thres = 0.5,
 #              outdir = "compare_allsites/slim_1/")
-args <- list(s_coef = "selection_results/s_coef/slim_10.tsv",
-             FIT = "selection_results/FIT/slim_10.tsv",
-             pdir = "selection_results/p_directional//slim_10.tsv.gz",
-             info = "2022-05-17.sims_for_midas/slim_10/snps_info.txt",
-             maf_changes = "2022-05-17.sims_for_midas/slim_10/maf_changes.tsv",
+# args <- list(s_coef = "selection_results/s_coef/slim_10.tsv",
+#              FIT = "selection_results/FIT/slim_10.tsv",
+#              pdir = "selection_results/p_directional//slim_10.tsv.gz",
+#              info = "2022-05-17.sims_for_midas/slim_10/snps_info.txt",
+#              maf_changes = "2022-05-17.sims_for_midas/slim_10/maf_changes.tsv",
+#              alpha_thres = 0.05,
+#              or_thres = 4,
+#              maf_thres = 0.5,
+#              outdir = "compare_allsites/slim_10/")
+# args <- list(s_coef = "2022-05-18.sel_methods/s_coef/slim_10.tsv.gz",
+#              FIT = "2022-05-18.sel_methods/FIT/slim_10.tsv.gz",
+#              pdir = "2022-05-18.sel_methods/p_directional//slim_10.tsv.gz",
+#              info = "2022-05-18.sims_for_midas/slim_10/snps_info.txt",
+#              maf_changes = "2022-05-18.sims_for_midas/slim_10/maf_changes.tsv",
+#              alpha_thres = 0.05,
+#              or_thres = 4,
+#              maf_thres = 0.5,
+#              outdir = "compare_allsites/slim_10/")
+args <- list(s_coef = "2022-05-18.sel_methods/s_coef/slim_34.tsv.gz",
+             FIT = "2022-05-18.sel_methods/FIT/slim_34.tsv.gz",
+             pdir = "2022-05-18.sel_methods/p_directional//slim_34.tsv.gz",
+             info = "2022-05-18.sims_for_midas/slim_34/snps_info.txt",
+             maf_changes = "2022-05-18.sims_for_midas/slim_34/maf_changes.tsv",
              alpha_thres = 0.05,
              or_thres = 4,
              maf_thres = 0.5,
-             outdir = "compare_allsites/slim_10/")
+             outdir = "compare_allsites/slim_34/")
+
 library(tidyverse)
 
 #+ print args
