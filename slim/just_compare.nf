@@ -72,8 +72,11 @@ process compare{
     --s_coef s_coef.tsv.gz \
     --FIT FIT.tsv.gz \
     --pdir p_directional.tsv.gz \
-    --maf maf_changes.tsv.gz \
+    --maf_changes maf_changes.tsv.gz \
     --info snps_info.txt.gz \
+    --alpha_thres 0.05 \
+    --or_thres 4 \
+    --maf_thres 0.5 \
     --outdir output
   """
 }
