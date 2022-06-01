@@ -60,7 +60,7 @@ process compare{
   input:
   tuple val(sim_id), file("maf_changes.tsv.gz"),
     file("snps_info.txt.gz"),
-    file("s_coef.tsv,gz"), file("FIT.tsv.gz"),
+    file("s_coef.tsv.gz"), file("FIT.tsv.gz"),
     file("p_directional.tsv.gz") from SIMS.join(SCOEFS).join(FITS).join(PDIRS)
 
   output:
