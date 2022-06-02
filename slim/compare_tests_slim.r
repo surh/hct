@@ -110,6 +110,15 @@ args <- process_arguments()
 #              or_thres = 4,
 #              maf_thres = 0.5,
 #              outdir = "compare_allsites/slim_34/")
+# args <- list(s_coef = "s_coef.tsv.gz",
+#              FIT = "FIT.tsv.gz",
+#              pdir = "p_directional.tsv.gz",
+#              info = "snps_info.txt.gz",
+#              maf_changes = "maf_changes.tsv.gz",
+#              alpha_thres = 0.05,
+#              or_thres = 4,
+#              maf_thres = 0.5,
+#              outdir = "output")
 
 library(tidyverse)
 
@@ -127,6 +136,11 @@ print(args)
 #'
 #' @examples
 roc <- function(d){
+  
+  if(nrow(d) == 0){
+    return(tibble())
+  }
+  
   d <- d %>%
     arrange(desc(score))
 
@@ -584,6 +598,8 @@ if(n_selected > 0){
 
   }else if(length(unique(tab$selected)) == 1){
     cat("\tOnly one value in selected...skipping\n")
+  }else if(nrow(tab) == 0){
+    cat("No sites were tested with s_coef...skipping\n")
   }else{
     stop("ERROR: Unexpected number of valuesin selected column...\n",
          call. = TRUE)
@@ -646,6 +662,8 @@ if(n_selected > 0){
 
   }else if(length(unique(tab$selected)) == 1){
     cat("\tOnly one value in selected...skipping\n")
+  }else if(nrow(tab) == 0){
+    cat("No sites were tested with FIT...skipping\n")
   }else{
     stop("ERROR: Unexpected number of valuesin selected column...\n",
          call. = TRUE)

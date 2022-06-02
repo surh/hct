@@ -51,7 +51,7 @@ process compare{
   tag "$sim_id"
   label 'r'
   publishDir "$params.outdir/comp_htmls/", mode: 'rellink',
-    pattern: "compare_tests_sim_moran_imm.html",
+    pattern: "compare_tests_slim.html",
     saveAs:{"${sim_id}.html"}
   publishDir "$params.outdir/comparisons/", mode: 'rellink',
     pattern: "output",
