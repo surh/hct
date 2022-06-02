@@ -143,28 +143,28 @@ roc <- function(d){
   
   d <- d %>%
     arrange(desc(score))
-
-  roc <- NULL
-  tp <- 0
-  fp <- 0
-
+  
   n_tp <- sum(d$truth)
   n_tf <- nrow(d) - n_tp
+  
+  tpr <- vector(mode = "numeric", length = nrow(d))
+  fpr <- vector(mode = "numeric", length = nrow(d))
+  tp <- 0
+  fp <- 0
+  
   for(i in 1:nrow(d)){
     if(d$truth[i]){
-      tp <- tp + (1 / n_tp)
+      tp <- tp + 1
+      tpr[i:nrow(d)] <- tp / n_tp
     }else{
-      fp <- fp + (1 / n_tf )
+      fp <- fp + 1
+      fpr[i:nrow(d)] <- fp / n_tf
     }
-
-    roc <- roc %>%
-      bind_rows(tibble(rank = i,
-                       tpr = tp,
-                       fpr = fp))
-
   }
-
-  return(roc)
+  
+  tibble(rank = 1:nrow(d),
+         tpr = tpr,
+         fpr = fpr)
 }
 
 #' We read the datA
@@ -797,7 +797,7 @@ if(n_selected > 0){
 
 if(n_selected > 0){
   
-  cat("Calculating ROC curves")
+  cat("Calculating ROC curves...\n")
   #+ roc curves
   ROC <- bind_rows(maf %>%
                      left_join(info, by = "site_id") %>%
