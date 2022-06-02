@@ -899,7 +899,7 @@ if(n_selected > 0){
   AUC <- ROC %>%
     split(.$test) %>%
     map_dfr(function(d){
-      
+      # cat(unique(d$test), "\n")
       if(max(d$tpr) == 1){
         yright <- 1
       }else if(max(d$tpr) == 0){
@@ -908,12 +908,20 @@ if(n_selected > 0){
         stop(paste("ERROR: unexpected TPR in", unique(d$test)), call. = TRUE)
       }
       
-      tibble(AUC = integrate(f = approxfun(x = d$fpr, y = d$tpr,
-                                           ties = min, yleft = 0, yright = yright),
-                             lower = 0, upper = 1,
-                             abs.tol = 0.0001,
-                             subdivisions = 1000)$value)
+      # tibble(AUC = integrate(f = approxfun(x = d$fpr, y = d$tpr,
+      #                                      ties = min,
+      #                                      yleft = 0,
+      #                                      yright = yright,
+      #                                      method = "constant"),
+      #                        lower = 0, upper = 1,
+      #                        abs.tol = 0.0001,
+      #                        stop.on.error = FALSE,
+      #                        subdivisions = nrow(d))$value)
+      
+      tibble(AUC = sum(diff(c(0, d$fpr)) * d$tpr))
+      
     }, .id = "test")
+  
   filename <- file.path(args$rocdir, "roc_auc.tsv")
   write_tsv(AUC, filename)
 
