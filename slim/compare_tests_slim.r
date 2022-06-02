@@ -796,7 +796,8 @@ if(n_selected > 0){
 
 
 if(n_selected > 0){
-
+  
+  cat("Calculating ROC curves")
   #+ roc curves
   ROC <- bind_rows(maf %>%
                      left_join(info, by = "site_id") %>%
@@ -833,7 +834,14 @@ if(n_selected > 0){
                                score = -log10(pval)) %>%
                      roc() %>%
                      mutate(test = "FIT"),
-
+                   
+                   FIT %>%
+                     left_join(info, by = "site_id") %>%
+                     transmute(truth = selected,
+                               score = -log10(p.adjust(pval, method = 'fdr'))) %>%
+                     roc() %>%
+                     mutate(test = "FIT_FDR"),
+                   
                    pdir %>%
                      left_join(info, by = "site_id") %>%
                      transmute(truth = selected,
@@ -887,13 +895,23 @@ if(n_selected > 0){
   #' rule.
 
   #+ r ROC AUC
+  cat("Integrating ROCs to get AUC...\n")
   AUC <- ROC %>%
     split(.$test) %>%
     map_dfr(function(d){
+      
+      if(max(d$tpr) == 1){
+        yright <- 1
+      }else if(max(d$tpr) == 0){
+        yright <- 0
+      }else{
+        stop(paste("ERROR: unexpected TPR in", unique(d$test)), call. = TRUE)
+      }
+      
       tibble(AUC = integrate(f = approxfun(x = d$fpr, y = d$tpr,
-                                           ties = min, yleft = 0, yright = 1),
+                                           ties = min, yleft = 0, yright = yright),
                              lower = 0, upper = 1,
-                             abs.tol = 0.01,
+                             abs.tol = 0.0001,
                              subdivisions = 1000)$value)
     }, .id = "test")
   filename <- file.path(args$rocdir, "roc_auc.tsv")
