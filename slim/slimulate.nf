@@ -30,7 +30,7 @@ Channel
       row.Mu,
       row.Rho,
       row.genome_size,
-      row.gcBurning,
+      row.gcBurnin,
       row.tractlen,
       row.n_generations,
       row.scoef,
