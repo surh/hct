@@ -2,17 +2,17 @@
 
 # (C) Copyright 2022 Sur Herrera Paredes
 # This file is part of This software.
-# 
+#
 # This software is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This software is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with This software.  If not, see <https://www.gnu.org/licenses/>.
 
@@ -23,7 +23,7 @@ process_arguments <- function(){
   p <- arg_parser(paste("Script to compare P(directional) detection of",
                         "selection with methods from Feder et al.",
                         "Script ready for knitr::spin()."))
-  
+
   # Optional arguments
   p <- add_argument(p, "--s_coef",
                      help = paste("File with selection coefficient estimates."),
@@ -65,15 +65,15 @@ process_arguments <- function(){
                     help = paste(""),
                     type = "character",
                     default = "output")
-                     
+
   # Read arguments
   cat("Processing arguments...\n")
   args <- parse_args(p)
-  
+
   return(args)
 }
 
-# args <- process_arguments()
+args <- process_arguments()
 # args <- list(s_coef = "selection_results/s_coef/slim_1.tsv",
 #              FIT = "selection_results/FIT/slim_1.tsv",
 #              pdir = "selection_results/p_directional//slim_1.tsv.gz",
@@ -83,15 +83,43 @@ process_arguments <- function(){
 #              or_thres = 4,
 #              maf_thres = 0.5,
 #              outdir = "compare_allsites/slim_1/")
-args <- list(s_coef = "selection_results/s_coef/slim_10.tsv",
-             FIT = "selection_results/FIT/slim_10.tsv",
-             pdir = "selection_results/p_directional//slim_10.tsv.gz",
-             info = "2022-05-17.sims_for_midas/slim_10/snps_info.txt",
-             maf_changes = "2022-05-17.sims_for_midas/slim_10/maf_changes.tsv",
-             alpha_thres = 0.05,
-             or_thres = 4,
-             maf_thres = 0.5,
-             outdir = "compare_allsites/slim_10/")
+# args <- list(s_coef = "selection_results/s_coef/slim_10.tsv",
+#              FIT = "selection_results/FIT/slim_10.tsv",
+#              pdir = "selection_results/p_directional//slim_10.tsv.gz",
+#              info = "2022-05-17.sims_for_midas/slim_10/snps_info.txt",
+#              maf_changes = "2022-05-17.sims_for_midas/slim_10/maf_changes.tsv",
+#              alpha_thres = 0.05,
+#              or_thres = 4,
+#              maf_thres = 0.5,
+#              outdir = "compare_allsites/slim_10/")
+# args <- list(s_coef = "2022-05-18.sel_methods/s_coef/slim_10.tsv.gz",
+#              FIT = "2022-05-18.sel_methods/FIT/slim_10.tsv.gz",
+#              pdir = "2022-05-18.sel_methods/p_directional//slim_10.tsv.gz",
+#              info = "2022-05-18.sims_for_midas/slim_10/snps_info.txt",
+#              maf_changes = "2022-05-18.sims_for_midas/slim_10/maf_changes.tsv",
+#              alpha_thres = 0.05,
+#              or_thres = 4,
+#              maf_thres = 0.5,
+#              outdir = "compare_allsites/slim_10/")
+# args <- list(s_coef = "2022-05-18.sel_methods/s_coef/slim_34.tsv.gz",
+#              FIT = "2022-05-18.sel_methods/FIT/slim_34.tsv.gz",
+#              pdir = "2022-05-18.sel_methods/p_directional//slim_34.tsv.gz",
+#              info = "2022-05-18.sims_for_midas/slim_34/snps_info.txt",
+#              maf_changes = "2022-05-18.sims_for_midas/slim_34/maf_changes.tsv",
+#              alpha_thres = 0.05,
+#              or_thres = 4,
+#              maf_thres = 0.5,
+#              outdir = "compare_allsites/slim_34/")
+# args <- list(s_coef = "s_coef.tsv.gz",
+#              FIT = "FIT.tsv.gz",
+#              pdir = "p_directional.tsv.gz",
+#              info = "snps_info.txt.gz",
+#              maf_changes = "maf_changes.tsv.gz",
+#              alpha_thres = 0.05,
+#              or_thres = 4,
+#              maf_thres = 0.5,
+#              outdir = "output")
+
 library(tidyverse)
 
 #+ print args
@@ -108,30 +136,35 @@ print(args)
 #'
 #' @examples
 roc <- function(d){
+  
+  if(nrow(d) == 0){
+    return(tibble())
+  }
+  
   d <- d %>%
     arrange(desc(score))
-
-  roc <- NULL
-  tp <- 0
-  fp <- 0
   
   n_tp <- sum(d$truth)
   n_tf <- nrow(d) - n_tp
+  
+  tpr <- vector(mode = "numeric", length = nrow(d))
+  fpr <- vector(mode = "numeric", length = nrow(d))
+  tp <- 0
+  fp <- 0
+  
   for(i in 1:nrow(d)){
     if(d$truth[i]){
-      tp <- tp + (1 / n_tp)
+      tp <- tp + 1
+      tpr[i:nrow(d)] <- tp / n_tp
     }else{
-      fp <- fp + (1 / n_tf )
+      fp <- fp + 1
+      fpr[i:nrow(d)] <- fp / n_tf
     }
-    
-    roc <- roc %>%
-      bind_rows(tibble(rank = i,
-                       tpr = tp,
-                       fpr = fp))
-    
   }
   
-  return(roc)
+  tibble(rank = 1:nrow(d),
+         tpr = tpr,
+         fpr = fpr)
 }
 
 #' We read the datA
@@ -174,24 +207,24 @@ selected_tests <- c("maf_FDR", "s_coef_FDR", "FIT_FDR", "P(directional)")
 cat("Prepare output dir...\n")
 if(!dir.exists(args$outdir)){
   dir.create(args$outdir)
-  
+
   args$pvaldir <- file.path(args$outdir, "pvals")
   dir.create(args$pvaldir)
-  
+
   args$sumdir <- file.path(args$outdir, "summaries")
   dir.create(args$sumdir)
-  
+
   if(n_selected > 0){
     args$statplot <- file.path(args$outdir, "statplot")
     dir.create(args$statplot)
-    
+
     args$confdir <- file.path(args$outdir, "confmat")
     dir.create(args$confdir)
-    
+
     args$rocdir <- file.path(args$outdir, "roc")
     dir.create(args$roc)
   }else{
-    
+
   }
 }else{
   stop("ERROR: output directory already exists", call. = TRUE)
@@ -286,10 +319,10 @@ filename <- file.path(args$sumdir, "npops_pdir_vs_FIT.png")
 ggsave(filename, p1, width = 6, height = 4)
 
 #' ## Comparison of *p-value* distributions
-#' 
+#'
 #' This is just a visual comparison and only for the methods in Feder et. al.
 #' and the naive maf method
-#' 
+#'
 #' The p-value distributions should be uniform-like except when there are
 #' true sites under selection which should be reflected as a spike
 #' on the left hand side
@@ -320,16 +353,16 @@ filename <- file.path(args$pvaldir, "FIT_pvals.png")
 ggsave(filename, p1, width = 5, height = 4)
 
 #' ## Compare main statistics with ground truth
-#' 
+#'
 #' The Feder *et. al.* methods use p-values as their main statistic.
 #' The same for the maf method. We expect smaller
 #' p-values for sites truly under selection in the simulation.
-#' 
+#'
 #' The P(directional) and its partitions (P(directional,+), P(directional, -))
 #' produce odds ratios of the posterior probability that a site is under directional
 #' selection, and so sites under true selection in the simulation must have higher
 #' ORs.
-#' 
+#'
 #' The plots are only produced if there are any selected sites in the simulation
 
 #+ statistic plots, fig.cap = "Comparison of main statistics between different selection tests. For *p-value* based methods the red line is at nominal $\\alpha = 0.05$ significance & for P(directional) methods the line is at $OR = 1$"
@@ -346,7 +379,7 @@ if(n_selected > 0){
     AMOR::theme_blackbox()
   filename <- file.path(args$statplot, "maf_changes.png")
   ggsave(filename, p1, width = 5, height = 4)
-  
+
   p1 <- s_coef %>%
     left_join(info, by = "site_id") %>%
     ggplot(aes(x = selected, y = pval)) +
@@ -358,7 +391,7 @@ if(n_selected > 0){
     AMOR::theme_blackbox()
   filename <- file.path(args$statplot, "s_coef_pvals.png")
   ggsave(filename, p1, width = 5, height = 4)
-  
+
   p1 <- s_coef %>%
     left_join(info, by = "site_id") %>%
     mutate(qval = p.adjust(pval, method = 'fdr')) %>%
@@ -371,7 +404,7 @@ if(n_selected > 0){
     AMOR::theme_blackbox()
   filename <- file.path(args$statplot, "s_coef_qvals.png")
   ggsave(filename, p1, width = 5, height = 4)
-  
+
   p1 <- FIT %>%
     left_join(info, by = "site_id") %>%
     ggplot(aes(x = selected, y = pval)) +
@@ -383,7 +416,7 @@ if(n_selected > 0){
     AMOR::theme_blackbox()
   filename <- file.path(args$statplot, "FIT_pvals.png")
   ggsave(filename, p1, width = 5, height = 4)
-  
+
   p1 <- FIT %>%
     left_join(info, by = "site_id") %>%
     mutate(qval = p.adjust(pval, method = 'fdr')) %>%
@@ -396,7 +429,7 @@ if(n_selected > 0){
     AMOR::theme_blackbox()
   filename <- file.path(args$statplot, "FIT_qvals.png")
   ggsave(filename, p1, width = 5, height = 4)
-  
+
   p1 <- pdir %>%
     left_join(info, by = "site_id") %>%
     ggplot(aes(x = selected, y = p_directional / (1 - p_directional))) +
@@ -408,7 +441,7 @@ if(n_selected > 0){
     AMOR::theme_blackbox()
   filename <- file.path(args$statplot, "pdir_or.png")
   ggsave(filename, p1, width = 5, height = 4)
-  
+
   p1 <- pdir %>%
     left_join(info, by = "site_id") %>%
     ggplot(aes(x = selected, y = p_pos / (1 - p_pos))) +
@@ -420,7 +453,7 @@ if(n_selected > 0){
     AMOR::theme_blackbox()
   filename <- file.path(args$statplot, "ppos_or.png")
   ggsave(filename, p1, width = 5, height = 4)
-  
+
   p1 <- pdir %>%
     left_join(info, by = "site_id") %>%
     ggplot(aes(x = selected, y = p_neg / (1 - p_neg))) +
@@ -437,23 +470,23 @@ if(n_selected > 0){
 }
 
 #' ## Confusion matrices
-#' 
+#'
 #' Next we print the confusion matrices of each method. For these
 #' matrices we use nominal $\alpha=0.5$ or $OR = 1$ as threshold values.
 #' A limitation of confusion matrices is that they only show us the performance
 #' at one threshold.
-#' 
+#'
 #' Only makes sense for simulations with selected sites
 
 #+ confusion tables
 if(n_selected > 0){
   Conf <- NULL
   cat("Getting confussion tables...\n")
-  
+
   cat("\t===MAF changes")
   tab <- maf %>%
     left_join(info, by = "site_id")
-  
+
   tab <- caret::confusionMatrix(data = factor(tab$pval < args$alpha_thres),
                                 reference = factor(tab$selected),
                                 positive = "TRUE")
@@ -471,17 +504,17 @@ if(n_selected > 0){
           plot.title = element_text(hjust = 1.2))
   filename <- file.path(args$confdir, "maf_confmat.png")
   ggsave(filename, p1, width = 3, height = 3)
-  Conf <- Conf %>% 
+  Conf <- Conf %>%
     bind_rows(tab %>%
                 broom::tidy() %>%
                 select(-class) %>%
                 mutate(test = "maf"))
-  
+
   cat("\t===MAF changes q-value")
   tab <- maf %>%
     left_join(info, by = "site_id") %>%
     mutate(qval = p.adjust(pval, method = 'fdr'))
-  
+
   tab <- caret::confusionMatrix(data = factor(tab$qval < args$alpha_thres),
                                 reference = factor(tab$selected),
                                 positive = "TRUE")
@@ -499,17 +532,17 @@ if(n_selected > 0){
           plot.title = element_text(hjust = 1.2))
   filename <- file.path(args$confdir, "maf_FDR_confmat.png")
   ggsave(filename, p1, width = 3, height = 3)
-  Conf <- Conf %>% 
+  Conf <- Conf %>%
     bind_rows(tab %>%
                 broom::tidy() %>%
                 select(-class) %>%
                 mutate(test = "maf_FDR"))
-  
+
   cat("\t===s_coef...\n")
   tab <- s_coef %>%
     left_join(info, by = "site_id")
   if(length(unique(tab$selected)) == 2){
-    
+
     cat("\ts_coef pval...\n")
     tab <- caret::confusionMatrix(data = factor(tab$pval < args$alpha_thres),
                                   reference = factor(tab$selected),
@@ -528,12 +561,12 @@ if(n_selected > 0){
             plot.title = element_text(hjust = 1.2))
     filename <- file.path(args$confdir, "s_coef_pval_confmat.png")
     ggsave(filename, p1, width = 3, height = 3)
-    Conf <- Conf %>% 
+    Conf <- Conf %>%
       bind_rows(tab %>%
                   broom::tidy() %>%
                   select(-class) %>%
                   mutate(test = "s_coef_pval"))
-    
+
     #
     cat("\ts_coef qval...\n")
     tab <- s_coef %>%
@@ -556,25 +589,27 @@ if(n_selected > 0){
             plot.title = element_text(hjust = 1.2))
     filename <- file.path(args$confdir, "s_coef_qval_confmat.png")
     ggsave(filename, p1, width = 3, height = 3)
-    Conf <- Conf %>% 
+    Conf <- Conf %>%
       bind_rows(tab %>%
                   broom::tidy() %>%
                   select(-class) %>%
                   mutate(test = "s_coef_qval"))
-    
-    
+
+
   }else if(length(unique(tab$selected)) == 1){
     cat("\tOnly one value in selected...skipping\n")
+  }else if(nrow(tab) == 0){
+    cat("No sites were tested with s_coef...skipping\n")
   }else{
     stop("ERROR: Unexpected number of valuesin selected column...\n",
          call. = TRUE)
   }
-  
+
   cat("\t===FIT...\n")
   tab <- FIT %>%
     left_join(info, by = "site_id")
   if(length(unique(tab$selected)) == 2){
-    
+
     cat("\tFIT pval...\n")
     tab <- caret::confusionMatrix(data = factor(tab$pval < args$alpha_thres),
                                   reference = factor(tab$selected),
@@ -592,17 +627,17 @@ if(n_selected > 0){
             axis.title = element_text(color = "black", face = 'bold'))
     filename <- file.path(args$confdir, "FIT_pval_confmat.png")
     ggsave(filename, p1, width = 3, height = 3)
-    Conf <- Conf %>% 
+    Conf <- Conf %>%
       bind_rows(tab %>%
                   broom::tidy() %>%
                   select(-class) %>%
                   mutate(test = "FIT_pval"))
-    
+
     #
     cat("\tFIT qval...\n")
     tab <- FIT %>%
       left_join(info, by = "site_id") %>%
-      mutate(qval = p.adjust(pval, method = 'fdr')) 
+      mutate(qval = p.adjust(pval, method = 'fdr'))
     tab <- caret::confusionMatrix(data = factor(tab$qval < args$alpha_thres),
                                   reference = factor(tab$selected),
                                   positive = "TRUE")
@@ -619,19 +654,21 @@ if(n_selected > 0){
             axis.title = element_text(color = "black", face = 'bold'))
     filename <- file.path(args$confdir, "FIT_qval_confmat.png")
     ggsave(filename, p1, width = 3, height = 3)
-    Conf <- Conf %>% 
+    Conf <- Conf %>%
       bind_rows(tab %>%
                   broom::tidy() %>%
                   select(-class) %>%
                   mutate(test = "FIT_qval"))
-    
+
   }else if(length(unique(tab$selected)) == 1){
     cat("\tOnly one value in selected...skipping\n")
+  }else if(nrow(tab) == 0){
+    cat("No sites were tested with FIT...skipping\n")
   }else{
     stop("ERROR: Unexpected number of valuesin selected column...\n",
          call. = TRUE)
   }
-  
+
   #
   cat("\tP(directional)...\n")
   tab <- pdir %>%
@@ -654,12 +691,12 @@ if(n_selected > 0){
           axis.title = element_text(color = "black", face = 'bold'))
   filename <- file.path(args$confdir, "pdir_confmat.png")
   ggsave(filename, p1, width = 3, height = 3)
-  Conf <- Conf %>% 
+  Conf <- Conf %>%
     bind_rows(tab %>%
                 broom::tidy() %>%
                 select(-class) %>%
                 mutate(test = "pdir"))
-  
+
   #
   cat("\tP(directional,+)...\n")
   tab <- pdir %>%
@@ -681,12 +718,12 @@ if(n_selected > 0){
           axis.title = element_text(color = "black", face = 'bold'))
   filename <- file.path(args$confdir, "ppos_confmat.png")
   ggsave(filename, p1, width = 3, height = 3)
-  Conf <- Conf %>% 
+  Conf <- Conf %>%
     bind_rows(tab %>%
                 broom::tidy() %>%
                 select(-class) %>%
                 mutate(test = "ppos"))
-  
+
   #
   cat("\tP(directional,-)...\n")
   tab <- pdir %>%
@@ -708,12 +745,12 @@ if(n_selected > 0){
           axis.title = element_text(color = "black", face = 'bold'))
   filename <- file.path(args$confdir, "pneg_confmat.png")
   ggsave(filename, p1, width = 3, height = 3)
-  Conf <- Conf %>% 
+  Conf <- Conf %>%
     bind_rows(tab %>%
                 broom::tidy() %>%
                 select(-class) %>%
                 mutate(test = "pneg"))
-  
+
   #+ conf comparison
   # Conf %>%
   #   print(n = 14)
@@ -726,7 +763,7 @@ if(n_selected > 0){
     AMOR::theme_blackbox()
   filename <- file.path(args$confdir, "ppv.png")
   ggsave(filename, p1, width = 5, height = 4)
-  
+
   p1 <- Conf %>%
     filter(term == "balanced_accuracy") %>%
     ggplot(aes(x = test, y = estimate)) +
@@ -735,31 +772,32 @@ if(n_selected > 0){
     AMOR::theme_blackbox()
   filename <- file.path(args$confdir, "balanced_accuracy.png")
   ggsave(filename, p1, width = 5, height = 4)
-  
+
   cat("Writing confussion table params...\n")
   filename <- file.path(args$confdir, "confusion_table_params.tsv")
   write_tsv(Conf, filename)
-  
+
 }else{
   cat("This is a neutral simulation, no classifier performance is evaluated\n")
 }
 
 #' ## ROC curves
-#' 
+#'
 #' ROC curves allow us to compare the performance of classifier methods
 #' at all thresholds.
-#' 
+#'
 #' An important caveat is that the number of tests is not identical
 #' across methods since the selection coefficient & FIT tests discard some
 #' observations and sites that don't fit their inclusion criteria, while
 #' the P(directional) statistics always include all sites and populations
 #' simulated.
-#' 
+#'
 #' Only used for cases where there is selected sites
 
 
 if(n_selected > 0){
   
+  cat("Calculating ROC curves...\n")
   #+ roc curves
   ROC <- bind_rows(maf %>%
                      left_join(info, by = "site_id") %>%
@@ -767,29 +805,29 @@ if(n_selected > 0){
                                score = -log10(pval)) %>%
                      roc() %>%
                      mutate(test = "maf"),
-                   
+
                    maf %>%
                      left_join(info, by = "site_id") %>%
                      transmute(truth = selected,
                                score = -log10(p.adjust(pval, 'fdr'))) %>%
                      roc() %>%
                      mutate(test = "maf_FDR"),
-                   
-                   
+
+
                    s_coef %>%
                      left_join(info, by = "site_id") %>%
                      transmute(truth = selected,
                                score = -log10(pval)) %>%
                      roc() %>%
                      mutate(test = "s_coef"),
-                   
+
                    s_coef %>%
                      left_join(info, by = "site_id") %>%
                      transmute(truth = selected,
                                score = -log10(p.adjust(pval, method = 'fdr'))) %>%
                      roc() %>%
                      mutate(test = "s_coef_FDR"),
-                   
+
                    FIT %>%
                      left_join(info, by = "site_id") %>%
                      transmute(truth = selected,
@@ -797,30 +835,37 @@ if(n_selected > 0){
                      roc() %>%
                      mutate(test = "FIT"),
                    
+                   FIT %>%
+                     left_join(info, by = "site_id") %>%
+                     transmute(truth = selected,
+                               score = -log10(p.adjust(pval, method = 'fdr'))) %>%
+                     roc() %>%
+                     mutate(test = "FIT_FDR"),
+                   
                    pdir %>%
                      left_join(info, by = "site_id") %>%
                      transmute(truth = selected,
                                score = p_directional / (1-p_directional)) %>%
                      roc() %>%
                      mutate(test = "P(directional)"),
-                   
+
                    pdir %>%
                      left_join(info, by = "site_id") %>%
                      transmute(truth = selected,
                                score = p_pos / (1-p_pos)) %>%
                      roc() %>%
                      mutate(test = "P(directional,+)"),
-                   
+
                    pdir %>%
                      left_join(info, by = "site_id") %>%
                      transmute(truth = selected,
                                score = p_neg / (1-p_neg)) %>%
                      roc() %>%
                      mutate(test = "P(directional,-)"))
-  
+
   filename <- file.path(args$rocdir, "roc_curves.tsv")
   write_tsv(ROC, filename)
-  
+
   p1 <- ROC %>%
     ggplot(aes(x = fpr, y = tpr, group = test))+
     geom_line(aes(col = test)) +
@@ -843,27 +888,45 @@ if(n_selected > 0){
   ggsave(filename, p1, width = 6, height = 4)
   filename <- file.path(args$rocdir, "roc_curves_selected.svg")
   ggsave(filename, p1, width = 6, height = 4)
-  
+
   #' When lines of different ROC curves intersect it can be hard to make a decision
   #' regarding a method. A standard way to summarise the information of ROC
   #' curves is by calculating the Area Under the Curve (AUC). EWe use the trapezoid
   #' rule.
-  
+
   #+ r ROC AUC
+  cat("Integrating ROCs to get AUC...\n")
   AUC <- ROC %>%
     split(.$test) %>%
     map_dfr(function(d){
-      tibble(AUC = integrate(f = approxfun(x = d$fpr, y = d$tpr,
-                                           ties = min, yleft = 0, yright = 1),
-                             lower = 0, upper = 1,
-                             abs.tol = 0.01,
-                             subdivisions = 1000)$value)
+      # cat(unique(d$test), "\n")
+      if(max(d$tpr) == 1){
+        yright <- 1
+      }else if(max(d$tpr) == 0){
+        yright <- 0
+      }else{
+        stop(paste("ERROR: unexpected TPR in", unique(d$test)), call. = TRUE)
+      }
+      
+      # tibble(AUC = integrate(f = approxfun(x = d$fpr, y = d$tpr,
+      #                                      ties = min,
+      #                                      yleft = 0,
+      #                                      yright = yright,
+      #                                      method = "constant"),
+      #                        lower = 0, upper = 1,
+      #                        abs.tol = 0.0001,
+      #                        stop.on.error = FALSE,
+      #                        subdivisions = nrow(d))$value)
+      
+      tibble(AUC = sum(diff(c(0, d$fpr)) * d$tpr))
+      
     }, .id = "test")
+  
   filename <- file.path(args$rocdir, "roc_auc.tsv")
   write_tsv(AUC, filename)
-  
+
   print(AUC)
-  
+
 }else{
   cat("This is a neutral simulation, no classifier performance is evaluated\n")
 }

@@ -67,7 +67,7 @@ INFOS = SIMDIRS_TEMP1
   .map{sim_id, simdir -> tuple(sim_id, file("$simdir/snps_info.txt"))}
 SIMDIRS_TEMP2
   .map{sim_id, simdir -> tuple(sim_id, file("$simdir/maf_changes.tsv"))}
-  .into{MAFS_SCOEF; MAFS2}
+  .into{MAFS_SCOEF; MAFS_COMPARE}
 SITES = SIMDIRS_TEMP3
   .map{sim_id, simdir -> tuple(sim_id, file("$simdir/sites.tsv"))}
 
@@ -163,6 +163,42 @@ process bern_mix{
     --chains $chains \
     --vp $vp \
     --vq $vq
+  """
+}
+
+process compare{
+  tag "$sim_id"
+  label 'r'
+  publishDir "$params.outdir/comp_htmls/", mode: 'rellink',
+    pattern: "compare_tests_slim.html",
+    saveAs:{"${sim_id}.html"}
+  publishDir "$params.outdir/comparisons/", mode: 'rellink',
+    pattern: "output",
+    saveAs:{"$sim_id"}
+
+  input:
+  tuple val(sim_id),
+    file("s_coef.tsv.gz"),
+    file("FIT.tsv.gz"),
+    file("p_directional.tsv.gz"),
+    file("maf_changes.tsv.gz"),
+    file("snps_info.txt.gz") from SCOEFS.join(FITS).join(PDIRS).join(MAFS_COMPARE).join(INFOS)
+
+  output:
+  file "output/"
+  file "compare_tests_slim.html"
+
+  """
+  Rscript $workflow.projectDir/render_compare_tests_slim.r \
+    --s_coef s_coef.tsv.gz \
+    --FIT FIT.tsv.gz \
+    --pdir p_directional.tsv.gz \
+    --maf_changes maf_changes.tsv.gz \
+    --info snps_info.txt.gz \
+    --alpha_thres 0.05 \
+    --or_thres 4 \
+    --maf_thres 0.5 \
+    --outdir output
   """
 }
 

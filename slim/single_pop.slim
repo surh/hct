@@ -241,7 +241,7 @@ initialize()
 		cat("Updating selecction coefficients\n");
 		for(i in sel_ii){
 			cat(">" + sim.mutations.position[i] + "\t" + sim.mutations[i].id +"\n");
-			sim.mutations[i].setSelectionCoeff(1.0);
+			sim.mutations[i].setSelectionCoeff(scoef1); // Using passed selection coefficient
 		}
 	}
 	

@@ -189,7 +189,7 @@ process{
   memory = '2G'
   withLabel: 'r'{
     module = 'R/4.1.0'
-    // module = "R/4.0.2:v8/8.4.371.22" // Make sure you have ~/.R/Makevars with CXX14
+    // module = "R/4.0.2:v8/8.4.371.22:pandoc/2.7.3" // Make sure you have ~/.R/Makevars with CXX14
   }
   withLabel: 'long'{
     time = '48h'
