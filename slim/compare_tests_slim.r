@@ -74,15 +74,15 @@ process_arguments <- function(){
 }
 
 args <- process_arguments()
-args <- list(s_coef = "~/micropopgen/exp/2022/2022-06-03.compare_sel_slim_test/output/s_coef/slim_1.tsv",
-             FIT = "~/micropopgen/exp/2022/2022-06-03.compare_sel_slim_test/output/FIT/slim_1.tsv",
-             pdir = "~/micropopgen/exp/2022/2022-06-03.compare_sel_slim_test/output/p_directional//slim_1.tsv.gz",
-             info = "~/micropopgen/exp/2022/2022-06-03.compare_sel_slim_test/2022-05-17.sims_for_midas/slim_1/snps_info.txt",
-             maf_changes = "~/micropopgen/exp/2022/2022-06-03.compare_sel_slim_test/2022-05-17.sims_for_midas/slim_1/maf_changes.tsv",
-             alpha_thres = 0.05,
-             or_thres = 4,
-             maf_thres = 0.5,
-             outdir = "~/micropopgen/exp/2022/today3/test_compare")
+# args <- list(s_coef = "~/micropopgen/exp/2022/2022-06-03.compare_sel_slim_test/output/s_coef/slim_1.tsv",
+#              FIT = "~/micropopgen/exp/2022/2022-06-03.compare_sel_slim_test/output/FIT/slim_1.tsv",
+#              pdir = "~/micropopgen/exp/2022/2022-06-03.compare_sel_slim_test/output/p_directional//slim_1.tsv.gz",
+#              info = "~/micropopgen/exp/2022/2022-06-03.compare_sel_slim_test/2022-05-17.sims_for_midas/slim_1/snps_info.txt",
+#              maf_changes = "~/micropopgen/exp/2022/2022-06-03.compare_sel_slim_test/2022-05-17.sims_for_midas/slim_1/maf_changes.tsv",
+#              alpha_thres = 0.05,
+#              or_thres = 4,
+#              maf_thres = 0.5,
+#              outdir = "~/micropopgen/exp/2022/today3/test_compare")
 library(tidyverse)
 
 #+ print args
@@ -109,6 +109,38 @@ calculate_ppvs <- function(tab, thres_list, invlog = TRUE){
     }, tab = tab) %>%
     mutate(thres = thres_list)
 }
+
+
+
+#' Counts false positives
+#' 
+#' The functions is actually more general and counts the number of scores
+#' below or above each of a vector of thresholds.
+#'
+#' @param tab 
+#' @param thres_list 
+#' @param less_than 
+#'
+#' @return
+#' @export
+#'
+#' @examples
+count_fps <- function(tab, thres_list, less_than = TRUE){
+  thres_mat <- matrix(rep(thres_list, each = nrow(tab)),
+                      ncol = length(thres_list))
+  
+  if(less_than){
+    n_fp <- colSums(tab$score < thres_mat)
+  }else{
+    n_fp <- colSums(tab$score > thres_mat)
+  }
+  
+  
+  tibble(ntests = nrow(tab),
+         thres = thres_list,
+         n_fp = n_fp)
+}
+
 
 #+ functions, echo=FALSE
 #' Title
@@ -179,6 +211,7 @@ maf <- maf %>%
   filter(!is.na(pval))
 
 #' We count the number of sites under selection
+# info$selected[1:10] <- TRUE # For testing script with selection
 n_selected <- sum(info$selected)
 
 #' There are `r n_selected` sites in this slimulation.
@@ -951,8 +984,7 @@ if(n_selected > 0){
 pval_thres <- c(0.1, 0.05, 0.01, 0.001)
 or_thres <- c(1, 2, 3, 4)
 
-
-#' Calculate all PPVs
+#' Calculate all PPVs or FP
 if(n_selected > 0){
   PPV <- bind_rows(# Allele frequency changes
     calculate_ppvs(tab = maf %>%
@@ -1044,7 +1076,55 @@ if(n_selected > 0){
   )
   filename <- file.path(args$ppvdir, "ppv_selected_thres.tsv")
   write_tsv(PPV, filename)
+}else if(n_selected == 0){
+  
+  NFPs <- count_fps(tab = maf %>%
+              transmute(score = pval),
+            thres_list = pval_thres) %>%
+    mutate(test = "maf") %>%
+    bind_rows(count_fps(tab = maf %>%
+                          transmute(score = p.adjust(pval, 'fdr')),
+                        thres_list = pval_thres) %>%
+                mutate(test = "maf_FDR")) %>%
+    bind_rows(count_fps(tab = s_coef %>%
+                          transmute(score = pval),
+                        thres_list = pval_thres) %>%
+                mutate(test = "s_coef")) %>%
+    bind_rows(count_fps(tab = s_coef %>%
+                          transmute(score = p.adjust(pval, 'fdr')),
+                        thres_list = pval_thres) %>%
+                mutate(test = "s_coef_FDR")) %>%
+    bind_rows(count_fps(tab = FIT %>%
+                          transmute(score = pval),
+                        thres_list = pval_thres) %>%
+                mutate(test = "FIT")) %>%
+    bind_rows(count_fps(tab = FIT %>%
+                          transmute(score = p.adjust(pval, 'fdr')),
+                        thres_list = pval_thres) %>%
+                mutate(test = "FIT_FDR")) %>%
+    bind_rows(count_fps(tab = pdir %>%
+                          transmute(score = p_directional / (1 - p_directional)),
+                        thres_list = or_thres,
+                        less_than = FALSE) %>%
+                mutate(test = "P(directional)")) %>%
+    bind_rows(count_fps(tab = pdir %>%
+                          transmute(score = p_pos / (1 - p_pos)),
+                        thres_list = or_thres,
+                        less_than = FALSE) %>%
+                mutate(test = "P(directional,+)")) %>%
+    bind_rows(count_fps(tab = pdir %>%
+                          transmute(score = p_neg / (1 - p_neg)),
+                        thres_list = or_thres,
+                        less_than = FALSE) %>%
+                mutate(test = "P(directional,-)")) %>%
+    mutate(fpr = n_fp / ntests)
+  filename <- file.path(args$sumdir, "n_fps_neutral.tsv")
+  write_tsv(NFPs, filename)
+  
+}else{
+  stop("ERROR: unexpected number of n_selected", call. = TRUE)
 }
+
 
 #' ## Manhattan plots
 #' This simulations include positional changes so it makes sense to plot
