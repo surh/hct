@@ -79,6 +79,29 @@ library(tidyverse)
 #+ print args
 print(args)
 
+
+calculate_ppvs <- function(tab, thres_list, invlog = TRUE){
+  if(invlog){
+    score_list <- -log10(thres_list)
+  }else{
+    score_list <- thres_list
+  }
+  
+  score_list %>%
+    map_dfr(function(t, tab){
+      n_sites <- nrow(tab)
+      pos_pred <- sum(tab$score > t)
+      true_pos <- sum(tab$score > t & tab$selected)
+      ppv <- true_pos / pos_pred
+      
+      tibble(n_sites = n_sites,
+             n_pos = pos_pred,
+             n_true_pos = true_pos,
+             ppv = ppv)
+    }, tab = tab) %>%
+    mutate(thres = thres_list)
+}
+
 #+ functions, echo=FALSE
 #' Title
 #'
@@ -90,33 +113,37 @@ print(args)
 #'
 #' @examples
 roc <- function(d){
+  
+  if(nrow(d) == 0){
+    return(tibble())
+  }
+  
   d <- d %>%
     arrange(desc(score))
-  # d
-
-
-  roc <- NULL
-  tp <- 0
-  fp <- 0
-
+  
   n_tp <- sum(d$truth)
   n_tf <- nrow(d) - n_tp
+  
+  tpr <- vector(mode = "numeric", length = nrow(d))
+  fpr <- vector(mode = "numeric", length = nrow(d))
+  tp <- 0
+  fp <- 0
+  
   for(i in 1:nrow(d)){
     if(d$truth[i]){
-      tp <- tp + (1 / n_tp)
+      tp <- tp + 1
+      tpr[i:nrow(d)] <- tp / n_tp
     }else{
-      fp <- fp + (1 / n_tf )
+      fp <- fp + 1
+      fpr[i:nrow(d)] <- fp / n_tf
     }
-
-    roc <- roc %>%
-      bind_rows(tibble(rank = i,
-                       tpr = tp,
-                       fpr = fp))
-
   }
-
-  return(roc)
+  
+  tibble(rank = 1:nrow(d),
+         tpr = tpr,
+         fpr = fpr)
 }
+
 
 #' We read the datA
 #+ read data
@@ -749,27 +776,6 @@ knitr::kable(AUC, caption = "AUC of ROC curves")
 
 #' The next step is to calculate positive predictive values at common thresholds
 #' for each method
-calculate_ppvs <- function(tab, thres_list, invlog = TRUE){
-  if(invlog){
-    score_list <- -log10(thres_list)
-  }else{
-    score_list <- thres_list
-  }
-
-  score_list %>%
-    map_dfr(function(t, tab){
-      n_sites <- nrow(tab)
-      pos_pred <- sum(tab$score > t)
-      true_pos <- sum(tab$score > t & tab$selected)
-      ppv <- true_pos / pos_pred
-
-      tibble(n_sites = n_sites,
-             n_pos = pos_pred,
-             n_true_pos = true_pos,
-             ppv = ppv)
-    }, tab = tab) %>%
-    mutate(thres = thres_list)
-}
 
 pval_thres <- c(0.1, 0.05, 0.01, 0.001)
 or_thres <- c(1, 2, 3, 4)

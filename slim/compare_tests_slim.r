@@ -74,56 +74,41 @@ process_arguments <- function(){
 }
 
 args <- process_arguments()
-# args <- list(s_coef = "selection_results/s_coef/slim_1.tsv",
-#              FIT = "selection_results/FIT/slim_1.tsv",
-#              pdir = "selection_results/p_directional//slim_1.tsv.gz",
-#              info = "2022-05-17.sims_for_midas/slim_1/snps_info.txt",
-#              maf_changes = "2022-05-17.sims_for_midas/slim_1/maf_changes.tsv",
-#              alpha_thres = 0.05,
-#              or_thres = 4,
-#              maf_thres = 0.5,
-#              outdir = "compare_allsites/slim_1/")
-# args <- list(s_coef = "selection_results/s_coef/slim_10.tsv",
-#              FIT = "selection_results/FIT/slim_10.tsv",
-#              pdir = "selection_results/p_directional//slim_10.tsv.gz",
-#              info = "2022-05-17.sims_for_midas/slim_10/snps_info.txt",
-#              maf_changes = "2022-05-17.sims_for_midas/slim_10/maf_changes.tsv",
-#              alpha_thres = 0.05,
-#              or_thres = 4,
-#              maf_thres = 0.5,
-#              outdir = "compare_allsites/slim_10/")
-# args <- list(s_coef = "2022-05-18.sel_methods/s_coef/slim_10.tsv.gz",
-#              FIT = "2022-05-18.sel_methods/FIT/slim_10.tsv.gz",
-#              pdir = "2022-05-18.sel_methods/p_directional//slim_10.tsv.gz",
-#              info = "2022-05-18.sims_for_midas/slim_10/snps_info.txt",
-#              maf_changes = "2022-05-18.sims_for_midas/slim_10/maf_changes.tsv",
-#              alpha_thres = 0.05,
-#              or_thres = 4,
-#              maf_thres = 0.5,
-#              outdir = "compare_allsites/slim_10/")
-# args <- list(s_coef = "2022-05-18.sel_methods/s_coef/slim_34.tsv.gz",
-#              FIT = "2022-05-18.sel_methods/FIT/slim_34.tsv.gz",
-#              pdir = "2022-05-18.sel_methods/p_directional//slim_34.tsv.gz",
-#              info = "2022-05-18.sims_for_midas/slim_34/snps_info.txt",
-#              maf_changes = "2022-05-18.sims_for_midas/slim_34/maf_changes.tsv",
-#              alpha_thres = 0.05,
-#              or_thres = 4,
-#              maf_thres = 0.5,
-#              outdir = "compare_allsites/slim_34/")
-# args <- list(s_coef = "s_coef.tsv.gz",
-#              FIT = "FIT.tsv.gz",
-#              pdir = "p_directional.tsv.gz",
-#              info = "snps_info.txt.gz",
-#              maf_changes = "maf_changes.tsv.gz",
-#              alpha_thres = 0.05,
-#              or_thres = 4,
-#              maf_thres = 0.5,
-#              outdir = "output")
-
+args <- list(s_coef = "~/micropopgen/exp/2022/2022-06-03.compare_sel_slim_test/output/s_coef/slim_1.tsv",
+             FIT = "~/micropopgen/exp/2022/2022-06-03.compare_sel_slim_test/output/FIT/slim_1.tsv",
+             pdir = "~/micropopgen/exp/2022/2022-06-03.compare_sel_slim_test/output/p_directional//slim_1.tsv.gz",
+             info = "~/micropopgen/exp/2022/2022-06-03.compare_sel_slim_test/2022-05-17.sims_for_midas/slim_1/snps_info.txt",
+             maf_changes = "~/micropopgen/exp/2022/2022-06-03.compare_sel_slim_test/2022-05-17.sims_for_midas/slim_1/maf_changes.tsv",
+             alpha_thres = 0.05,
+             or_thres = 4,
+             maf_thres = 0.5,
+             outdir = "~/micropopgen/exp/2022/today3/test_compare")
 library(tidyverse)
 
 #+ print args
 print(args)
+
+calculate_ppvs <- function(tab, thres_list, invlog = TRUE){
+  if(invlog){
+    score_list <- -log10(thres_list)
+  }else{
+    score_list <- thres_list
+  }
+  
+  score_list %>%
+    map_dfr(function(t, tab){
+      n_sites <- nrow(tab)
+      pos_pred <- sum(tab$score > t)
+      true_pos <- sum(tab$score > t & tab$selected)
+      ppv <- true_pos / pos_pred
+      
+      tibble(n_sites = n_sites,
+             n_pos = pos_pred,
+             n_true_pos = true_pos,
+             ppv = ppv)
+    }, tab = tab) %>%
+    mutate(thres = thres_list)
+}
 
 #+ functions, echo=FALSE
 #' Title
@@ -213,6 +198,9 @@ if(!dir.exists(args$outdir)){
 
   args$sumdir <- file.path(args$outdir, "summaries")
   dir.create(args$sumdir)
+  
+  args$mafdir <- file.path(args$outdir, "MAF_change")
+  dir.create(args$mafdir)
 
   if(n_selected > 0){
     args$statplot <- file.path(args$outdir, "statplot")
@@ -223,12 +211,16 @@ if(!dir.exists(args$outdir)){
 
     args$rocdir <- file.path(args$outdir, "roc")
     dir.create(args$roc)
-  }else{
-
+    
+    args$ppvdir <- file.path(args$outdir, "ppv")
+    dir.create(args$ppv)
   }
 }else{
   stop("ERROR: output directory already exists", call. = TRUE)
 }
+
+#' We write the results of the MAF change comparison
+write_tsv(maf, file.path(args$mafdir, "maf_change.tsv"))
 
 #' # Method comparison
 
@@ -317,6 +309,30 @@ p1 <- pdir %>%
   AMOR::theme_blackbox()
 filename <- file.path(args$sumdir, "npops_pdir_vs_FIT.png")
 ggsave(filename, p1, width = 6, height = 4)
+
+#' We need to produce a table with the number of pops per site per test
+Npops <- maf %>%
+  select(site_id, n_pops) %>%
+  mutate(test = "maf") %>%
+  bind_rows(s_coef %>%
+              select(site_id, n_pops) %>%
+              mutate(test = "s_coef")) %>%
+  
+  bind_rows(FIT %>%
+              select(site_id, n_pops) %>%
+              mutate(test = "FIT")) %>%
+  bind_rows(pdir %>% 
+              select(site_id, n_pops = n_patients) %>%
+              mutate(test = "P(directional)")
+  ) %>% 
+  # pivot_wider(names_from = "test", values_from = "n_pops", values_fill = NA) %>%
+  left_join(info %>%
+              select(site_id, selected),
+            by = "site_id")
+  # pivot_wider(names_from = "test", values_from = "n_pops", values_fill = NA) 
+filename <- file.path(args$sumdir, "npops_all.tsv")
+write_tsv(Npops, filename)
+
 
 #' ## Comparison of *p-value* distributions
 #'
@@ -932,6 +948,103 @@ if(n_selected > 0){
 }
 
 #' ## ADD PPV
+pval_thres <- c(0.1, 0.05, 0.01, 0.001)
+or_thres <- c(1, 2, 3, 4)
+
+
+#' Calculate all PPVs
+if(n_selected > 0){
+  PPV <- bind_rows(# Allele frequency changes
+    calculate_ppvs(tab = maf %>%
+                     left_join(info, by = "site_id") %>%
+                     filter(!is.na(pval)) %>%
+                     transmute(site_id,
+                               selected,
+                               score = -log10(pval)),
+                   thres_list = pval_thres) %>%
+      mutate(test = "maf"),
+    
+    calculate_ppvs(tab = maf %>%
+                     left_join(info, by = "site_id") %>%
+                     filter(!is.na(pval)) %>%
+                     transmute(site_id,
+                               selected,
+                               score = -log10(p.adjust(pval, method = 'fdr'))),
+                   thres_list = pval_thres) %>%
+      mutate(test = "maf_FDR"),
+    
+    # s_coef
+    calculate_ppvs(tab = s_coef %>%
+                     left_join(info, by = "site_id") %>%
+                     filter(!is.na(pval)) %>%
+                     transmute(site_id,
+                               selected,
+                               score = -log10(pval)),
+                   thres_list = pval_thres) %>%
+      mutate(test = "s_coef"),
+    
+    calculate_ppvs(tab = s_coef %>%
+                     left_join(info, by = "site_id") %>%
+                     filter(!is.na(pval)) %>%
+                     transmute(site_id,
+                               selected,
+                               score = -log10(p.adjust(pval, method = 'fdr'))),
+                   thres_list = pval_thres) %>%
+      mutate(test = "s_coef_FDR"),
+    
+    # FIT
+    calculate_ppvs(tab = FIT %>%
+                     left_join(info, by = "site_id") %>%
+                     filter(!is.na(pval)) %>%
+                     transmute(site_id,
+                               selected,
+                               score = -log10(pval)),
+                   thres_list = pval_thres) %>%
+      mutate(test = "FIT"),
+    
+    calculate_ppvs(tab = FIT %>%
+                     left_join(info, by = "site_id") %>%
+                     filter(!is.na(pval)) %>%
+                     transmute(site_id,
+                               selected,
+                               score = -log10(p.adjust(pval, method = 'fdr'))),
+                   thres_list = pval_thres) %>%
+      mutate(test = "FIT_FDR"),
+    
+    # pdir
+    calculate_ppvs(tab = pdir %>%
+                     left_join(info, by = "site_id") %>%
+                     filter(!is.na(p_directional)) %>%
+                     transmute(site_id,
+                               selected,
+                               score = p_directional / (1 - p_directional)),
+                   thres_list = or_thres,
+                   invlog = FALSE) %>%
+      mutate(test = "P(directional)"),
+    
+    calculate_ppvs(tab = pdir %>%
+                     left_join(info, by = "site_id") %>%
+                     filter(!is.na(p_neg)) %>%
+                     transmute(site_id,
+                               selected,
+                               score = p_neg / (1 - p_neg)),
+                   thres_list = or_thres,
+                   invlog = FALSE) %>%
+      mutate(test = "P(directional,-)"),
+    
+    calculate_ppvs(tab = pdir %>%
+                     left_join(info, by = "site_id") %>%
+                     filter(!is.na(p_pos)) %>%
+                     transmute(site_id,
+                               selected,
+                               score = p_pos / (1 - p_pos)),
+                   thres_list = or_thres,
+                   invlog = FALSE) %>%
+      mutate(test = "P(directional,+)")
+  )
+  filename <- file.path(args$ppvdir, "ppv_selected_thres.tsv")
+  write_tsv(PPV, filename)
+}
 
 #' ## Manhattan plots
 #' This simulations include positional changes so it makes sense to plot
