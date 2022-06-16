@@ -31,15 +31,15 @@ pdir_dir = file(params.pdir_dir)
 
 SIMS = Channel.fromPath("$sims_dir/*", type: 'dir', maxDepth: 1)
   .map{simdir -> tuple(simdir.name,
-    file("$simdir/maf_changes.tsv.gz"),
-    file("$simdir/snps_info.txt.gz"))}
+    file("$simdir/maf_changes.tsv"),
+    file("$simdir/snps_info.txt"))}
 
 SCOEFS = Channel.fromPath("$scoef_dir/*", type: 'file')
-  .map{resfile -> tuple(resfile.name.replaceAll(/\.tsv.gz$/, ''),
+  .map{resfile -> tuple(resfile.name.replaceAll(/\.tsv$/, ''),
     file(resfile))}
 
 FITS = Channel.fromPath("$FIT_dir/*", type: 'file')
-  .map{resfile -> tuple(resfile.name.replaceAll(/\.tsv.gz$/, ''),
+  .map{resfile -> tuple(resfile.name.replaceAll(/\.tsv$/, ''),
     file(resfile))}
 
 PDIRS = Channel.fromPath("$pdir_dir/*", type: 'file')
@@ -57,10 +57,11 @@ process compare{
     pattern: "output",
     saveAs:{"$sim_id"}
 
+
   input:
-  tuple val(sim_id), file("maf_changes.tsv.gz"),
-    file("snps_info.txt.gz"),
-    file("s_coef.tsv.gz"), file("FIT.tsv.gz"),
+  tuple val(sim_id), file("maf_changes.tsv"),
+    file("snps_info.txt"),
+    file("s_coef.tsv"), file("FIT.tsv"),
     file("p_directional.tsv.gz") from SIMS.join(SCOEFS).join(FITS).join(PDIRS)
 
   output:
@@ -69,11 +70,11 @@ process compare{
 
   """
   Rscript $workflow.projectDir/render_compare_tests_slim.r \
-    --s_coef s_coef.tsv.gz \
-    --FIT FIT.tsv.gz \
+    --s_coef s_coef.tsv \
+    --FIT FIT.tsv \
     --pdir p_directional.tsv.gz \
-    --maf_changes maf_changes.tsv.gz \
-    --info snps_info.txt.gz \
+    --maf_changes maf_changes.tsv \
+    --info snps_info.txt \
     --alpha_thres 0.05 \
     --or_thres 4 \
     --maf_thres 0.5 \
