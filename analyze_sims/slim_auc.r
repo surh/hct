@@ -19,7 +19,7 @@
 #' # Setup
 library(tidyverse)
 
-args <- list(comps_dir = "2022-06-03.selection_methods/comparisons/",
+args <- list(comps_dir = "2022-06-16.comparisons/comparisons/",
              meta = "pars_per_simulation.tsv",
              nsites = "sites_per_sim.tsv",
              outdir = "auc_output/")
@@ -360,3 +360,6 @@ lmerTest::difflsmeans(m2, test.effs = "test")
 
 #' Overall, it is clear that P(directional) performs better than the
 #' other methods
+
+#' # Session Info
+sessionInfo()

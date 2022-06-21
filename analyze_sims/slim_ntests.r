@@ -19,7 +19,7 @@
 #' # Setup
 library(tidyverse)
 
-args <- list(comps_dir = "2022-06-03.selection_methods/comparisons/",
+args <- list(comps_dir = "2022-06-16.comparisons/comparisons/",
              meta = "pars_per_simulation.tsv",
              nsites = "sites_per_sim.tsv",
              outdir = "ntests_output/")
@@ -32,8 +32,6 @@ args <- list(comps_dir = "2022-06-03.selection_methods/comparisons/",
 selected_tests <- c("maf_FDR", "s_coef_FDR", "FIT_FDR",
                     "P(directional)")
 test_colors <- c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c")
-
-
 
 #' Read metadata of slimulations
 Meta <- read_tsv(args$meta,
@@ -63,8 +61,6 @@ Meta <- Meta %>%
 if(!dir.exists(args$outdir)){
   dir.create(args$outdir)
 }
-
-
 
 #' # AUC summaries
 #' Read all ntests_summaries
@@ -119,7 +115,6 @@ ggsave(filename, p1, width = 10, height = 4)
 filename <- file.path(args$outdir, "n_tested_all_alt.svg")
 ggsave(filename, p1, width = 10, height = 4)
 
-
 p1 <- Ntests %>%
   left_join(Meta %>%
               select(sim_id, Mu),
@@ -161,6 +156,13 @@ ggsave(filename, p1, width = 6, height = 4)
 filename <- file.path(args$outdir, "n_tested_sel.svg")
 ggsave(filename, p1, width = 6, height = 4)
 
+#' Interestingly, we see little difference, if any, between the number of sites
+#' under selection that make the cutoffs to be tested aros methos. This might
+#' partially reflect the fact that in order to be under selection, a site had to
+#' have at least 5% allele frequency in the starting population,
+#' so it is likely that that frequency is enough to survive in enough
+#' populations to make the cut for being test
+
 #' Confirming that MAF and P(directional) always make the same number of tests)
 Ntests %>%
   group_by(sim_id) %>%
@@ -184,4 +186,85 @@ Ntests %>%
 #' that that is enough to ensure that the allele survives in enough population
 #' to make the cut for the test most times.
 
+#' # Compare n_pops
+
+#' We read the number of populations per site per test
+Npops <- list.dirs(args$comps_dir, recursive = FALSE, full.names = TRUE) %>%
+  map_dfr(function(slim_dir){
+    sim_id <- basename(slim_dir)
+    
+    
+    subdir <- file.path(slim_dir, "summaries")
+    if(dir.exists(subdir)){
+      filename <- file.path(subdir, "npops_all.tsv")
+      dat <- read_tsv(filename, col_types = cols(test = col_character(),
+                                                 site_id = col_character(),
+                                                 selected = col_logical(),
+                                                 .default = col_number())) %>%
+        mutate(sim_id = sim_id)
+    }else{
+      dat <- NULL
+    }
+    
+    return(dat)
+  }) %>%
+  mutate(test = replace(test, test == "maf", "maf_FDR")) %>%
+  mutate(test = replace(test, test == "s_coef", "s_coef_FDR")) %>%
+  mutate(test = replace(test, test == "FIT", "FIT_FDR")) 
+Npops
+
+
+#' Let's try sites under selection
+p1 <- Npops %>%
+  filter(selected) %>%
+  pivot_wider(names_from = "test", values_from = "n_pops", values_fill = 0)  %>%
+  pivot_longer(-all_of(c("site_id", "selected", "sim_id")),
+               names_to = "test", values_to = "n_pops") %>%
+  
+  filter(sim_id %in% unique(sim_id)) %>%
+  mutate(site_id = paste0(site_id, ".", sim_id)) %>%
+  mutate(lost_pops = n_pops - 10) %>%
+  mutate(test = factor(test, levels = selected_tests)) %>%
+  # select(site_id) %>% unlist %>% unique %>% length()
+  ggplot(aes(x = site_id, y = test)) +
+  facet_grid( ~ sim_id , scales = "free_x", space = "free_x") +
+  # facet_wrap(~ sim_id, scales = "free_x") +
+  # geom_tile(aes(fill = n_pops), col = NA) +
+  geom_tile(aes(fill = lost_pops), col = NA) +
+  # scale_fill_gradient(low = RColorBrewer::brewer.pal(9, "YlOrRd")[1],
+  #                     high = RColorBrewer::brewer.pal(9, "YlOrRd")[9],
+  #                     na.value = "grey") +
+  scale_fill_gradient(low = RColorBrewer::brewer.pal(9, "YlOrRd")[9],
+                      high = "white" ,
+                      na.value = "black") +
+  
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        panel.background = element_blank(),
+        panel.grid = element_blank())
+p1
+filename <- file.path(args$outdir,"lost_pops_heat_selected.png")
+ggsave(filename, p1, width = 10, height = 10)
+
+p1 <- Npops %>%
+  filter(selected) %>%
+  mutate(test = factor(test, levels = selected_tests)) %>%
+  ggplot(aes(x = n_pops)) +
+  facet_wrap(~ test, ncol = 1) +
+  geom_histogram(aes(fill = test), bins = 10) +
+  scale_fill_manual(values = test_colors) +
+  scale_x_continuous(breaks = 1:10) +
+  scale_y_continuous(name = "# of selected sites") +
+  AMOR::theme_blackbox()
+p1
+filename <- file.path(args$outdir,"npops_hist_selected.png")
+ggsave(filename, p1, width = 4, height = 6)
+filename <- file.path(args$outdir,"npops_hist_selected.svg")
+ggsave(filename, p1, width = 4, height = 6)
+
+#' P(directional) and MAF can incorporate all populations while
+#' s_coef and FIT drop some for about half of selected sites.
+
+#' # Session Info
+sessionInfo()
 
