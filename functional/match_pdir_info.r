@@ -16,7 +16,7 @@ if(!dir.exists(args$outdir)){
 Res <- list.files(args$pdir,
            full.names = TRUE,
            recursive = FALSE) %>%
-  map(function(f){
+  map_dfr(function(f){
     # f <- list.files(args$pdir,
     #                 full.names = TRUE,
     #                 recursive = FALSE)[1]
@@ -91,6 +91,7 @@ Res <- list.files(args$pdir,
            n_genes_hits, n_genes_hits_ns, n_genes_hits_pos)
     
   })
+Res %>%
+  print(n = 100)
 
-
-write_tsv(pdir, "pdir_hit_counts.tsv")
+write_tsv(Res, "pdir_hit_counts.tsv")
