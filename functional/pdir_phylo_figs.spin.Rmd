@@ -1,3 +1,5 @@
+
+```{r }
 library(tidyverse)
 library(ape)
 library(ggtree)
@@ -25,16 +27,22 @@ tre
 
 
 Dat$spec == tre$tip.label
+```
 
-#' Basic tree plot
+Basic tree plot
+
+```{r }
 p1 <- ggtree(tre) + geom_tiplab(align = TRUE) +
   # hexpand(0.3) +
   # theme(plot.margin = unit(c(0,0.3,0,0), "npc"))
   xlim(c(0,2.7))
 p1
 # dev.off()
+```
 
-#' Plot number of populations
+Plot number of populations
+
+```{r }
 p2 <- Dat %>%
   select(spec, n_pops)  %>%
   rename(label = spec) %>%
@@ -44,8 +52,11 @@ p2 <- Dat %>%
   theme_classic() +
   theme(axis.title.y = element_blank())
 p2
+```
 
-#' Plot of synonymous to non synonymous counts
+Plot of synonymous to non synonymous counts
+
+```{r }
 p3 <- Dat %>%
   select(spec, n_hits, n_hits_ns)  %>%
   mutate(n_hits_s = n_hits - n_hits_ns) %>%
@@ -74,8 +85,11 @@ p4 <- Dat %>%
   theme_classic() +
   theme(axis.title.y = element_blank())
 p4
+```
 
-#' Combine everything with aplot
+Combine everything with aplot
+
+```{r }
 pp <- (p2 +
   theme(axis.text.y = element_blank())) %>% 
   aplot::insert_left(p1 + 
@@ -89,10 +103,12 @@ filename <- file.path(args$outdir, "phylo_n_hits.png")
 ggsave(filename, pp, width = 12, height = 5)
 filename <- file.path(args$outdir, "phylo_n_hits.svg")
 ggsave(filename, pp, width = 12, height = 5)
+```
 
+Get ns vs s for all tested snps.
+Ignoring non-coding snps
 
-#' Get ns vs s for all tested snps.
-#' Ignoring non-coding snps
+```{r }
 bg_type <- list.files(args$pdir_info,
            full.names = TRUE,
            recursive = FALSE) %>%
@@ -163,9 +179,11 @@ p6 <- Ns_enrich %>%
   theme_classic() +
   theme(axis.title.y = element_blank())
 p6
+```
 
+Overall enrichment when there are hits
 
-#' Overall enrichment when there are hits
+```{r }
 Ns_enrich %>%
   filter(n_hits_ns + n_hits_s > 0) %>%
   summarise(n_tested_ns = sum(n_tested_ns),
@@ -210,5 +228,13 @@ filename <- file.path(args$outdir, "phylo_ns_enrich_hits.png")
 ggsave(filename, pp, width = 12, height = 5)
 filename <- file.path(args$outdir, "phylo_ns_enrich_hits.svg")
 ggsave(filename, pp, width = 12, height = 5)
+```
 
 
+
+---
+title: pdir_phylo_figs.r
+author: sur
+date: '2022-08-08'
+
+---
