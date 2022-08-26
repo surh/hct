@@ -368,13 +368,17 @@ lmerTest::difflsmeans(m2, test.effs = "test")
 
 
 #' The effect is significant even in this reduced model, though the fit is singular
+#' So we fit with MCMC using brms
 m3 <- brms::brm(AUC ~ test + g + npops + popsize + T + (1 | sim_id),
                 data = dat,
                 family = gaussian(link = "identity"),
                 chains = 4, cores = 4,
-                iter = 100)
+                iter = 1300)
+summary(m3)
 
-
+#' No convergence issues with brms and confirms the results. Interestingly
+#' We can also confirm that there is no difference between s_coef & P(directional)
+bayesplot::mcmc_areas(brms::as_draws(m3, variable = c("b_tests_coef_FDR", "b_testFIT_FDR", "b_testPdirectional")))
 
 #' # Session Info
 sessionInfo()
