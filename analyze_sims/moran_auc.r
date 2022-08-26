@@ -21,7 +21,6 @@ library(tidyverse)
 source(file.path(this.path::this.dir(), "functions.r"))
 args <- list(comps_dir = "old_moran_sim_selmethods/2022-05-17.comparisons/",
              meta = "pars_per_simulation_moran.tsv",
-             # nsites = "sites_per_sim.tsv",
              outdir = "auc_output/")
 
 #' Read metadata of slimulations
@@ -43,7 +42,6 @@ if(!dir.exists(args$outdir)){
 AUC <- list.dirs(args$comps_dir, recursive = FALSE, full.names = TRUE) %>%
   map_dfr(function(slim_dir){
     sim_id <- basename(slim_dir)
-    cat(sim_id, "\n")
     
     roc_dir <- file.path(slim_dir, "roc")
     if(dir.exists(roc_dir)){

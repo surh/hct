@@ -16,42 +16,22 @@
 # You should have received a copy of the GNU General Public License
 # along with This program.  If not, see <https://www.gnu.org/licenses/>.
 
-#' # Setup
 library(tidyverse)
-
-args <- list(comps_dir = "2022-06-16.comparisons/comparisons/",
-             meta = "pars_per_simulation.tsv",
-             nsites = "sites_per_sim.tsv",
+source(file.path(this.path::this.dir(), "functions.r"))
+args <- list(comps_dir = "old_moran_sim_selmethods/2022-05-17.comparisons/",
+             meta = "pars_per_simulation_moran.tsv",
              outdir = "ppv_output/")
-
-#' We choose the methods and colors to display
-# selected_tests <- c("maf_FDR", "s_coef_FDR", "FIT_FDR",
-#                     "P(directional)", "P(directional,-)")
-# test_colors <- c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c", "#fb9a99")
-selected_tests <- c("maf_FDR", "s_coef_FDR", "FIT_FDR",
-                    "P(directional)")
-test_colors <- c("#a6cee3", "#1f78b4", "#b2df8a", "#33a02c")
 
 #' Read metadata of slimulations
 Meta <- read_tsv(args$meta,
                  col_types = cols(sim_id = col_character(),
-                                  run_id_short = col_character(),
                                   .default = col_number()))
-Meta
-
-Nsites <-read_tsv(args$nsites,
-                  col_types = cols(sim_id = col_character(),
-                                   
-                                   
-                                   .default = col_number()))
-Nsites
+#' Number of sites under selection per simulation
 Meta <- Meta %>%
-  left_join(Nsites %>%
-              select(sim_id, n_sites, n_standing, n_selected),
-            by = "sim_id")
+  mutate(n_selected = nsites * prop_selected) 
 Meta
 
-# Prepare output dir
+#' Prepare output dir
 if(!dir.exists(args$outdir)){
   dir.create(args$outdir)
 }
@@ -76,7 +56,6 @@ PPVs <- list.dirs(args$comps_dir, recursive = FALSE, full.names = TRUE) %>%
   })
 PPVs
 
-
 #' Calculate FPR
 #' FPR = FP / (FP + TN)
 PPVs <- PPVs %>%
@@ -85,9 +64,8 @@ PPVs <- PPVs %>%
   mutate(fpr = (n_pos - n_true_pos) / (n_sites - n_pos))
 PPVs
 # PPVs <- PPVs %>%
-#   mutate(fpr = (n_pos - n_true_pos) / n_sites)
+#   mutate(fpr = (n_pos - n_true_pos) / n_sites )
 # PPVs
-#' Need to rerun
 
 #' Plot PPVs
 p1 <- PPVs %>%
@@ -95,11 +73,12 @@ p1 <- PPVs %>%
   mutate(test = factor(test, levels = selected_tests)) %>%
   filter(sim_id %in% Meta$sim_id) %>%
   mutate(thres = factor(thres, levels = c(0.1, 0.05, 0.01, 0.001, 1, 2, 3, 4))) %>%
-  # filter(n_true_pos > 0) %>%
   ggplot(aes(x = thres, y = ppv)) +
   facet_wrap(~ test, scales = "free_x") +
-  # ggbeeswarm::geom_beeswarm(aes(fill = thres), size = 2, col = "black", shape = 21, cex = 0.8) +
-  ggbeeswarm::geom_beeswarm(aes(col = thres), size = 2, cex = 0.8, alpha = 0.5) +
+  # ggbeeswarm::geom_beeswarm(aes(col = thres), size = 2, cex = 0.8, alpha = 0.5) +
+  ggbeeswarm::geom_quasirandom(aes(col = thres), size = 2, cex = 0.8, alpha = 0.3) +
+  # geom_point(aes(col = thres), size = 2, cex = 0.8, alpha = 0.5,
+  #            position = position_jitter(width = 0.3)) +
   scale_color_manual(values = c("#bae4bc", "#7bccc4", "#43a2ca", "#0868ac",
                                 "#fdcc8a", "#fc8d59", "#e34a33", "#b30000")) +
   geom_hline(yintercept = 0.05, col = "black") +
@@ -120,8 +99,7 @@ p1 <- PPVs %>%
   # filter(n_true_pos > 0) %>%
   ggplot(aes(x = thres, y = fpr)) +
   facet_wrap(~ test, scales = "free_x") +
-  # ggbeeswarm::geom_beeswarm(aes(fill = thres), size = 2, col = "black", shape = 21, cex = 0.8) +
-  ggbeeswarm::geom_beeswarm(aes(col = thres), size = 2, cex = 0.8, alpha = 0.5) +
+  ggbeeswarm::geom_quasirandom(aes(col = thres), size = 2, cex = 0.8, alpha = 0.3) +
   scale_color_manual(values = c("#bae4bc", "#7bccc4", "#43a2ca", "#0868ac",
                                 "#fdcc8a", "#fc8d59", "#e34a33", "#b30000")) +
   geom_hline(yintercept = 0.05, col = "black") +
@@ -133,9 +111,15 @@ ggsave(filename, p1, width = 6, height = 4)
 filename <- file.path(args$outdir, "fpr_selected.svg")
 ggsave(filename, p1, width = 6, height = 4)
 
-#' We see that PPV might be a bit better for s_coef at the selected coeffients,
-#' but FPR is now worse in contrast to neutral slimulations. While P(directional)
-#' FPR rate is not affected by the presence of sites under selection
+#' s_coef & P(directional) essentially perform on par here. Though at OR of 1
+#' P(directional is probably worse). Also s_coef has a very strong bimodal
+#' distribution on PPV. 
+
+
+
+
+
+
 
 #' Now plot number of discoveries
 meds <- PPVs %>%
@@ -148,19 +132,23 @@ meds <- PPVs %>%
             .groups = 'drop')
 meds
 
+
+
+
 p1 <- PPVs %>%
   filter(test %in% selected_tests) %>%
   mutate(test = factor(test, levels = selected_tests)) %>%
   filter(sim_id %in% Meta$sim_id) %>%
   mutate(thres = factor(thres, levels = c(0.1, 0.05, 0.01, 0.001, 1, 2, 3, 4))) %>%
-  # filter(n_true_pos > 0) %>%
+
   ggplot(aes(x = thres, y = n_true_pos + 1)) +
   facet_wrap(~ test, scales = "free_x") +
   # ggbeeswarm::geom_beeswarm(aes(fill = thres), size = 2, col = "black", shape = 21, cex = 0.8) +
-  ggbeeswarm::geom_beeswarm(aes(col = thres), size = 2, cex = 0.8, alpha = 0.5) +
+  # ggbeeswarm::geom_beeswarm(aes(col = thres), size = 2, cex = 0.8, alpha = 0.5) +
+  ggbeeswarm::geom_quasirandom(aes(col = thres), size = 2, cex = 0.8, alpha = 0.3) +
   scale_color_manual(values = c("#bae4bc", "#7bccc4", "#43a2ca", "#0868ac",
                                 "#fdcc8a", "#fc8d59", "#e34a33", "#b30000")) +
-  # geom_hline(yintercept = 0.05, col = "black") +
+  geom_hline(yintercept = 10, col = "black") +
   # geom_crossbar(data = . %>%
   #                 group_by(test, thres) %>%
   #                 summarise(n_true_pos = median(n_true_pos),
@@ -177,13 +165,10 @@ ggsave(filename, p1, width = 6, height = 4)
 filename <- file.path(args$outdir, "ndiscoveries_selected.svg")
 ggsave(filename, p1, width = 6, height = 4)
 
-#' We see that in more than 50% of cases, s_coef does not discover any
-#' selected sites, while P(directional) makes some discoveries
-#' in more than half of the cases
+#' s_coef does a bit better here. Specially at higher significance thresholds
 
 #' Overall PPV is the main weakness but the method outperforms or matches
-#' s_coef in all the other metrics, other methods have more serious issiues
-
+#' s_coef in all the other metrics, other methods have more serious issues
 
 #' # Session info
 sessionInfo()
