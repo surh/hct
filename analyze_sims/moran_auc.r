@@ -74,7 +74,8 @@ p1 <- AUC %>%
   # geom_boxplot(outlier.colour = NA) +
   geom_violin(draw_quantiles = c(0.25, 0.5, 0.5)) +
   # ggbeeswarm::geom_beeswarm(priority = "none") +
-  geom_point(position = position_jitter(width = 0.3), alpha = 0.2) +
+  ggbeeswarm::geom_quasirandom(width = 0.5, alpha = 0.4) +
+  # geom_point(position = position_jitter(width = 0.3), alpha = 0.2) +
   scale_y_continuous(limits = c(0, 1)) +
   AMOR::theme_blackbox()
 p1
@@ -117,7 +118,6 @@ p.adjust(lmerTest::difflsmeans(m1)$`Pr(>|t|)`, 'fdr')
 #' Other methods are worse with MAF in last place
 
 #' # AUC over params
-Meta
 #' Compare vs npops
 
 p1 <- AUC %>%
@@ -130,8 +130,9 @@ p1 <- AUC %>%
   # ggbeeswarm::geom_beeswarm(aes(fill = test), col = "black", shape = 21, size = 2, cex = 2) +
   # scale_fill_manual(values = test_colors) +
   # ggbeeswarm::geom_beeswarm(aes(col = test), size = 1, cex = 2) +
-  geom_point(aes(col = test), size = 1.5, cex = 2, position = position_jitter(width = 0.4),
-             alpha = 0.4) +
+  ggbeeswarm::geom_quasirandom(aes(col = test), width = 0.5, alpha = 0.4) +
+  # geom_point(aes(col = test), size = 1.5, cex = 2, position = position_jitter(width = 0.4),
+  #            alpha = 0.4) +
   scale_color_manual(values = test_colors) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle(label = "npops") +
@@ -159,10 +160,11 @@ p1 <- AUC %>%
   # ggbeeswarm::geom_beeswarm(aes(fill = test), col = "black", shape = 21, size = 2, cex = 2) +
   # scale_fill_manual(values = test_colors) +
   # ggbeeswarm::geom_beeswarm(aes(col = test), size = 1, cex = 2) +
-  geom_point(aes(col = test), size = 1.5,
-             cex = 2,
-             position = position_jitter(width = 0.4),
-             alpha = 0.4) +
+  ggbeeswarm::geom_quasirandom(aes(col = test), width = 0.5, alpha = 0.4) +
+  # geom_point(aes(col = test), size = 1.5,
+  #            cex = 2,
+  #            position = position_jitter(width = 0.4),
+  #            alpha = 0.4) +
   scale_color_manual(values = test_colors) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle(label = "popsize") +
@@ -189,10 +191,11 @@ p1 <- AUC %>%
   # ggbeeswarm::geom_beeswarm(aes(fill = test), col = "black", shape = 21, size = 2, cex = 2) +
   # scale_fill_manual(values = test_colors) +
   # ggbeeswarm::geom_beeswarm(aes(col = test), size = 1, cex = 2) +
-  geom_point(aes(col = test), cex = 2, 
-             size = 1.5,
-             position = position_jitter(width = 0.4),
-             alpha = 0.4) +
+  ggbeeswarm::geom_quasirandom(aes(col = test), width = 0.5, alpha = 0.4) +
+  # geom_point(aes(col = test), cex = 2, 
+  #            size = 1.5,
+  #            position = position_jitter(width = 0.4),
+  #            alpha = 0.4) +
   scale_color_manual(values = test_colors) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle(label = "nsites") +
@@ -219,10 +222,11 @@ p1 <- AUC %>%
   # ggbeeswarm::geom_beeswarm(aes(fill = test), col = "black", shape = 21, size = 2, cex = 2) +
   # scale_fill_manual(values = test_colors) +
   # ggbeeswarm::geom_beeswarm(aes(col = test), size = 1, cex = 2) +
-  geom_point(aes(col = test), cex = 2, 
-             size = 1.5,
-             position = position_jitter(width = 0.4),
-             alpha = 0.4) +
+  ggbeeswarm::geom_quasirandom(aes(col = test), width = 0.5, alpha = 0.4) +
+  # geom_point(aes(col = test), cex = 2, 
+  #            size = 1.5,
+  #            position = position_jitter(width = 0.4),
+  #            alpha = 0.4) +
   scale_color_manual(values = test_colors) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle(label = "Relative selection (g)") +
@@ -249,10 +253,11 @@ p1 <- AUC %>%
   # ggbeeswarm::geom_beeswarm(aes(fill = test), col = "black", shape = 21, size = 2, cex = 2) +
   # scale_fill_manual(values = test_colors) +
   # ggbeeswarm::geom_beeswarm(aes(col = test), size = 1, cex = 2) +
-  geom_point(aes(col = test), cex = 2, 
-             size = 1.5,
-             position = position_jitter(width = 0.4),
-             alpha = 0.4) +
+  ggbeeswarm::geom_quasirandom(aes(col = test), width = 0.5, alpha = 0.4) +
+  # geom_point(aes(col = test), cex = 2, 
+  #            size = 1.5,
+  #            position = position_jitter(width = 0.4),
+  #            alpha = 0.4) +
   scale_color_manual(values = test_colors) +
   scale_y_continuous(limits = c(0, 1)) +
   ggtitle(label = "T / popsize") +
@@ -284,10 +289,11 @@ p1 <- AUC %>%
             by = "sim_id") %>%
   ggplot(aes(x = test, y = AUC)) +
   facet_wrap(~ factor(n_selected), nrow = 1) +
-  geom_point(aes(col = test), cex = 2, 
-             size = 1.5,
-             position = position_jitter(width = 0.4),
-             alpha = 0.4) +
+  ggbeeswarm::geom_quasirandom(aes(col = test), width = 0.5, alpha = 0.4) +
+  # geom_point(aes(col = test), cex = 2, 
+  #            size = 1.5,
+  #            position = position_jitter(width = 0.4),
+  #            alpha = 0.4) +
   scale_color_manual(values = test_colors) +
   scale_y_continuous(limits = c(0, 1)) +
   # scale_x_log10() +
