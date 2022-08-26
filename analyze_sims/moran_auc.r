@@ -80,9 +80,9 @@ p1 <- AUC %>%
   scale_y_continuous(limits = c(0, 1)) +
   AMOR::theme_blackbox()
 p1
-filename <- file.path(args$outdir, "auc_overall_slim.png")
+filename <- file.path(args$outdir, "auc_overall_moran.png")
 ggsave(filename, p1, width = 6, height = 4)
-filename <- file.path(args$outdir, "auc_overall_slim.svg")
+filename <- file.path(args$outdir, "auc_overall_moran.svg")
 ggsave(filename, p1, width = 6, height = 4)
 
 #' #STILL NEED TO FIX ROC CALCULATIONS 
@@ -90,7 +90,222 @@ ggsave(filename, p1, width = 6, height = 4)
 1 - max(AUC$AUC)
 warning("FIX ROC")
 
+#' We see that P(directional) is on par with s_coef and both are better than
+#' other methods. Though in some cases, all perform well.
 
 
 
+#' ## Stats overall AUC
+#' Perform simple test to determine significance
+#' Need to account for paired structure
+dat <- AUC %>%
+  filter(test %in% selected_tests) %>%
+  mutate(test = factor(test, levels = selected_tests)) 
+m1 <- lmerTest::lmer(AUC ~ test + (1 | sim_id), data = dat)
+m2 <- lm(AUC ~ test, data = dat)
 
+#' We use the Likelihood ratio test to confirm that the random effect is
+#' significant. Two tests agree
+anova(m1, m2, "LRT")
+summary(m1)
+
+lmerTest::ranova(m1)
+
+
+#' Finally we make all pairwise comparisons
+lmerTest::difflsmeans(m1)
+p.adjust(lmerTest::difflsmeans(m1)$`Pr(>|t|)`, 'fdr')
+
+#' No significant difference between s_cief & P(directional).
+#' Other methods are worse with MAF in last place
+
+#' # AUC over params
+Meta
+#' Compare vs npops
+
+p1 <- AUC %>%
+  filter(test %in% selected_tests) %>%
+  mutate(test = factor(test, levels = selected_tests)) %>%
+  left_join(Meta,
+            by = "sim_id") %>%
+  ggplot(aes(x = test, y = AUC)) +
+  facet_wrap(~ factor(npops), nrow = 1) +
+  # ggbeeswarm::geom_beeswarm(aes(fill = test), col = "black", shape = 21, size = 2, cex = 2) +
+  # scale_fill_manual(values = test_colors) +
+  # ggbeeswarm::geom_beeswarm(aes(col = test), size = 1, cex = 2) +
+  geom_point(aes(col = test), size = 1.5, cex = 2, position = position_jitter(width = 0.4),
+             alpha = 0.4) +
+  scale_color_manual(values = test_colors) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle(label = "npops") +
+  AMOR::theme_blackbox() +
+  theme(axis.text.x = element_text(angle = 90),
+        legend.position = "bottom")
+p1
+filename <- file.path(args$outdir, "auc_by_npops_moran.png")
+ggsave(filename, p1, width = 6, height = 4)
+filename <- file.path(args$outdir, "auc_by_npops_moran.svg")
+ggsave(filename, p1, width = 6, height = 4)
+
+#' We see that as the number of populations increase, also the
+#' ROC AUC increases. 
+
+
+#' Now we compare by popsize
+p1 <- AUC %>%
+  filter(test %in% selected_tests) %>%
+  mutate(test = factor(test, levels = selected_tests)) %>%
+  left_join(Meta,
+            by = "sim_id") %>%
+  ggplot(aes(x = test, y = AUC)) +
+  facet_wrap(~ factor(popsize), nrow = 1) +
+  # ggbeeswarm::geom_beeswarm(aes(fill = test), col = "black", shape = 21, size = 2, cex = 2) +
+  # scale_fill_manual(values = test_colors) +
+  # ggbeeswarm::geom_beeswarm(aes(col = test), size = 1, cex = 2) +
+  geom_point(aes(col = test), size = 1.5,
+             cex = 2,
+             position = position_jitter(width = 0.4),
+             alpha = 0.4) +
+  scale_color_manual(values = test_colors) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle(label = "popsize") +
+  AMOR::theme_blackbox() +
+  theme(axis.text.x = element_text(angle = 90),
+        legend.position = "bottom")
+p1
+filename <- file.path(args$outdir, "auc_by_popsize_moran.png")
+ggsave(filename, p1, width = 6, height = 4)
+filename <- file.path(args$outdir, "auc_by_popsize_moran.svg")
+ggsave(filename, p1, width = 6, height = 4)
+
+#' Interestingly population size (i.e. number of genomes simulated
+#' within each population) has no apparent effect.
+
+#' Now we plot by number of sites
+p1 <- AUC %>%
+  filter(test %in% selected_tests) %>%
+  mutate(test = factor(test, levels = selected_tests)) %>%
+  left_join(Meta,
+            by = "sim_id") %>%
+  ggplot(aes(x = test, y = AUC)) +
+  facet_wrap(~ factor(nsites), nrow = 1) +
+  # ggbeeswarm::geom_beeswarm(aes(fill = test), col = "black", shape = 21, size = 2, cex = 2) +
+  # scale_fill_manual(values = test_colors) +
+  # ggbeeswarm::geom_beeswarm(aes(col = test), size = 1, cex = 2) +
+  geom_point(aes(col = test), cex = 2, 
+             size = 1.5,
+             position = position_jitter(width = 0.4),
+             alpha = 0.4) +
+  scale_color_manual(values = test_colors) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle(label = "nsites") +
+  AMOR::theme_blackbox() +
+  theme(axis.text.x = element_text(angle = 90),
+        legend.position = "bottom")
+p1
+filename <- file.path(args$outdir, "auc_by_nsites_moran.png")
+ggsave(filename, p1, width = 6, height = 4)
+filename <- file.path(args$outdir, "auc_by_nsites_moran.svg")
+ggsave(filename, p1, width = 6, height = 4)
+
+#' Limited effect of number of sites. Probably not unexpected given that
+#' each site is simulated independently by the Moran process.
+
+#' Plot by elative strength of selection (g)
+p1 <- AUC %>%
+  filter(test %in% selected_tests) %>%
+  mutate(test = factor(test, levels = selected_tests)) %>%
+  left_join(Meta,
+            by = "sim_id") %>%
+  ggplot(aes(x = test, y = AUC)) +
+  facet_wrap(~ factor(g), nrow = 1) +
+  # ggbeeswarm::geom_beeswarm(aes(fill = test), col = "black", shape = 21, size = 2, cex = 2) +
+  # scale_fill_manual(values = test_colors) +
+  # ggbeeswarm::geom_beeswarm(aes(col = test), size = 1, cex = 2) +
+  geom_point(aes(col = test), cex = 2, 
+             size = 1.5,
+             position = position_jitter(width = 0.4),
+             alpha = 0.4) +
+  scale_color_manual(values = test_colors) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle(label = "Relative selection (g)") +
+  AMOR::theme_blackbox() +
+  theme(axis.text.x = element_text(angle = 90),
+        legend.position = "bottom")
+p1
+filename <- file.path(args$outdir, "auc_by_sel_moran.png")
+ggsave(filename, p1, width = 6, height = 4)
+filename <- file.path(args$outdir, "auc_by_sel_moran.svg")
+ggsave(filename, p1, width = 6, height = 4)
+
+#' This has the largest impact, as expected. Although
+#' FIT behaves in unexpected manner.
+
+
+#' Plot by normalized time ny po size.
+p1 <- AUC %>%
+  filter(test %in% selected_tests) %>%
+  mutate(test = factor(test, levels = selected_tests)) %>%
+  left_join(Meta,
+            by = "sim_id") %>%
+  ggplot(aes(x = test, y = AUC)) +
+  facet_wrap(~ factor(T / popsize), nrow = 1) +
+  # ggbeeswarm::geom_beeswarm(aes(fill = test), col = "black", shape = 21, size = 2, cex = 2) +
+  # scale_fill_manual(values = test_colors) +
+  # ggbeeswarm::geom_beeswarm(aes(col = test), size = 1, cex = 2) +
+  geom_point(aes(col = test), cex = 2, 
+             size = 1.5,
+             position = position_jitter(width = 0.4),
+             alpha = 0.4) +
+  scale_color_manual(values = test_colors) +
+  scale_y_continuous(limits = c(0, 1)) +
+  ggtitle(label = "T / popsize") +
+  AMOR::theme_blackbox() +
+  theme(axis.text.x = element_text(angle = 90),
+        legend.position = "bottom")
+p1
+filename <- file.path(args$outdir, "auc_by_time_moran.png")
+ggsave(filename, p1, width = 6, height = 4)
+filename <- file.path(args$outdir, "auc_by_time_moran.svg")
+ggsave(filename, p1, width = 6, height = 4)
+
+#' We see that the more "Time" has passed, more effective most methods
+#' Not perfect but at least improvement seems monotonic. Some variation
+#' is normal. It reflects more time for selection to act.
+#' 
+#' T is the number of individual replacements attempted in the simulation. So
+#' T/popsize is the number of replacements as a function of the population
+#' size. Note that it is **NOT** the fraction of population replaced, nor
+#' the expected value of that fraction, because individuals can survive
+#' replacement attempt, and can be chosen again, can be replaced even if
+#' they are not founded, and selection affects the probs of replacement.
+
+
+
+#' Finally plot by number of selected sites
+p1 <- AUC %>%
+  filter(test %in% selected_tests) %>%
+  mutate(test = factor(test, levels = selected_tests)) %>%
+  left_join(Meta,
+            by = "sim_id") %>%
+  ggplot(aes(x = test, y = AUC)) +
+  facet_wrap(~ factor(n_selected), nrow = 1) +
+  geom_point(aes(col = test), cex = 2, 
+             size = 1.5,
+             position = position_jitter(width = 0.4),
+             alpha = 0.4) +
+  scale_color_manual(values = test_colors) +
+  scale_y_continuous(limits = c(0, 1)) +
+  # scale_x_log10() +
+  ggtitle(label = "n_selected") +
+  AMOR::theme_blackbox() +
+  theme(axis.text.x = element_text(angle = 90),
+        legend.position = "bottom")
+p1
+filename <- file.path(args$outdir, "auc_by_nselected_moran.png")
+ggsave(filename, p1, width = 6, height = 4)
+filename <- file.path(args$outdir, "auc_by_nselected_moran.svg")
+ggsave(filename, p1, width = 6, height = 4)
+
+#' No differences under this variable. Expected given that all
+#' sites are simulated independently
