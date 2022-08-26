@@ -111,7 +111,6 @@ summary(m1)
 
 lmerTest::ranova(m1)
 
-
 #' Finally we make all pairwise comparisons
 lmerTest::difflsmeans(m1)
 p.adjust(lmerTest::difflsmeans(m1)$`Pr(>|t|)`, 'fdr')
@@ -241,7 +240,6 @@ ggsave(filename, p1, width = 6, height = 4)
 #' This has the largest impact, as expected. Although
 #' FIT behaves in unexpected manner.
 
-
 #' Plot by normalized time ny po size.
 p1 <- AUC %>%
   filter(test %in% selected_tests) %>%
@@ -280,8 +278,6 @@ ggsave(filename, p1, width = 6, height = 4)
 #' replacement attempt, and can be chosen again, can be replaced even if
 #' they are not founded, and selection affects the probs of replacement.
 
-
-
 #' Finally plot by number of selected sites
 p1 <- AUC %>%
   filter(test %in% selected_tests) %>%
@@ -309,3 +305,77 @@ ggsave(filename, p1, width = 6, height = 4)
 
 #' No differences under this variable. Expected given that all
 #' sites are simulated independently
+
+#' ## Stats across params
+
+#' We now fit a full model that tries to capture
+#' how all the different variables influence
+#' ROC AUC performance
+dat <- AUC %>%
+  filter(test %in% selected_tests) %>%
+  mutate(test = factor(test, levels = selected_tests)) %>%
+  left_join(Meta %>%
+              select(sim_id, g, nsites, npops, popsize, T, n_selected),
+            by = "sim_id") %>%
+  mutate(g = log10(g),
+         nsites = log10(nsites),
+         npops = log10(npops),
+         popsize = log10(popsize),
+         T = log10(T),
+         n_selected = log10(n_selected))
+dat
+summary(dat)
+
+m1 <- lmerTest::lmer(AUC ~ test + n_selected + g + nsites + npops + popsize + T + (1 | sim_id),
+                     data = dat)
+
+#' The random effect controls for *pairedness* and all the other
+#' variables are continuous, we log transform to keep all variables
+#' in a similar scale
+
+#' Overall residuals behave well. AUC is bounded at [0,1] which we can see in
+#' the residual plot. No test is particulary over/under-fittedd 
+plot(m1)
+boxplot(residuals(m1, "pearson") ~ dat$test)
+
+#' We confirm that the random effect is significant
+lmerTest::ranova(m1)
+
+#' Then we look at the overall results
+summary(m1)
+
+#' All terms are significant except for n_selected and nsites. Again
+#' This is expected because all sites are simulated independetly. Interestingly
+#' popsize has a negative effect?? It could be simply because npops is much
+#' more important, and so this is a relative performance
+
+#' Similar as with the model without covariates, MAF is the worst and there
+#' is no difference between s_coef & P(directional)
+lmerTest::difflsmeans(m1, test.effs = "test")
+
+#' We now performs backwards selection to reduce the model
+#' We try a reduced model 
+drop1(m1)
+m2 <- lmerTest::lmer(AUC ~ test + g + nsites + npops + popsize + T + (1 | sim_id),
+                     data = dat)
+summary(m2)
+drop1(m2)
+m2 <- lmerTest::lmer(AUC ~ test + g + npops + popsize + T + (1 | sim_id),
+                     data = dat)
+summary(m2)
+lmerTest::ranova(m2)
+lmerTest::difflsmeans(m2, test.effs = "test")
+
+
+#' The effect is significant even in this reduced model, though the fit is singular
+m3 <- brms::brm(AUC ~ test + g + npops + popsize + T + (1 | sim_id),
+                data = dat,
+                family = gaussian(link = "identity"),
+                chains = 4, cores = 4,
+                iter = 100)
+
+
+
+#' # Session Info
+sessionInfo()
+
