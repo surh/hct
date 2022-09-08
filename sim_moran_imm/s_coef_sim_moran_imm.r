@@ -36,11 +36,6 @@ process_arguments <- function(){
                     help = paste("Number of Moran process steps"),
                     type = "numeric",
                     default = 100)
-  p <- add_argument(p, "--x_0",
-                    help = paste("Number of individuals with genotype A",
-                                 "at the beginning of the simulation."),
-                    type = "numeric",
-                    default = 100)
   p <- add_argument(p, "--output",
                     help = paste("File to write output"),
                     type = "character",
@@ -64,9 +59,9 @@ library(tidyverse)
 library(HMVAR)
 
 # Read maf_changes
-Dat <- read_tsv(file.path(args$simdir, "maf_changes.tsv"),
-                          col_types = cols(site_id = col_character(),
-                                           pop_id = col_character()))
+Dat <- read_tsv(args$maf_changes,
+                col_types = cols(site_id = col_character(),
+                                 pop_id = col_character()))
 
 # Calculate selection coefficient
 cat("Calculating selection coefficient...\n")
