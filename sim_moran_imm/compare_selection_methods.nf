@@ -154,33 +154,33 @@ process bern_mix{
   """
 }
 
-process compare{
-  tag "$sim_id"
-  label 'r'
-  publishDir "$params.outdir/comp_htmls/", mode: 'rellink',
-    pattern: "compare_tests_sim_moran_imm.html",
-    saveAs:{"${sim_id}.html"}
-  publishDir "$params.outdir/comparisons/", mode: 'rellink',
-    pattern: "output",
-    saveAs:{"$sim_id"}
-
-  input:
-  tuple val(sim_id), file(s_coef), file(fit),
-    file(pdir), file(info) from SCOEFS.join(FITS).join(PDIRS).join(INFOS)
-
-  output:
-  file "output/"
-  file "compare_tests_sim_moran_imm.html"
-
-  """
-  Rscript $workflow.projectDir/render_compare_tests_sim_moran_imm.r \
-    --s_coef $s_coef \
-    --FIT $fit \
-    --pdir $pdir\
-    --info $info \
-    --outdir output
-  """
-}
+// process compare{
+//   tag "$sim_id"
+//   label 'r'
+//   publishDir "$params.outdir/comp_htmls/", mode: 'rellink',
+//     pattern: "compare_tests_sim_moran_imm.html",
+//     saveAs:{"${sim_id}.html"}
+//   publishDir "$params.outdir/comparisons/", mode: 'rellink',
+//     pattern: "output",
+//     saveAs:{"$sim_id"}
+//
+//   input:
+//   tuple val(sim_id), file(s_coef), file(fit),
+//     file(pdir), file(info) from SCOEFS.join(FITS).join(PDIRS).join(INFOS)
+//
+//   output:
+//   file "output/"
+//   file "compare_tests_sim_moran_imm.html"
+//
+//   """
+//   Rscript $workflow.projectDir/render_compare_tests_sim_moran_imm.r \
+//     --s_coef $s_coef \
+//     --FIT $fit \
+//     --pdir $pdir\
+//     --info $info \
+//     --outdir output
+//   """
+// }
 
 // Example nextflow.config
 /*
@@ -193,7 +193,7 @@ process{
   memory = '2G'
   withLabel: 'r'{
     module = 'R/4.1.0'
-    // module = "R/4.0.2:v8/8.4.371.22:pandoc/2.7.3" // Make sure you have ~/.R/Makevars with CXX14
+    // module = "R/4.2.0:v8/8.4.371.22:pandoc/2.7.3:fribidi/1.0.12" // Make sure you have ~/.R/Makevars with CXX14
   }
   withLabel: 'long'{
     time = '48h'
