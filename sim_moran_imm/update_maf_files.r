@@ -26,22 +26,25 @@
 
 # setwd("/cashew/users/sur/exp/fraserv/2022/today3")
 
+#' Load libraries & functions
+#' cannot use with rsutiles
 library(tidyverse)
 source(file.path(this.path::this.dir(), "sim_functions.r"))
-args <- list(simdir = "sims/",
+args <- list(simdir = "sims",
              outdir = "output")
 
-# Prepare output dir
+
+#' Prepare output dir
 if(!dir.exists(args$outdir)){
   dir.create(args$outdir)
 }
 
-
-list.dirs(args$simdir, recursive = FALSE)[1] %>%
+#' Produce maf_changes files
+list.dirs(args$simdir, recursive = FALSE) %>%
   map(function(d, outdir){
     sim_id <- basename(d)
     cat(sim_id, "\n")
-    
+
     maf_changes <- list.dirs(file.path(d, "freqs"), recursive = FALSE) %>%
       map_dfr(function(popdir){
         cat(popdir, "\n")
@@ -52,9 +55,10 @@ list.dirs(args$simdir, recursive = FALSE)[1] %>%
         get_site_maf_changes(freq = freq, t_0 = min(tpoints), t_n = max(tpoints)) %>%
           mutate(pop_id = as.character(pop))
       })
-    
+
     filename <- file.path(outdir, paste0(sim_id, ".tsv"))
     write_tsv(maf_changes, filename)
-  }, outdir = args$outdir)
 
+    filename
+  }, outdir = args$outdir)
 
