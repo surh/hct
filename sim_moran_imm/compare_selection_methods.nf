@@ -51,7 +51,12 @@ SIMPARS = Channel
 // Get list of simulation directories
 Channel.fromPath("$params.simdirs/*", type:'dir', maxDepth: 1)
   .map{simdir -> tuple(simdir.name, file(simdir))}
-  .into{SIMDIRS; SIMDIRS_TEMP}
+  .into{SIMDIRS; SIMDIRS_TEMP; SIMDIRS_TEMP2}
+
+// Get list of maf_changes file
+SIMDIRS_TEMP2
+  .map{sim_id, simdir -> tuple(sim_id, file("$simdir/maf_changes.tsv"))}
+  .into{MAFS_SCOEF; MAFS_COMPARE}
 
 // Splitting for each selection method
 SIMDIRS.join(SIMPARS).into{SIMS1; SIMS2; SIMS3}
@@ -66,18 +71,17 @@ process s_coef{
     saveAs: {"${sim_id}.tsv"}
 
   input:
-  tuple val(sim_id), file(simdir), f, g, x_0, nsites,
-    npops, p_imm, prop_selected, popsize, T, seed from SIMS1
+  tuple val(sim_id), simdir, f, g, x_0, nsites,
+    npops, p_imm, prop_selected, popsize, T, seed,
+    file(maf) from SIMS1.join(MAFS_SCOEF)
 
   output:
   tuple sim_id, file("s_coef.tsv") into SCOEFS
 
   """
   Rscript $workflow.projectDir/s_coef_sim_moran_imm.r \
-    $simdir \
-    --N $popsize \
-    --T $T \
-    --x_0 $x_0 \
+    $maf \
+    --time $T \
     --output s_coef.tsv
   """
 }
